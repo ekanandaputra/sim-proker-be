@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
 import { CreateUnitDto, UpdateUnitDto } from '../dto/unit.dto';
+import { PaginatedResponse, PaginationMeta } from '@common/dto/pagination.dto';
 
 @Injectable()
 export class UnitService {
@@ -11,7 +12,7 @@ export class UnitService {
 
   constructor(private readonly httpService: HttpService) { }
 
-  async getUnits(token: string, query?: any) {
+  async getUnits(token: string, query?: any): Promise<PaginatedResponse<any>> {
     const { data } = await firstValueFrom(
       this.httpService.get(`${this.authUrl}/api/units`, {
         headers: { Authorization: token },
@@ -26,7 +27,25 @@ export class UnitService {
         }),
       ),
     );
-    return data.data || data;
+
+    const items = data.data || data;
+
+    const page = Number(query?.page) || 1;
+    const limit = Number(query?.limit) || 10;
+    const totalItems = 0 // in auth service not return total items;
+    const totalPages = Math.ceil(totalItems / limit) || 0;
+
+    const pagination: PaginationMeta = {
+      page,
+      limit,
+      totalItems,
+      totalPages
+    };
+
+    return {
+      items,
+      pagination
+    };
   }
 
   async getUnitById(id: string, token: string) {
