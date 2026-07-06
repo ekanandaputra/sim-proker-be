@@ -2,7 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
-import { CreateUnitDto, UpdateUnitDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
 import { PaginatedResponse, PaginationMeta } from '@common/dto/pagination.dto';
 
 @Injectable()
@@ -108,6 +108,23 @@ export class UnitService {
           this.logger.error(`Failed to delete unit ${id}: ${error.message}`);
           throw new HttpException(
             error.response?.data?.message || 'Failed to delete unit',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+    return data.data || data;
+  }
+
+  async assignUsers(id: string, payload: AssignUnitPayloadDto, token: string) {
+    const { data } = await firstValueFrom(
+      this.httpService.post(`${this.authUrl}/api/units/${id}/assign`, payload, {
+        headers: { Authorization: token },
+      }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to assign users to unit ${id}: ${error.message}`);
+          throw new HttpException(
+            error.response?.data?.message || 'Failed to assign users to unit',
             error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
           );
         }),

@@ -6,7 +6,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Role } from '@common/constants/roles.constant';
 import { UnitService } from '../services/unit.service';
-import { CreateUnitDto, UpdateUnitDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
 
 @ApiTags('Unit Management')
 @ApiBearerAuth()
@@ -71,5 +71,13 @@ export class UnitController {
   @Delete(':id')
   async deleteUnit(@Req() req: Request, @Param('id') id: string) {
     return this.unitService.deleteUnit(id, this.extractToken(req));
+  }
+
+  @ApiOperation({ summary: 'Assign users to a unit' })
+  @ApiBody({ type: AssignUnitPayloadDto })
+  @Roles(Role.ADMIN)
+  @Post(':id/assign')
+  async assignUsers(@Req() req: Request, @Param('id') id: string, @Body() payload: AssignUnitPayloadDto) {
+    return this.unitService.assignUsers(id, payload, this.extractToken(req));
   }
 }
