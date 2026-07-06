@@ -1,0 +1,215 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum ProgramStatus {
+  DRAFT
+  SUBMITTED
+  REVISION
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ActivityStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  DRAFT
+  SUBMITTED
+  REVISION
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ProgramMemberRole {
+  PIC
+  MEMBER
+  REVIEWER
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+/// Program Category (e.g., Research, Community Service, etc.)
+model ProgramCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  programs Program[]
+
+  @@map("program_categories")
+}
+
+/// Program Kerja (Work Program)
+model Program {
+  id          String        @id @default(uuid())
+  code        String        @unique @db.VarChar(50)
+  title       String        @db.VarChar(255)
+  description String?       @db.Text
+  objective   String?       @db.Text
+  year        Int
+  unitId      String        @map("unit_id")
+  categoryId  String        @map("category_id")
+  status      ProgramStatus @default(DRAFT)
+  startDate   DateTime      @map("start_date")
+  endDate     DateTime      @map("end_date")
+  budget      Decimal       @default(0) @db.Decimal(15, 2)
+  picId       String        @map("pic_id")
+  createdBy   String        @map("created_by")
+  updatedBy   String?       @map("updated_by")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  category   ProgramCategory @relation(fields: [categoryId], references: [id])
+  activities Activity[]
+  members    ProgramMember[]
+  approvals  Approval[]
+
+  @@index([unitId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([year])
+  @@index([picId])
+  @@map("programs")
+}
+
+/// Program Member assignment
+model ProgramMember {
+  id        String            @id @default(uuid())
+  programId String            @map("program_id")
+  userId    String            @map("user_id")
+  role      ProgramMemberRole
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, userId, role])
+  @@index([userId])
+  @@map("program_members")
+}
+
+/// Activity within a Program
+model Activity {
+  id          String         @id @default(uuid())
+  programId   String         @map("program_id")
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  weight      Decimal        @default(0) @db.Decimal(5, 2)
+  status      ActivityStatus @default(NOT_STARTED)
+  startDate   DateTime       @map("start_date")
+  endDate     DateTime       @map("end_date")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  program      Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  outputs      Output[]
+  progressLogs ProgressLog[]
+  evidences    Evidence[]
+
+  @@index([programId])
+  @@index([status])
+  @@map("activities")
+}
+
+/// Output / deliverable of an Activity
+model Output {
+  id          String   @id @default(uuid())
+  activityId  String   @map("activity_id")
+  metricType  String   @map("metric_type") @db.VarChar(100)
+  target      Decimal  @db.Decimal(10, 2)
+  realization Decimal  @default(0) @db.Decimal(10, 2)
+  unit        String   @db.VarChar(50)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("outputs")
+}
+
+/// Progress log (append-only)
+model ProgressLog {
+  id         String   @id @default(uuid())
+  activityId String   @map("activity_id")
+  progress   Int      @db.SmallInt
+  note       String?  @db.Text
+  createdBy  String   @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@index([createdAt])
+  @@map("progress_logs")
+}
+
+/// Evidence / supporting document
+model Evidence {
+  id         String   @id @default(uuid())
+  activityId String   @map("activity_id")
+  fileName   String   @map("file_name") @db.VarChar(255)
+  filePath   String   @map("file_path") @db.VarChar(500)
+  mimeType   String   @map("mime_type") @db.VarChar(100)
+  fileSize   Int      @map("file_size")
+  uploadedBy String   @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("evidences")
+}
+
+/// Approval workflow entry
+model Approval {
+  id         String         @id @default(uuid())
+  programId  String         @map("program_id")
+  status     ApprovalStatus @default(DRAFT)
+  level      Int            @default(1) @db.SmallInt
+  approverId String?        @map("approver_id")
+  note       String?        @db.Text
+  approvedAt DateTime?      @map("approved_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId])
+  @@index([approverId])
+  @@index([status])
+  @@map("approvals")
+}
