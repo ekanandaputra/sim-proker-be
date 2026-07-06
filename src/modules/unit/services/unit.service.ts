@@ -132,4 +132,42 @@ export class UnitService {
     );
     return data.data || data;
   }
+
+  async getUnitUsers(id: string, token: string, query?: any): Promise<PaginatedResponse<any>> {
+    const { data } = await firstValueFrom(
+      this.httpService.get(`${this.authUrl}/api/units/${id}/users`, {
+        headers: { Authorization: token },
+        params: query,
+      }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to fetch unit users ${id}: ${error.message}`);
+          throw new HttpException(
+            error.response?.data?.message || 'Failed to fetch unit users',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+    
+    const items = data.data || data;
+    const authPagination = data.pagination;
+
+    // Construct pagination manually
+    const page = Number(query?.page) || (authPagination ? authPagination.page : 1);
+    const limit = Number(query?.limit) || (authPagination ? authPagination.limit : 10);
+    const totalItems = authPagination?.total ?? (Array.isArray(items) ? items.length : 0);
+    const totalPages = authPagination?.totalPages ?? (Math.ceil(totalItems / limit) || 0);
+
+    const pagination: PaginationMeta = {
+      page,
+      limit,
+      totalItems,
+      totalPages
+    };
+
+    return {
+      items,
+      pagination
+    };
+  }
 }

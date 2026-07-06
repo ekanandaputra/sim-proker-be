@@ -80,4 +80,13 @@ export class UnitController {
   async assignUsers(@Req() req: Request, @Param('id') id: string, @Body() payload: AssignUnitPayloadDto) {
     return this.unitService.assignUsers(id, payload, this.extractToken(req));
   }
+
+  @ApiOperation({ summary: 'Get all users in a unit (proxied to auth service)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
+  @Get(':id/users')
+  async getUnitUsers(@Req() req: Request, @Param('id') id: string, @Query() query: any) {
+    return this.unitService.getUnitUsers(id, this.extractToken(req), query);
+  }
 }
