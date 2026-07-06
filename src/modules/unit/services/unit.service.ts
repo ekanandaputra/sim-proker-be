@@ -2,17 +2,18 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
+import { CreateUnitDto, UpdateUnitDto } from '../dto/unit.dto';
 
 @Injectable()
 export class UnitService {
   private readonly logger = new Logger(UnitService.name);
   private readonly authUrl = getAppConfig().AUTH_SERVICE_URL;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   async getUnits(token: string, query?: any) {
     const { data } = await firstValueFrom(
-      this.httpService.get(`${this.authUrl}/api/v1/units`, {
+      this.httpService.get(`${this.authUrl}/api/units`, {
         headers: { Authorization: token },
         params: query,
       }).pipe(
@@ -25,12 +26,12 @@ export class UnitService {
         }),
       ),
     );
-    return data;
+    return data.data || data;
   }
 
   async getUnitById(id: string, token: string) {
     const { data } = await firstValueFrom(
-      this.httpService.get(`${this.authUrl}/api/v1/units/${id}`, {
+      this.httpService.get(`${this.authUrl}/api/units/${id}`, {
         headers: { Authorization: token },
       }).pipe(
         catchError((error) => {
@@ -42,12 +43,12 @@ export class UnitService {
         }),
       ),
     );
-    return data;
+    return data.data || data;
   }
 
-  async createUnit(payload: any, token: string) {
+  async createUnit(payload: CreateUnitDto, token: string) {
     const { data } = await firstValueFrom(
-      this.httpService.post(`${this.authUrl}/api/v1/units`, payload, {
+      this.httpService.post(`${this.authUrl}/api/units`, payload, {
         headers: { Authorization: token },
       }).pipe(
         catchError((error) => {
@@ -59,12 +60,12 @@ export class UnitService {
         }),
       ),
     );
-    return data;
+    return data.data || data;
   }
 
-  async updateUnit(id: string, payload: any, token: string) {
+  async updateUnit(id: string, payload: UpdateUnitDto, token: string) {
     const { data } = await firstValueFrom(
-      this.httpService.put(`${this.authUrl}/api/v1/units/${id}`, payload, {
+      this.httpService.put(`${this.authUrl}/api/units/${id}`, payload, {
         headers: { Authorization: token },
       }).pipe(
         catchError((error) => {
@@ -76,12 +77,12 @@ export class UnitService {
         }),
       ),
     );
-    return data;
+    return data.data || data;
   }
 
   async deleteUnit(id: string, token: string) {
     const { data } = await firstValueFrom(
-      this.httpService.delete(`${this.authUrl}/api/v1/units/${id}`, {
+      this.httpService.delete(`${this.authUrl}/api/units/${id}`, {
         headers: { Authorization: token },
       }).pipe(
         catchError((error) => {
@@ -93,6 +94,6 @@ export class UnitService {
         }),
       ),
     );
-    return data;
+    return data.data || data;
   }
 }
