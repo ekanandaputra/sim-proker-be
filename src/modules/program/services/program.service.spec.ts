@@ -22,7 +22,6 @@ describe('ProgramService', () => {
     startDate: new Date('2025-01-01'),
     endDate: new Date('2025-12-31'),
     budget: new Decimal(100000000),
-    picId: 'pic-uuid-1',
     createdBy: 'user-uuid-1',
     updatedBy: null,
     createdAt: new Date(),
@@ -116,7 +115,6 @@ describe('ProgramService', () => {
         startDate: new Date('2025-01-01'),
         endDate: new Date('2025-12-31'),
         budget: 100000000,
-        picId: 'pic-uuid-1',
       };
 
       const result = await service.create(dto, 'user-uuid-1');
@@ -137,7 +135,6 @@ describe('ProgramService', () => {
         startDate: new Date('2025-01-01'),
         endDate: new Date('2025-12-31'),
         budget: 0,
-        picId: 'pic-uuid-1',
       };
 
       await expect(service.create(dto, 'user-uuid-1')).rejects.toThrow(EntityConflictException);

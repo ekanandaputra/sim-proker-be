@@ -93,11 +93,10 @@ export class ProgramService {
       objective: dto.objective,
       year: dto.year,
       unitId: dto.unitId,
-      category: { connect: { id: dto.categoryId } },
+      category: dto.categoryId ? { connect: { id: dto.categoryId } } : undefined,
       startDate: dto.startDate,
       endDate: dto.endDate,
       budget: dto.budget,
-      picId: dto.picId,
       createdBy: userId,
     });
 

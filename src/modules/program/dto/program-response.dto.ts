@@ -20,11 +20,11 @@ export class ProgramResponseDto {
   @ApiProperty({ example: 2025 })
   year!: number;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
-  unitId!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', nullable: true })
+  unitId!: string | null;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
-  categoryId!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', nullable: true })
+  categoryId!: string | null;
 
   @ApiProperty({ example: 'Research', nullable: true })
   categoryName!: string | null;
@@ -41,8 +41,6 @@ export class ProgramResponseDto {
   @ApiProperty({ example: 50000000 })
   budget!: number;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003' })
-  picId!: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440004' })
   createdBy!: string;

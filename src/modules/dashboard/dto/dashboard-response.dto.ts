@@ -8,7 +8,7 @@ export class DashboardResponseDto {
   @ApiProperty({ example: 500000000 }) totalBudget!: number;
   @ApiProperty({ example: 45.5 }) completionPercentage!: number;
   @ApiProperty({ example: [{ unitId: 'uuid', count: 10 }] })
-  programsByUnit!: Array<{ unitId: string; count: number }>;
+  programsByUnit!: Array<{ unitId: string | null; count: number }>;
   @ApiProperty({ example: [{ status: 'APPROVED', count: 15 }] })
   programsByStatus!: Array<{ status: string; count: number }>;
 }

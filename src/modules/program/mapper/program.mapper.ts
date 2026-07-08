@@ -21,7 +21,6 @@ export class ProgramMapper {
       startDate: program.startDate,
       endDate: program.endDate,
       budget: Number(program.budget),
-      picId: program.picId,
       createdBy: program.createdBy,
       createdAt: program.createdAt,
       updatedAt: program.updatedAt,

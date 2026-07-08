@@ -57,7 +57,6 @@ async function main() {
       startDate: new Date('2025-01-01'),
       endDate: new Date('2025-12-31'),
       budget: 150000000,
-      picId: samplePicId,
       createdBy: sampleUserId,
     },
   });
@@ -77,7 +76,6 @@ async function main() {
       startDate: new Date('2025-03-01'),
       endDate: new Date('2025-11-30'),
       budget: 75000000,
-      picId: samplePicId,
       createdBy: sampleUserId,
     },
   });
@@ -97,7 +95,6 @@ async function main() {
       startDate: new Date('2025-02-01'),
       endDate: new Date('2025-10-31'),
       budget: 200000000,
-      picId: samplePicId,
       createdBy: sampleUserId,
     },
   });

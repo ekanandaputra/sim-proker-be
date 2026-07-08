@@ -17,12 +17,12 @@ export const createProgramSchema = z.object({
     .int()
     .min(2000, 'Year must be at least 2000')
     .max(2100, 'Year must be at most 2100'),
-  unitId: z.string().uuid('Unit ID must be a valid UUID'),
-  categoryId: z.string().uuid('Category ID must be a valid UUID'),
+  unitId: z.string().uuid('Unit ID must be a valid UUID').optional(),
+  categoryId: z.string().uuid('Category ID must be a valid UUID').optional(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   budget: z.number().min(0, 'Budget must be non-negative').default(0),
-  picId: z.string().uuid('PIC ID must be a valid UUID'),
+
 }).refine(
   (data) => data.endDate > data.startDate,
   { message: 'End date must be after start date', path: ['endDate'] },
@@ -44,11 +44,11 @@ export class CreateProgramDto {
   @ApiProperty({ example: 2025 })
   year!: number;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
-  unitId!: string;
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440001' })
+  unitId?: string;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
-  categoryId!: string;
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  categoryId?: string;
 
   @ApiProperty({ example: '2025-01-01' })
   startDate!: Date;
@@ -59,6 +59,4 @@ export class CreateProgramDto {
   @ApiProperty({ example: 50000000, default: 0 })
   budget!: number;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003' })
-  picId!: string;
 }

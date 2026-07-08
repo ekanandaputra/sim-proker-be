@@ -13,7 +13,6 @@ export const updateProgramSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
   budget: z.number().min(0).optional(),
-  picId: z.string().uuid().optional(),
 });
 
 export class UpdateProgramDto {
@@ -46,7 +45,4 @@ export class UpdateProgramDto {
 
   @ApiPropertyOptional({ example: 75000000 })
   budget?: number;
-
-  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440003' })
-  picId?: string;
 }

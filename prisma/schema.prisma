@@ -74,20 +74,20 @@ model Program {
   description String?       @db.Text
   objective   String?       @db.Text
   year        Int
-  unitId      String        @map("unit_id")
-  categoryId  String        @map("category_id")
+  unitId      String?       @map("unit_id")
+  categoryId  String?       @map("category_id")
   status      ProgramStatus @default(DRAFT)
   startDate   DateTime      @map("start_date")
   endDate     DateTime      @map("end_date")
   budget      Decimal       @default(0) @db.Decimal(15, 2)
-  picId       String        @map("pic_id")
+
   createdBy   String        @map("created_by")
   updatedBy   String?       @map("updated_by")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  category   ProgramCategory @relation(fields: [categoryId], references: [id])
+  category   ProgramCategory? @relation(fields: [categoryId], references: [id])
   activities Activity[]
   members    ProgramMember[]
   approvals  Approval[]
@@ -96,7 +96,6 @@ model Program {
   @@index([categoryId])
   @@index([status])
   @@index([year])
-  @@index([picId])
   @@map("programs")
 }
 
