@@ -15,6 +15,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
+  ApiBody,
   ApiParam,
   ApiQuery,
   ApiResponse,
@@ -84,6 +85,7 @@ export class ProgramController {
     summary: 'Create program',
     description: 'Create a new program kerja. Requires Admin, Unit Admin, or PIC role.',
   })
+  @ApiBody({ type: CreateProgramDto })
   @ApiResponse({ status: 201, description: 'Program created', type: ProgramResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiResponse({ status: 409, description: 'Program code already exists' })
@@ -101,6 +103,7 @@ export class ProgramController {
     description: 'Partially update an existing program.',
   })
   @ApiParam({ name: 'id', type: String, description: 'Program UUID' })
+  @ApiBody({ type: UpdateProgramDto })
   @ApiResponse({ status: 200, description: 'Program updated', type: ProgramResponseDto })
   @ApiResponse({ status: 404, description: 'Program not found' })
   async update(
