@@ -10,12 +10,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiCreatedResponse, ApiPaginatedResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ActivityService } from '../services/activity.service';
 import { createActivitySchema, CreateActivityDto, updateActivitySchema, UpdateActivityDto } from '../dto/activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 
 @ApiTags('Activities')
@@ -36,7 +37,20 @@ export class ActivityController {
   @Post('programs/:id/activities')
   @ApiOperation({ summary: 'Create activity under a program' })
   @ApiParam({ name: 'id', description: 'Program UUID' })
-  @ApiCreatedResponse({ description: 'Activity created', type: ActivityResponseDto, examples: { example: { title: 'New Activity', description: 'Description', weight: 10, startDate: '2024-01-01', endDate: '2024-01-31' } } })
+  @ApiResponse({ status: 201, description: 'Activity created', type: ActivityResponseDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['title', 'startDate', 'endDate'],
+      properties: {
+        title: { type: 'string', example: 'Workshop Pelatihan' },
+        description: { type: 'string', example: 'Deskripsi kegiatan workshop' },
+        weight: { type: 'number', example: 25 },
+        startDate: { type: 'string', format: 'date', example: '2024-01-15' },
+        endDate: { type: 'string', format: 'date', example: '2024-01-31' },
+      },
+    },
+  })
   async create(
     @Param('id') programId: string,
     @Body(new ZodValidationPipe(createActivitySchema)) dto: CreateActivityDto,

@@ -10,6 +10,7 @@ import { EvidenceResponseDto } from '../dto/evidence.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { JwtPayload } from '@common/guards';
 import { getAppConfig } from '@common/config';
 
@@ -23,7 +24,7 @@ export class EvidenceController {
   @Get('activities/:id/evidences')
   @ApiOperation({ summary: 'List evidences for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID' })
-  @ApiResponse({ status: 200, type: [EvidenceResponseDto] })
+  @ApiPaginatedResponse(EvidenceResponseDto)
   async findByActivity(@Param('id') activityId: string) {
     return this.evidenceService.findByActivityId(activityId);
   }
@@ -37,12 +38,12 @@ export class EvidenceController {
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'The file to upload' },
+        file: { type: 'string', format: 'binary', description: 'The file to upload (max 10MB)' },
       },
       required: ['file'],
     },
   })
-  @ApiResponse({ status: 201, type: EvidenceResponseDto })
+  @ApiResponse({ status: 201, description: 'Evidence uploaded', type: EvidenceResponseDto })
   async upload(
     @Param('id') activityId: string,
     @UploadedFile(

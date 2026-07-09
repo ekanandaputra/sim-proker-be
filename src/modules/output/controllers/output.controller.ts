@@ -1,11 +1,12 @@
 import {
   Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, HttpCode, HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiCreatedResponse, ApiPaginatedResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { OutputService } from '../services/output.service';
 import { createOutputSchema, CreateOutputDto, updateOutputSchema, UpdateOutputDto, OutputResponseDto } from '../dto/output.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 
 @ApiTags('Outputs')
@@ -26,7 +27,20 @@ export class OutputController {
   @Post('activities/:id/outputs')
   @ApiOperation({ summary: 'Create output for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID' })
-  @ApiCreatedResponse({ description: 'Output created', type: OutputResponseDto, examples: { example: { title: 'New Output', description: 'Description', weight: 5, startDate: '2024-01-01', endDate: '2024-01-31' } } })
+  @ApiResponse({ status: 201, description: 'Output created', type: OutputResponseDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['metricType', 'target', 'unit'],
+      properties: {
+        metricType: { type: 'string', example: 'Publication' },
+        target: { type: 'number', example: 5 },
+        realization: { type: 'number', example: 0 },
+        unit: { type: 'string', example: 'pcs' },
+        description: { type: 'string', example: 'Jumlah publikasi yang ditargetkan' },
+      },
+    },
+  })
   async create(
     @Param('id') activityId: string,
     @Body(new ZodValidationPipe(createOutputSchema)) dto: CreateOutputDto,
