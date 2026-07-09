@@ -212,3 +212,38 @@ model Approval {
   @@index([status])
   @@map("approvals")
 }
+
+// ============================================================================
+// AUDIT LOG
+// ============================================================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  APPROVE
+  REJECT
+  SUBMIT
+}
+
+/// Audit Log — records all significant user actions
+model AuditLog {
+  id         String      @id @default(uuid())
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(100)
+  entityId   String      @map("entity_id") @db.VarChar(100)
+  userId     String      @map("user_id")
+  userName   String?     @map("user_name") @db.VarChar(255)
+  oldValue   Json?       @map("old_value")
+  newValue   Json?       @map("new_value")
+  ipAddress  String?     @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -130,6 +130,27 @@ CREATE TABLE `approvals` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `audit_logs` (
+    `id` VARCHAR(191) NOT NULL,
+    `action` ENUM('CREATE', 'UPDATE', 'DELETE', 'STATUS_CHANGE', 'APPROVE', 'REJECT', 'SUBMIT') NOT NULL,
+    `entity_type` VARCHAR(100) NOT NULL,
+    `entity_id` VARCHAR(100) NOT NULL,
+    `user_id` VARCHAR(191) NOT NULL,
+    `user_name` VARCHAR(255) NULL,
+    `old_value` JSON NULL,
+    `new_value` JSON NULL,
+    `ip_address` VARCHAR(45) NULL,
+    `user_agent` VARCHAR(500) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `audit_logs_entity_type_entity_id_idx`(`entity_type`, `entity_id`),
+    INDEX `audit_logs_user_id_idx`(`user_id`),
+    INDEX `audit_logs_action_idx`(`action`),
+    INDEX `audit_logs_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `programs` ADD CONSTRAINT `programs_category_id_fkey` FOREIGN KEY (`category_id`) REFERENCES `program_categories`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 

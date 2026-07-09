@@ -121,8 +121,8 @@ export class ProgramController {
   @ApiParam({ name: 'id', type: String, description: 'Program UUID' })
   @ApiResponse({ status: 200, description: 'Program deleted' })
   @ApiResponse({ status: 404, description: 'Program not found' })
-  async remove(@Param('id') id: string) {
-    await this.programService.remove(id);
+  async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    await this.programService.remove(id, user.userId);
     return { message: 'Program deleted successfully' };
   }
 }

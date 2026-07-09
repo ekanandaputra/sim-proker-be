@@ -15,6 +15,7 @@ import {
   EntityNotFoundException,
   EntityConflictException,
 } from '@common/exceptions';
+import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 
 @Injectable()
 export class ProgramService {
@@ -23,6 +24,7 @@ export class ProgramService {
   constructor(
     @Inject(PROGRAM_REPOSITORY)
     private readonly programRepository: IProgramRepository,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async findAll(query: ProgramQueryDto): Promise<PaginatedResponse<ProgramResponseDto>> {
@@ -102,6 +104,21 @@ export class ProgramService {
 
     this.logger.log(`Program created: ${program.id} by user ${userId}`);
 
+    // Audit log
+    await this.auditLogService.log({
+      action: 'CREATE',
+      entityType: 'Program',
+      entityId: program.id,
+      userId,
+      newValue: {
+        code: program.code,
+        title: program.title,
+        status: program.status,
+        year: program.year,
+        budget: Number(program.budget),
+      },
+    });
+
     return ProgramMapper.toResponse(
       program as typeof program & { category?: { name: string } | null },
     );
@@ -116,6 +133,16 @@ export class ProgramService {
     if (!existing) {
       throw new EntityNotFoundException('Program', id);
     }
+
+    // Capture old values for audit
+    const oldValue = {
+      code: existing.code,
+      title: existing.title,
+      description: existing.description,
+      status: existing.status,
+      year: existing.year,
+      budget: Number(existing.budget),
+    };
 
     const updateData: Prisma.ProgramUpdateInput = {
       ...dto,
@@ -140,12 +167,29 @@ export class ProgramService {
 
     this.logger.log(`Program updated: ${id} by user ${userId}`);
 
+    // Audit log
+    await this.auditLogService.log({
+      action: 'UPDATE',
+      entityType: 'Program',
+      entityId: id,
+      userId,
+      oldValue,
+      newValue: {
+        code: program.code,
+        title: program.title,
+        description: program.description,
+        status: program.status,
+        year: program.year,
+        budget: Number(program.budget),
+      },
+    });
+
     return ProgramMapper.toResponse(
       program as typeof program & { category?: { name: string } | null },
     );
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId?: string): Promise<void> {
     const existing = await this.programRepository.findById(id);
     if (!existing) {
       throw new EntityNotFoundException('Program', id);
@@ -153,5 +197,20 @@ export class ProgramService {
 
     await this.programRepository.delete(id);
     this.logger.log(`Program deleted: ${id}`);
+
+    // Audit log
+    await this.auditLogService.log({
+      action: 'DELETE',
+      entityType: 'Program',
+      entityId: id,
+      userId: userId ?? existing.createdBy,
+      oldValue: {
+        code: existing.code,
+        title: existing.title,
+        status: existing.status,
+        year: existing.year,
+      },
+    });
   }
 }
+
