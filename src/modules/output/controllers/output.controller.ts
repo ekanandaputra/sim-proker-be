@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, HttpCode, HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiCreatedResponse, ApiPaginatedResponse } from '@nestjs/swagger';
 import { OutputService } from '../services/output.service';
 import { createOutputSchema, CreateOutputDto, updateOutputSchema, UpdateOutputDto, OutputResponseDto } from '../dto/output.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -18,7 +18,7 @@ export class OutputController {
   @Get('activities/:id/outputs')
   @ApiOperation({ summary: 'List outputs for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID' })
-  @ApiResponse({ status: 200, type: [OutputResponseDto] })
+  @ApiPaginatedResponse(OutputResponseDto)
   async findByActivity(@Param('id') activityId: string) {
     return this.outputService.findByActivityId(activityId);
   }
@@ -26,7 +26,7 @@ export class OutputController {
   @Post('activities/:id/outputs')
   @ApiOperation({ summary: 'Create output for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID' })
-  @ApiResponse({ status: 201, type: OutputResponseDto })
+  @ApiCreatedResponse({ description: 'Output created', type: OutputResponseDto, examples: { example: { title: 'New Output', description: 'Description', weight: 5, startDate: '2024-01-01', endDate: '2024-01-31' } } })
   async create(
     @Param('id') activityId: string,
     @Body(new ZodValidationPipe(createOutputSchema)) dto: CreateOutputDto,

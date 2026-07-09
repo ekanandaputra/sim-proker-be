@@ -10,7 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiCreatedResponse, ApiPaginatedResponse } from '@nestjs/swagger';
 import { ActivityService } from '../services/activity.service';
 import { createActivitySchema, CreateActivityDto, updateActivitySchema, UpdateActivityDto } from '../dto/activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
@@ -28,7 +28,7 @@ export class ActivityController {
   @Get('programs/:id/activities')
   @ApiOperation({ summary: 'List activities for a program' })
   @ApiParam({ name: 'id', description: 'Program UUID' })
-  @ApiResponse({ status: 200, type: [ActivityResponseDto] })
+  @ApiPaginatedResponse(ActivityResponseDto)
   async findByProgram(@Param('id') programId: string) {
     return this.activityService.findByProgramId(programId);
   }
@@ -36,7 +36,7 @@ export class ActivityController {
   @Post('programs/:id/activities')
   @ApiOperation({ summary: 'Create activity under a program' })
   @ApiParam({ name: 'id', description: 'Program UUID' })
-  @ApiResponse({ status: 201, type: ActivityResponseDto })
+  @ApiCreatedResponse({ description: 'Activity created', type: ActivityResponseDto, examples: { example: { title: 'New Activity', description: 'Description', weight: 10, startDate: '2024-01-01', endDate: '2024-01-31' } } })
   async create(
     @Param('id') programId: string,
     @Body(new ZodValidationPipe(createActivitySchema)) dto: CreateActivityDto,
