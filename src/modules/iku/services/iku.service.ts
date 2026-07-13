@@ -9,8 +9,8 @@ export class IkuService {
 
   constructor(private readonly ikuIntegrationService: IkuIntegrationService) {}
 
-  async getAllIkus(token?: string): Promise<PaginatedResponse<IkuResponseDto>> {
+  async getAllIkus(token?: string, query?: any): Promise<PaginatedResponse<IkuResponseDto>> {
     this.logger.log('Fetching IKUs from integration service');
-    return this.ikuIntegrationService.getAllIkus(token);
+    return this.ikuIntegrationService.getAllIkus(token, query);
   }
 }

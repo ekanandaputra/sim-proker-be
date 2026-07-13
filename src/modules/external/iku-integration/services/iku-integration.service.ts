@@ -25,11 +25,12 @@ export class IkuIntegrationService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async getAllIkus(token?: string): Promise<PaginatedResponse<IkuDto>> {
+  async getAllIkus(token?: string, query?: any): Promise<PaginatedResponse<IkuDto>> {
     const headers = token ? { Authorization: token } : undefined;
+    const params = query ? { page: query.page, limit: query.limit } : undefined;
 
     const { data } = await firstValueFrom(
-      this.httpService.get<IkuApiResponse>(`${this.ikuUrl}/api/ikus`, { headers }).pipe(
+      this.httpService.get<IkuApiResponse>(`${this.ikuUrl}/api/ikus`, { headers, params }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to fetch IKUs from IKU Service: ${error.message}`);
           throw new HttpException(
