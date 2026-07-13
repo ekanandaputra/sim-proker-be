@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
 import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
+import { paginationQuerySchema, PaginationQuery } from '@common/dto/pagination.dto';
 
 @ApiTags('Default Program')
 @ApiBearerAuth()
@@ -15,9 +17,14 @@ export class DefaultProgramController {
 
   @Get()
   @ApiOperation({ summary: 'Get all default programs' })
-  @ApiResponse({ status: 200, type: [DefaultProgramDto] })
-  async findAll() {
-    return this.defaultProgramService.findAll();
+  @ApiPaginatedResponse(DefaultProgramDto)
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page (default: 10)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search keyword' })
+  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field to sort by' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (asc/desc)' })
+  async findAll(@Query(new ZodValidationPipe(paginationQuerySchema)) query: PaginationQuery) {
+    return this.defaultProgramService.findAll(query);
   }
 
   @Get('by-iku/:ikuId')

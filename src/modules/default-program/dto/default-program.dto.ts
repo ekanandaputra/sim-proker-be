@@ -7,10 +7,36 @@ export const createDefaultProgramSchema = z.object({
   title: z.string().min(1, 'title is required'),
   description: z.string().optional(),
 });
-export type CreateDefaultProgramDto = z.infer<typeof createDefaultProgramSchema>;
+
+export class CreateDefaultProgramDto {
+  @ApiProperty()
+  ikuId!: string;
+
+  @ApiProperty()
+  ikuCode!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty({ required: false })
+  description?: string;
+}
 
 export const updateDefaultProgramSchema = createDefaultProgramSchema.partial();
-export type UpdateDefaultProgramDto = z.infer<typeof updateDefaultProgramSchema>;
+
+export class UpdateDefaultProgramDto {
+  @ApiProperty({ required: false })
+  ikuId?: string;
+
+  @ApiProperty({ required: false })
+  ikuCode?: string;
+
+  @ApiProperty({ required: false })
+  title?: string;
+
+  @ApiProperty({ required: false })
+  description?: string;
+}
 
 export class DefaultProgramDto {
   @ApiProperty() id!: string;

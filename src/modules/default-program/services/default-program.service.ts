@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException } from '@common/exceptions';
 import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto } from '../dto/default-program.dto';
+import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
 
 @Injectable()
 export class DefaultProgramService {
@@ -9,10 +10,40 @@ export class DefaultProgramService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<DefaultProgramDto[]> {
-    return this.prisma.defaultProgram.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query: PaginationQuery): Promise<PaginatedResponse<DefaultProgramDto>> {
+    const { page, limit, search, sortBy, sortOrder } = query;
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' as const } },
+            { ikuCode: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const [items, totalItems] = await Promise.all([
+      this.prisma.defaultProgram.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy || 'createdAt']: sortOrder },
+      }),
+      this.prisma.defaultProgram.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages,
+      },
+    };
   }
 
   async findById(id: string): Promise<DefaultProgramDto> {
