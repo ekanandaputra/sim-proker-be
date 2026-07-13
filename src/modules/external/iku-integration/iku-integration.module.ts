@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 
-import { IkuIntegrationController } from './controllers/iku-integration.controller';
 import { IkuIntegrationService } from './services/iku-integration.service';
 
 @Module({
@@ -11,7 +10,6 @@ import { IkuIntegrationService } from './services/iku-integration.service';
       maxRedirects: 5,
     }),
   ],
-  controllers: [IkuIntegrationController],
   providers: [IkuIntegrationService],
   exports: [IkuIntegrationService],
 })

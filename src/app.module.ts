@@ -15,6 +15,7 @@ import { IkuIntegrationModule } from '@modules/external/iku-integration/iku-inte
 import { UnitModule } from '@modules/unit/unit.module';
 import { AuditLogModule } from '@modules/audit-log/audit-log.module';
 import { DefaultProgramModule } from '@modules/default-program/default-program.module';
+import { IkuModule } from '@modules/iku/iku.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { DefaultProgramModule } from '@modules/default-program/default-program.m
     ApprovalModule,
     DashboardModule,
     DefaultProgramModule,
+    IkuModule,
 
     // Integration
     IntegrationModule,

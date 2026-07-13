@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
 import { IkuDto } from '../dto/iku-integration.dto';
+import { PaginatedResponse } from '@common/dto/pagination.dto';
 
 interface IkuApiResponse {
   success: boolean;
@@ -24,7 +25,7 @@ export class IkuIntegrationService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async getAllIkus(token?: string): Promise<IkuDto[]> {
+  async getAllIkus(token?: string): Promise<PaginatedResponse<IkuDto>> {
     const headers = token ? { Authorization: token } : undefined;
 
     const { data } = await firstValueFrom(
@@ -39,7 +40,22 @@ export class IkuIntegrationService {
       ),
     );
 
-    // sim-iku-api wraps response as { success, data: { data: [...], pagination } }
-    return data?.data?.data || (data as any);
+    const resData = data?.data;
+    if (!resData) {
+      return {
+        items: [],
+        pagination: { page: 1, limit: 10, totalItems: 0, totalPages: 0 }
+      };
+    }
+
+    return {
+      items: resData.data,
+      pagination: {
+        page: resData.pagination.page,
+        limit: resData.pagination.limit,
+        totalItems: resData.pagination.total,
+        totalPages: resData.pagination.totalPages,
+      }
+    };
   }
 }
