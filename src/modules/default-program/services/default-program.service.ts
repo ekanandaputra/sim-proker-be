@@ -17,8 +17,8 @@ export class DefaultProgramService {
     const where = search
       ? {
           OR: [
-            { title: { contains: search, mode: 'insensitive' as const } },
-            { ikuCode: { contains: search, mode: 'insensitive' as const } },
+            { title: { contains: search } },
+            { ikuCode: { contains: search } },
           ],
         }
       : {};
