@@ -5,6 +5,7 @@ export const appConfigSchema = z.object({
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().url(),
   AUTH_SERVICE_URL: z.string().url(),
+  IKU_SERVICE_URL: z.string().url(),
   UPLOAD_DIR: z.string().default('./uploads'),
   MAX_FILE_SIZE: z.coerce.number().default(10485760), // 10MB
   CORS_ORIGIN: z.string().default('*'),

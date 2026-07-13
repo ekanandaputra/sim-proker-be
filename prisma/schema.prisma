@@ -81,10 +81,10 @@ model Program {
   endDate     DateTime      @map("end_date")
   budget      Decimal       @default(0) @db.Decimal(15, 2)
 
-  createdBy   String        @map("created_by")
-  updatedBy   String?       @map("updated_by")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  createdBy String   @map("created_by")
+  updatedBy String?  @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   category   ProgramCategory? @relation(fields: [categoryId], references: [id])
@@ -246,4 +246,23 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// DEFAULT PROGRAM (IKU Mapping)
+// ============================================================================
+
+/// Default program template mapping for IKU (Integration with SIM IKU)
+model DefaultProgram {
+  id          String   @id @default(uuid())
+  ikuId       String   @map("iku_id") @db.VarChar(100)
+  ikuCode     String   @map("iku_code") @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([ikuId])
+  @@index([ikuCode])
+  @@map("default_programs")
 }

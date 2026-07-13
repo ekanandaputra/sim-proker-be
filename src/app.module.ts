@@ -11,8 +11,10 @@ import { ApprovalModule } from '@modules/approval/approval.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { IntegrationModule } from './integrations/integration.module';
 import { AuthIntegrationModule } from '@modules/external/auth-integration/auth-integration.module';
+import { IkuIntegrationModule } from '@modules/external/iku-integration/iku-integration.module';
 import { UnitModule } from '@modules/unit/unit.module';
 import { AuditLogModule } from '@modules/audit-log/audit-log.module';
+import { DefaultProgramModule } from '@modules/default-program/default-program.module';
 
 @Module({
   imports: [
@@ -29,10 +31,12 @@ import { AuditLogModule } from '@modules/audit-log/audit-log.module';
     EvidenceModule,
     ApprovalModule,
     DashboardModule,
+    DefaultProgramModule,
 
     // Integration
     IntegrationModule,
     AuthIntegrationModule,
+    IkuIntegrationModule,
     UnitModule,
   ],
 })
