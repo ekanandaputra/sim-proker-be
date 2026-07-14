@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { paginationQuerySchema, PaginationQuery } from '@common/dto/pagination.dto';
 
 @ApiTags('Default Program')
@@ -46,6 +48,18 @@ export class DefaultProgramController {
   @ApiResponse({ status: 201, type: DefaultProgramDto })
   async create(@Body(new ZodValidationPipe(createDefaultProgramSchema)) dto: CreateDefaultProgramDto) {
     return this.defaultProgramService.create(dto);
+  }
+
+  @Post('assign-to-unit')
+  @ApiOperation({ summary: 'Assign default programs to a unit for a specific year' })
+  @ApiResponse({ status: 201, description: 'Default programs assigned successfully' })
+  async assignToUnit(
+    @Body(new ZodValidationPipe(assignDefaultProgramSchema)) dto: AssignDefaultProgramDto,
+    @CurrentUser('userId') userId: string,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.defaultProgramService.assignToUnit(dto, userId, token);
   }
 
   @Put(':id')
