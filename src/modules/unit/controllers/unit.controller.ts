@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Role } from '@common/constants/roles.constant';
 import { UnitService } from '../services/unit.service';
-import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto } from '../dto/unit.dto';
 
 @ApiTags('Unit Management')
 @ApiBearerAuth()
@@ -32,6 +32,13 @@ export class UnitController {
   @Get(':id')
   async getUnitById(@Req() req: Request, @Param('id') id: string) {
     return this.unitService.getUnitById(id, this.extractToken(req));
+  }
+
+  @ApiOperation({ summary: 'Get unit details including IKUs and assigned users' })
+  @ApiResponse({ status: 200, type: UnitDetailsResponseDto })
+  @Get(':id/details')
+  async getUnitDetails(@Req() req: Request, @Param('id') id: string) {
+    return this.unitService.getUnitDetails(id, this.extractToken(req));
   }
 
   @ApiOperation({ summary: 'Create new unit' })

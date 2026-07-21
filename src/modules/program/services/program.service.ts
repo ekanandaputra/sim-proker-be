@@ -6,6 +6,7 @@ import {
 } from '../repositories/program.repository.interface';
 import { CreateProgramDto } from '../dto/create-program.dto';
 import { UpdateProgramDto } from '../dto/update-program.dto';
+import { AssignProgramDto } from '../dto/assign-program.dto';
 import { ProgramQueryDto } from '../dto/program-query.dto';
 import { ProgramResponseDto } from '../dto/program-response.dto';
 import { ProgramMapper } from '../mapper/program.mapper';
@@ -100,6 +101,7 @@ export class ProgramService {
       endDate: dto.endDate,
       budget: dto.budget,
       createdBy: userId,
+      status: dto.status ?? (dto.unitId ? 'ASSIGNED_TO_UNIT' : 'DRAFT'),
     });
 
     this.logger.log(`Program created: ${program.id} by user ${userId}`);
@@ -116,6 +118,56 @@ export class ProgramService {
         status: program.status,
         year: program.year,
         budget: Number(program.budget),
+      },
+    });
+
+    return ProgramMapper.toResponse(
+      program as typeof program & { category?: { name: string } | null },
+    );
+  }
+
+  async assignToUnit(id: string, dto: AssignProgramDto, userId: string): Promise<ProgramResponseDto> {
+    const existing = await this.programRepository.findById(id);
+    if (!existing) {
+      throw new EntityNotFoundException('Program', id);
+    }
+
+    const newCode = `${existing.code}-${dto.year}-${Math.floor(Math.random() * 1000)}`;
+
+    const start = new Date(existing.startDate);
+    start.setFullYear(dto.year);
+    const end = new Date(existing.endDate);
+    end.setFullYear(dto.year);
+
+    const program = await this.programRepository.create({
+      code: newCode,
+      title: existing.title,
+      description: existing.description,
+      objective: existing.objective,
+      year: dto.year,
+      unitId: dto.unitId ?? existing.unitId,
+      category: existing.categoryId ? { connect: { id: existing.categoryId } } : undefined,
+      startDate: start,
+      endDate: end,
+      budget: existing.budget,
+      createdBy: userId,
+      status: 'ASSIGNED_TO_UNIT',
+    });
+
+    this.logger.log(`Program assigned to unit: ${program.id} (from ${existing.id}) by user ${userId}`);
+
+    await this.auditLogService.log({
+      action: 'CREATE',
+      entityType: 'Program',
+      entityId: program.id,
+      userId,
+      newValue: {
+        code: program.code,
+        title: program.title,
+        status: program.status,
+        year: program.year,
+        budget: Number(program.budget),
+        clonedFrom: existing.id,
       },
     });
 

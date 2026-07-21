@@ -9,6 +9,7 @@ import { PaginatedResponse, PaginationMeta } from '@common/dto/pagination.dto';
 export class UnitService {
   private readonly logger = new Logger(UnitService.name);
   private readonly authUrl = getAppConfig().AUTH_SERVICE_URL;
+  private readonly ikuUrl = getAppConfig().IKU_SERVICE_URL;
 
   constructor(private readonly httpService: HttpService) { }
 
@@ -168,6 +169,40 @@ export class UnitService {
     return {
       items,
       pagination
+    };
+  }
+
+  async getUnitIkus(id: string, token: string) {
+    const { data } = await firstValueFrom(
+      this.httpService.get(`${this.ikuUrl}/api/units/${id}/ikus`, {
+        headers: { Authorization: token },
+      }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to fetch unit ikus ${id}: ${error.message}`);
+          throw new HttpException(
+            error.response?.data?.message || 'Failed to fetch unit ikus',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+    return data.data || data;
+  }
+
+  async getUnitDetails(id: string, token: string) {
+    const [unit, usersResponse, ikuResponse] = await Promise.all([
+      this.getUnitById(id, token),
+      this.getUnitUsers(id, token, { limit: 100 }), // Get up to 100 users for details
+      this.getUnitIkus(id, token).catch(() => ({ ikus: [] })), // Graceful fallback
+    ]);
+
+    const ikus = ikuResponse?.ikus || [];
+    const users = usersResponse?.items || [];
+
+    return {
+      unit,
+      users,
+      ikus,
     };
   }
 }

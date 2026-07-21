@@ -8,6 +8,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 describe('ProgramService', () => {
   let service: ProgramService;
   let repository: IProgramRepository;
+  let auditLogService: any;
 
   const mockProgram = {
     id: 'test-uuid-1',
@@ -40,7 +41,11 @@ describe('ProgramService', () => {
       delete: vi.fn(),
     };
 
-    service = new ProgramService(repository);
+    auditLogService = {
+      log: vi.fn(),
+    };
+
+    service = new ProgramService(repository, auditLogService);
   });
 
   describe('findAll', () => {

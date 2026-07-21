@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProgramStatus } from '@prisma/client';
 
 export const createProgramSchema = z.object({
   code: z
@@ -22,7 +23,7 @@ export const createProgramSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   budget: z.number().min(0, 'Budget must be non-negative').default(0),
-
+  status: z.nativeEnum(ProgramStatus).optional(),
 }).refine(
   (data) => data.endDate > data.startDate,
   { message: 'End date must be after start date', path: ['endDate'] },
@@ -59,4 +60,6 @@ export class CreateProgramDto {
   @ApiProperty({ example: 50000000, default: 0 })
   budget!: number;
 
+  @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.ASSIGNED_TO_UNIT })
+  status?: ProgramStatus;
 }

@@ -15,6 +15,7 @@ datasource db {
 // ============================================================================
 
 enum ProgramStatus {
+  ASSIGNED_TO_UNIT
   DRAFT
   SUBMITTED
   REVISION
