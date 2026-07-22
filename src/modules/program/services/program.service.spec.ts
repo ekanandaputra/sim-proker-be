@@ -95,7 +95,6 @@ describe('ProgramService', () => {
 
       expect(result.id).toBe('test-uuid-1');
       expect(result.title).toBe('Test Program');
-      expect(result.categoryName).toBe('Penelitian');
     });
 
     it('should throw EntityNotFoundException when not found', async () => {

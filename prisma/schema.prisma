@@ -61,9 +61,6 @@ model ProgramCategory {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  programs Program[]
-
   @@map("program_categories")
 }
 
@@ -75,11 +72,6 @@ model Program {
   description String?       @db.Text
   objective   String?       @db.Text
   year        Int
-  categoryId  String?       @map("category_id")
-  status      ProgramStatus @default(DRAFT)
-  startDate   DateTime      @map("start_date")
-  endDate     DateTime      @map("end_date")
-  budget      Decimal       @default(0) @db.Decimal(15, 2)
 
   createdBy String   @map("created_by")
   updatedBy String?  @map("updated_by")
@@ -87,14 +79,11 @@ model Program {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  category   ProgramCategory? @relation(fields: [categoryId], references: [id])
   activities Activity[]
   members    ProgramMember[]
   approvals  Approval[]
   indicators ProgramIndicator[]
 
-  @@index([categoryId])
-  @@index([status])
   @@index([year])
   @@map("programs")
 }

@@ -33,9 +33,6 @@ export class ProgramService {
 
     const where: Prisma.ProgramWhereInput = {};
 
-    if (query.status) {
-      where.status = query.status;
-    }
     if (query.year) {
       where.year = query.year;
     }
@@ -43,9 +40,6 @@ export class ProgramService {
       where.indicators = {
         some: { unitId: query.unitId },
       };
-    }
-    if (query.categoryId) {
-      where.categoryId = query.categoryId;
     }
     if (query.search) {
       where.OR = [
@@ -97,12 +91,7 @@ export class ProgramService {
       description: dto.description,
       objective: dto.objective,
       year: dto.year,
-      category: dto.categoryId ? { connect: { id: dto.categoryId } } : undefined,
-      startDate: dto.startDate,
-      endDate: dto.endDate,
-      budget: dto.budget,
       createdBy: userId,
-      status: dto.status ?? 'DRAFT',
     });
 
     this.logger.log(`Program created: ${program.id} by user ${userId}`);
@@ -116,9 +105,7 @@ export class ProgramService {
       newValue: {
         code: program.code,
         title: program.title,
-        status: program.status,
         year: program.year,
-        budget: Number(program.budget),
       },
     });
 
@@ -135,23 +122,13 @@ export class ProgramService {
 
     const newCode = `${existing.code}-${dto.year}-${Math.floor(Math.random() * 1000)}`;
 
-    const start = new Date(existing.startDate);
-    start.setFullYear(dto.year);
-    const end = new Date(existing.endDate);
-    end.setFullYear(dto.year);
-
     const program = await this.programRepository.create({
       code: newCode,
       title: existing.title,
       description: existing.description,
       objective: existing.objective,
       year: dto.year,
-      category: existing.categoryId ? { connect: { id: existing.categoryId } } : undefined,
-      startDate: start,
-      endDate: end,
-      budget: existing.budget,
       createdBy: userId,
-      status: 'ASSIGNED_TO_UNIT',
       indicators: dto.unitId ? {
         create: [
           {
@@ -173,9 +150,7 @@ export class ProgramService {
       newValue: {
         code: program.code,
         title: program.title,
-        status: program.status,
         year: program.year,
-        budget: Number(program.budget),
         clonedFrom: existing.id,
       },
     });
@@ -200,29 +175,13 @@ export class ProgramService {
       code: existing.code,
       title: existing.title,
       description: existing.description,
-      status: existing.status,
       year: existing.year,
-      budget: Number(existing.budget),
     };
 
     const updateData: Prisma.ProgramUpdateInput = {
       ...dto,
       updatedBy: userId,
     };
-
-    // If categoryId is provided, use connect syntax
-    if (dto.categoryId) {
-      updateData.category = { connect: { id: dto.categoryId } };
-      delete (updateData as Record<string, unknown>)['categoryId'];
-    }
-
-    // Handle date coercion
-    if (dto.startDate) {
-      updateData.startDate = dto.startDate;
-    }
-    if (dto.endDate) {
-      updateData.endDate = dto.endDate;
-    }
 
     const program = await this.programRepository.update(id, updateData);
 
@@ -239,9 +198,7 @@ export class ProgramService {
         code: program.code,
         title: program.title,
         description: program.description,
-        status: program.status,
         year: program.year,
-        budget: Number(program.budget),
       },
     });
 
@@ -268,7 +225,6 @@ export class ProgramService {
       oldValue: {
         code: existing.code,
         title: existing.title,
-        status: existing.status,
         year: existing.year,
       },
     });

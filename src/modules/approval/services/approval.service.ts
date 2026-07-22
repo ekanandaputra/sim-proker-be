@@ -18,15 +18,6 @@ export class ApprovalService {
     const program = await this.programRepository.findById(programId);
     if (!program) throw new EntityNotFoundException('Program', programId);
 
-    if (program.status !== ProgramStatus.DRAFT && program.status !== ProgramStatus.REVISION) {
-      throw new InvalidStateException(
-        `Program can only be submitted from DRAFT or REVISION status. Current: ${program.status}`,
-      );
-    }
-
-    // Update program status
-    await this.programRepository.update(programId, { status: ProgramStatus.SUBMITTED });
-
     // Create approval record
     const approval = await this.approvalRepository.create({
       status: ApprovalStatus.SUBMITTED,
@@ -54,7 +45,7 @@ export class ApprovalService {
     });
 
     // Update program status
-    await this.programRepository.update(approval.programId, { status: ProgramStatus.APPROVED });
+    // await this.programRepository.update(approval.programId, { status: ProgramStatus.APPROVED });
 
     this.logger.log(`Approval ${approvalId} approved by ${userId}`);
     return ApprovalMapper.toResponse(updated);
@@ -75,7 +66,7 @@ export class ApprovalService {
       approvedAt: new Date(),
     });
 
-    await this.programRepository.update(approval.programId, { status: ProgramStatus.REJECTED });
+    // await this.programRepository.update(approval.programId, { status: ProgramStatus.REJECTED });
 
     this.logger.log(`Approval ${approvalId} rejected by ${userId}`);
     return ApprovalMapper.toResponse(updated);
@@ -95,7 +86,7 @@ export class ApprovalService {
       note: dto.note,
     });
 
-    await this.programRepository.update(approval.programId, { status: ProgramStatus.REVISION });
+    // await this.programRepository.update(approval.programId, { status: ProgramStatus.REVISION });
 
     this.logger.log(`Approval ${approvalId} revision requested by ${userId}`);
     return ApprovalMapper.toResponse(updated);

@@ -12,12 +12,8 @@ export class IntegrationProgramDto {
   @ApiProperty() id!: string;
   @ApiProperty() code!: string;
   @ApiProperty() title!: string;
-  @ApiProperty() status!: string;
   @ApiProperty() year!: number;
   @ApiProperty({ nullable: true }) unitId!: string | null;
-  @ApiProperty() startDate!: Date;
-  @ApiProperty() endDate!: Date;
-  @ApiProperty() budget!: number;
 }
 
 export class IntegrationOutputDto {

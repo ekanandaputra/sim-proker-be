@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException } from '@common/exceptions';
-import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
 
 @Injectable()
 export class ProgramIndicatorService {
@@ -55,6 +55,26 @@ export class ProgramIndicatorService {
 
     await this.prisma.programIndicator.delete({
       where: { id },
+    });
+  }
+
+  async setTarget(programId: string, id: string, dto: SetIndicatorTargetDto) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', id);
+    }
+
+    // Ubah status ke IN_PROGRESS jika sebelumnya ASSIGNED_TO_UNIT
+    const newStatus = indicator.status === 'ASSIGNED_TO_UNIT' ? 'IN_PROGRESS' : indicator.status;
+
+    return this.prisma.programIndicator.update({
+      where: { id },
+      data: {
+        ...dto,
+        status: newStatus,
+      },
     });
   }
 }

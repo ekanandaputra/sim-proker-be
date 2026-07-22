@@ -121,8 +121,6 @@ export class DefaultProgramService {
     const { unitId, defaultProgramId, period } = dto;
 
     // Set standard start and end dates for the given year
-    const startDate = new Date(`${period}-01-01T00:00:00Z`);
-    const endDate = new Date(`${period}-12-31T23:59:59Z`);
 
     const dp = await this.findById(defaultProgramId);
 
@@ -150,10 +148,6 @@ export class DefaultProgramService {
       description: dp.description || undefined,
       objective: '',
       year: period,
-      startDate,
-      endDate,
-      budget: 0,
-      status: ProgramStatus.ASSIGNED_TO_UNIT,
     }, userId);
 
     if (dp.indicators && dp.indicators.length > 0) {
@@ -209,8 +203,6 @@ export class DefaultProgramService {
 
     // If program doesn't exist, create it (fallback scenario if they assign indicator before program)
     if (!program) {
-      const startDate = new Date(`${period}-01-01T00:00:00Z`);
-      const endDate = new Date(`${period}-12-31T23:59:59Z`);
       const randomStr = randomBytes(3).toString('hex').toUpperCase();
       const code = `PRG-${period}-${randomStr}`;
 
@@ -220,10 +212,6 @@ export class DefaultProgramService {
         description: dp.description || undefined,
         objective: '',
         year: period,
-        startDate,
-        endDate,
-        budget: 0,
-        status: ProgramStatus.ASSIGNED_TO_UNIT,
       }, userId);
     }
 

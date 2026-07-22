@@ -19,7 +19,7 @@ export class ProgramRepository implements IProgramRepository {
       take: params.take,
       where: params.where,
       orderBy: params.orderBy ?? { createdAt: 'desc' },
-      include: params.include ?? { category: true, indicators: true },
+      include: params.include ?? { indicators: true },
     });
   }
 
@@ -31,7 +31,6 @@ export class ProgramRepository implements IProgramRepository {
     return this.prisma.program.findUnique({
       where: { id },
       include: include ?? {
-        category: true,
         indicators: true,
         activities: true,
         members: true,
@@ -47,7 +46,7 @@ export class ProgramRepository implements IProgramRepository {
   async create(data: Prisma.ProgramCreateInput): Promise<Program> {
     return this.prisma.program.create({
       data,
-      include: { category: true, indicators: true },
+      include: { indicators: true },
     });
   }
 
@@ -55,7 +54,7 @@ export class ProgramRepository implements IProgramRepository {
     return this.prisma.program.update({
       where: { id },
       data,
-      include: { category: true, indicators: true },
+      include: { indicators: true },
     });
   }
 

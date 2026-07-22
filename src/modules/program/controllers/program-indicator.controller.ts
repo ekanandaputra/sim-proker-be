@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } 
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
-import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 
 @ApiTags('Program Indicators')
@@ -16,7 +16,7 @@ export class ProgramIndicatorController {
   @Get()
   @ApiOperation({ summary: 'Get all indicators for a program' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
-  @ApiResponse({ status: 200, type: [ProgramIndicatorResponseDto] })
+  @ApiResponse({ status: 200, type: () => [ProgramIndicatorResponseDto] })
   async findAll(@Param('programId') programId: string) {
     return this.indicatorService.findAllByProgramId(programId);
   }
@@ -55,5 +55,19 @@ export class ProgramIndicatorController {
   async remove(@Param('programId') programId: string, @Param('id') id: string) {
     await this.indicatorService.remove(programId, id);
     return { success: true };
+  }
+
+  @Post(':id/set-target')
+  @ApiOperation({ summary: 'Set targets for an indicator and upgrade status to IN_PROGRESS' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiBody({ type: SetIndicatorTargetDto })
+  @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
+  async setTarget(
+    @Param('programId') programId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(setIndicatorTargetSchema)) dto: SetIndicatorTargetDto
+  ) {
+    return this.indicatorService.setTarget(programId, id, dto);
   }
 }

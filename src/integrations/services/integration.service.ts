@@ -22,12 +22,8 @@ export class IntegrationService {
       id: p.id,
       code: p.code,
       title: p.title,
-      status: p.status,
       year: p.year,
       unitId: p.indicators[0]?.unitId ?? null,
-      startDate: p.startDate,
-      endDate: p.endDate,
-      budget: Number(p.budget),
     }));
   }
 
@@ -36,9 +32,8 @@ export class IntegrationService {
     if (!p) throw new EntityNotFoundException('Program', id);
 
     return {
-      id: p.id, code: p.code, title: p.title, status: p.status,
-      year: p.year, unitId: p.indicators[0]?.unitId ?? null, startDate: p.startDate,
-      endDate: p.endDate, budget: Number(p.budget),
+      id: p.id, code: p.code, title: p.title,
+      year: p.year, unitId: p.indicators[0]?.unitId ?? null,
     };
   }
 

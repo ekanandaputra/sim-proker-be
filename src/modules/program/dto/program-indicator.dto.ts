@@ -106,3 +106,24 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' })
   updatedAt!: Date;
 }
+
+export const setIndicatorTargetSchema = z.object({
+  targetQ1: z.number().nullable().optional(),
+  targetQ2: z.number().nullable().optional(),
+  targetQ3: z.number().nullable().optional(),
+  targetQ4: z.number().nullable().optional(),
+});
+
+export class SetIndicatorTargetDto {
+  @ApiPropertyOptional({ example: 10, description: 'Target for Q1' })
+  targetQ1?: number | null;
+
+  @ApiPropertyOptional({ example: 20, description: 'Target for Q2' })
+  targetQ2?: number | null;
+
+  @ApiPropertyOptional({ example: 30, description: 'Target for Q3' })
+  targetQ3?: number | null;
+
+  @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
+  targetQ4?: number | null;
+}
