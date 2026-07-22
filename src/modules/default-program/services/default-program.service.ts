@@ -106,9 +106,11 @@ export class DefaultProgramService {
     // Check for duplicates
     const existingProgram = await this.prisma.program.findFirst({
       where: {
-        unitId,
         year: period,
         title: dp.title,
+        indicators: {
+          some: { unitId },
+        },
       }
     });
 
@@ -119,18 +121,26 @@ export class DefaultProgramService {
     const randomStr = randomBytes(3).toString('hex').toUpperCase();
     const code = `PRG-${period}-${randomStr}`;
 
-    await this.programService.create({
+    const program = await this.programService.create({
       code,
       title: dp.title,
       description: dp.description || undefined,
       objective: '',
       year: period,
-      unitId,
       startDate,
       endDate,
       budget: 0,
       status: ProgramStatus.ASSIGNED_TO_UNIT,
     }, userId);
+
+    await this.prisma.programIndicator.create({
+      data: {
+        programId: program.id,
+        unitId,
+        name: dp.title, // Default name based on program title or default program title
+        unit: 'N/A', // Default unit
+      }
+    });
 
     return { createdCount: 1 };
   }

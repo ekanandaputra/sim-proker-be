@@ -1,8 +1,11 @@
 import { Program } from '@prisma/client';
 import { ProgramResponseDto } from '../dto/program-response.dto';
 
+import { ProgramIndicatorResponseDto } from '../dto/program-indicator.dto';
+
 interface ProgramWithCategory extends Program {
   category?: { name: string } | null;
+  indicators?: any[];
 }
 
 export class ProgramMapper {
@@ -14,7 +17,17 @@ export class ProgramMapper {
       description: program.description,
       objective: program.objective,
       year: program.year,
-      unitId: program.unitId,
+      indicators: program.indicators ? program.indicators.map((ind) => ({
+        id: ind.id,
+        programId: ind.programId,
+        unitId: ind.unitId,
+        name: ind.name,
+        unit: ind.unit,
+        target: ind.target ? Number(ind.target) : null,
+        order: ind.order,
+        createdAt: ind.createdAt,
+        updatedAt: ind.updatedAt,
+      })) : [],
       categoryId: program.categoryId,
       categoryName: program.category?.name ?? null,
       status: program.status,

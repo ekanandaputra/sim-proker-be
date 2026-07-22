@@ -40,7 +40,9 @@ export class ProgramService {
       where.year = query.year;
     }
     if (query.unitId) {
-      where.unitId = query.unitId;
+      where.indicators = {
+        some: { unitId: query.unitId },
+      };
     }
     if (query.categoryId) {
       where.categoryId = query.categoryId;
@@ -95,13 +97,12 @@ export class ProgramService {
       description: dto.description,
       objective: dto.objective,
       year: dto.year,
-      unitId: dto.unitId,
       category: dto.categoryId ? { connect: { id: dto.categoryId } } : undefined,
       startDate: dto.startDate,
       endDate: dto.endDate,
       budget: dto.budget,
       createdBy: userId,
-      status: dto.status ?? (dto.unitId ? 'ASSIGNED_TO_UNIT' : 'DRAFT'),
+      status: dto.status ?? 'DRAFT',
     });
 
     this.logger.log(`Program created: ${program.id} by user ${userId}`);
@@ -145,13 +146,21 @@ export class ProgramService {
       description: existing.description,
       objective: existing.objective,
       year: dto.year,
-      unitId: dto.unitId ?? existing.unitId,
       category: existing.categoryId ? { connect: { id: existing.categoryId } } : undefined,
       startDate: start,
       endDate: end,
       budget: existing.budget,
       createdBy: userId,
       status: 'ASSIGNED_TO_UNIT',
+      indicators: dto.unitId ? {
+        create: [
+          {
+            unitId: dto.unitId,
+            name: 'Default Indicator',
+            unit: 'N/A',
+          }
+        ]
+      } : undefined,
     });
 
     this.logger.log(`Program assigned to unit: ${program.id} (from ${existing.id}) by user ${userId}`);

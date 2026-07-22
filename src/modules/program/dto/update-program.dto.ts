@@ -7,7 +7,6 @@ export const updateProgramSchema = z.object({
   description: z.string().optional(),
   objective: z.string().optional(),
   year: z.number().int().min(2000).max(2100).optional(),
-  unitId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   status: z.nativeEnum(ProgramStatus).optional(),
   startDate: z.coerce.date().optional(),
@@ -27,9 +26,6 @@ export class UpdateProgramDto {
 
   @ApiPropertyOptional({ example: 2026, description: 'Year of the program' })
   year?: number;
-
-  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'Unit UUID assigned to this program' })
-  unitId?: string;
 
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002', description: 'Category UUID for this program' })
   categoryId?: string;

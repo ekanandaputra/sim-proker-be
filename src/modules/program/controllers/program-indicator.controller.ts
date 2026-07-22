@@ -1,0 +1,59 @@
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { ProgramIndicatorService } from '../services/program-indicator.service';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema } from '../dto/program-indicator.dto';
+import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
+
+@ApiTags('Program Indicators')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('programs/:programId/indicators')
+export class ProgramIndicatorController {
+  constructor(private readonly indicatorService: ProgramIndicatorService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all indicators for a program' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiResponse({ status: 200, type: [ProgramIndicatorResponseDto] })
+  async findAll(@Param('programId') programId: string) {
+    return this.indicatorService.findAllByProgramId(programId);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new indicator for a program' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiBody({ type: CreateProgramIndicatorDto })
+  @ApiResponse({ status: 201, type: ProgramIndicatorResponseDto })
+  async create(
+    @Param('programId') programId: string,
+    @Body(new ZodValidationPipe(createProgramIndicatorSchema)) dto: CreateProgramIndicatorDto
+  ) {
+    return this.indicatorService.create(programId, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an indicator' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiBody({ type: UpdateProgramIndicatorDto })
+  @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
+  async update(
+    @Param('programId') programId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateProgramIndicatorSchema)) dto: UpdateProgramIndicatorDto
+  ) {
+    return this.indicatorService.update(programId, id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete an indicator' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  async remove(@Param('programId') programId: string, @Param('id') id: string) {
+    await this.indicatorService.remove(programId, id);
+    return { success: true };
+  }
+}

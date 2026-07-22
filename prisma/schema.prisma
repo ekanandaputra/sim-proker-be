@@ -75,7 +75,6 @@ model Program {
   description String?       @db.Text
   objective   String?       @db.Text
   year        Int
-  unitId      String?       @map("unit_id")
   categoryId  String?       @map("category_id")
   status      ProgramStatus @default(DRAFT)
   startDate   DateTime      @map("start_date")
@@ -92,12 +91,32 @@ model Program {
   activities Activity[]
   members    ProgramMember[]
   approvals  Approval[]
+  indicators ProgramIndicator[]
 
-  @@index([unitId])
   @@index([categoryId])
   @@index([status])
   @@index([year])
   @@map("programs")
+}
+
+/// Program Indicator (Assigned to Unit)
+model ProgramIndicator {
+  id          String   @id @default(uuid())
+  programId   String   @map("program_id")
+  unitId      String   @map("unit_id")
+  name        String   @db.VarChar(255)
+  unit        String   @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  target      Decimal? @db.Decimal(10, 2)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  @@index([programId])
+  @@index([unitId])
+  @@map("program_indicators")
 }
 
 /// Program Member assignment

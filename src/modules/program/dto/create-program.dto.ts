@@ -18,7 +18,6 @@ export const createProgramSchema = z.object({
     .int()
     .min(2000, 'Year must be at least 2000')
     .max(2100, 'Year must be at most 2100'),
-  unitId: z.string().uuid('Unit ID must be a valid UUID').optional(),
   categoryId: z.string().uuid('Category ID must be a valid UUID').optional(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
@@ -44,9 +43,6 @@ export class CreateProgramDto {
 
   @ApiProperty({ example: 2025 })
   year!: number;
-
-  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440001' })
-  unitId?: string;
 
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
   categoryId?: string;
