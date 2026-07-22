@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-realization.dto';
 
 @Injectable()
 export class ProgramIndicatorService {
@@ -75,6 +76,48 @@ export class ProgramIndicatorService {
         ...dto,
         status: newStatus,
       },
+    });
+  }
+
+  async getRealizations(programId: string, indicatorId: string) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id: indicatorId, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', indicatorId);
+    }
+
+    return this.prisma.programIndicatorRealization.findMany({
+      where: { indicatorId },
+      orderBy: { month: 'asc' },
+    });
+  }
+
+  async upsertRealization(programId: string, indicatorId: string, dto: CreateProgramIndicatorRealizationDto) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id: indicatorId, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', indicatorId);
+    }
+
+    return this.prisma.programIndicatorRealization.upsert({
+      where: {
+        indicatorId_month: {
+          indicatorId,
+          month: dto.month,
+        }
+      },
+      update: {
+        realization: dto.realization,
+        remark: dto.remark,
+      },
+      create: {
+        indicatorId,
+        month: dto.month,
+        realization: dto.realization,
+        remark: dto.remark,
+      }
     });
   }
 }

@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationResponseDto, programIndicatorRealizationSchema } from '../dto/program-indicator-realization.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 
 @ApiTags('Program Indicators')
@@ -69,5 +70,31 @@ export class ProgramIndicatorController {
     @Body(new ZodValidationPipe(setIndicatorTargetSchema)) dto: SetIndicatorTargetDto
   ) {
     return this.indicatorService.setTarget(programId, id, dto);
+  }
+
+  @Get(':id/realizations')
+  @ApiOperation({ summary: 'Get realizations for an indicator' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiResponse({ status: 200, type: [ProgramIndicatorRealizationResponseDto] })
+  async getRealizations(
+    @Param('programId') programId: string,
+    @Param('id') id: string
+  ) {
+    return this.indicatorService.getRealizations(programId, id);
+  }
+
+  @Post(':id/realizations')
+  @ApiOperation({ summary: 'Create or update a realization for a specific month' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiBody({ type: CreateProgramIndicatorRealizationDto })
+  @ApiResponse({ status: 201, type: ProgramIndicatorRealizationResponseDto })
+  async upsertRealization(
+    @Param('programId') programId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(programIndicatorRealizationSchema)) dto: CreateProgramIndicatorRealizationDto
+  ) {
+    return this.indicatorService.upsertRealization(programId, id, dto);
   }
 }

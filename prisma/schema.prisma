@@ -105,11 +105,30 @@ model ProgramIndicator {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  realizations ProgramIndicatorRealization[]
   
   @@index([programId])
   @@index([unitId])
   @@map("program_indicators")
+}
+
+/// Program Indicator Realization per month
+model ProgramIndicatorRealization {
+  id          String   @id @default(uuid())
+  indicatorId String   @map("indicator_id")
+  month       Int      @db.SmallInt
+  realization Decimal  @db.Decimal(10, 2)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  indicator   ProgramIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@unique([indicatorId, month])
+  @@index([indicatorId])
+  @@map("program_indicator_realizations")
 }
 
 /// Program Member assignment
