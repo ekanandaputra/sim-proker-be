@@ -1877,7 +1877,7 @@
     },
     "/api/v1/dashboard": {
       "get": {
-        "description": "Returns aggregated statistics including total programs, budgets, completion rates, and breakdowns by unit/status.",
+        "description": "Returns aggregated statistics including total programs, indicators, activities, and breakdowns by unit/status.",
         "operationId": "DashboardController_getDashboard",
         "parameters": [],
         "responses": {
@@ -1886,7 +1886,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DashboardResponseDto"
+                  "$ref": "#/components/schemas/AdminDashboardResponseDto"
                 }
               }
             }
@@ -1897,7 +1897,35 @@
             "bearer": []
           }
         ],
-        "summary": "Get dashboard statistics",
+        "summary": "Get admin dashboard statistics",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/unit": {
+      "get": {
+        "description": "Returns aggregated statistics specific to the authenticated user's unit.",
+        "operationId": "DashboardController_getUnitDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitDashboardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get unit dashboard statistics",
         "tags": [
           "Dashboard"
         ]
@@ -4068,7 +4096,7 @@
           }
         }
       },
-      "DashboardResponseDto": {
+      "AdminDashboardResponseDto": {
         "type": "object",
         "properties": {
           "totalPrograms": {
@@ -4076,30 +4104,28 @@
             "example": 50,
             "description": "Total number of programs"
           },
-          "runningPrograms": {
+          "totalIndicators": {
             "type": "number",
-            "example": 20,
-            "description": "Number of currently running/in-progress programs"
+            "example": 120,
+            "description": "Total number of indicators across all programs"
           },
-          "completedPrograms": {
+          "totalActivities": {
             "type": "number",
-            "example": 15,
-            "description": "Number of completed programs"
+            "example": 35,
+            "description": "Total number of activities"
           },
-          "delayedPrograms": {
-            "type": "number",
-            "example": 5,
-            "description": "Number of delayed/overdue programs"
-          },
-          "totalBudget": {
-            "type": "number",
-            "example": 500000000,
-            "description": "Total budget allocated across all programs"
-          },
-          "completionPercentage": {
-            "type": "number",
-            "example": 45.5,
-            "description": "Overall completion percentage"
+          "indicatorsByStatus": {
+            "example": [
+              {
+                "status": "IN_PROGRESS",
+                "count": 15
+              }
+            ],
+            "description": "Indicator count grouped by status",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "programsByUnit": {
             "example": [
@@ -4108,20 +4134,7 @@
                 "count": 10
               }
             ],
-            "description": "Program count grouped by unit",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "programsByStatus": {
-            "example": [
-              {
-                "status": "APPROVED",
-                "count": 15
-              }
-            ],
-            "description": "Program count grouped by status",
+            "description": "Distinct program count grouped by unit",
             "type": "array",
             "items": {
               "type": "string"
@@ -4130,13 +4143,43 @@
         },
         "required": [
           "totalPrograms",
-          "runningPrograms",
-          "completedPrograms",
-          "delayedPrograms",
-          "totalBudget",
-          "completionPercentage",
-          "programsByUnit",
-          "programsByStatus"
+          "totalIndicators",
+          "totalActivities",
+          "indicatorsByStatus",
+          "programsByUnit"
+        ]
+      },
+      "UnitDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalPrograms": {
+            "type": "number",
+            "example": 10,
+            "description": "Total programs assigned to this unit"
+          },
+          "totalIndicators": {
+            "type": "number",
+            "example": 25,
+            "description": "Total indicators assigned to this unit"
+          },
+          "indicatorsByStatus": {
+            "example": [
+              {
+                "status": "COMPLETED",
+                "count": 5
+              }
+            ],
+            "description": "Indicator count for this unit grouped by status",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "totalPrograms",
+          "totalIndicators",
+          "indicatorsByStatus"
         ]
       },
       "DefaultProgramIndicatorDto": {
