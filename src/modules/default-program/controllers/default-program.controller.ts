@@ -56,7 +56,7 @@ export class DefaultProgramController {
   }
 
   @Post('assign-to-unit')
-  @ApiOperation({ summary: 'Assign default programs to a unit for a specific year' })
+  @ApiOperation({ summary: 'Assign a default program to a unit for a specific period' })
   @ApiBody({ type: AssignDefaultProgramDto })
   @ApiResponse({ status: 201, description: 'Default programs assigned successfully' })
   @ApiResponse({ status: 400, description: 'Validation failed' })

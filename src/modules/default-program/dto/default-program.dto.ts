@@ -49,14 +49,18 @@ export class DefaultProgramDto {
 }
 
 export const assignDefaultProgramSchema = z.object({
-  unitId: z.string().uuid('unitId must be a valid UUID').optional(),
-  year: z.number().int().min(2000).max(2100),
+  unitId: z.string().uuid('unitId must be a valid UUID'),
+  defaultProgramId: z.string().uuid('defaultProgramId must be a valid UUID'),
+  period: z.number().int().min(2000).max(2100),
 });
 
 export class AssignDefaultProgramDto {
-  @ApiProperty({ required: false, description: 'ID unit yang akan di-assign program default. Jika kosong, akan di-assign ke semua unit.', example: '550e8400-e29b-41d4-a716-446655440000' })
-  unitId?: string;
+  @ApiProperty({ description: 'ID unit yang akan di-assign program', example: '550e8400-e29b-41d4-a716-446655440000' })
+  unitId!: string;
+
+  @ApiProperty({ description: 'ID default program yang akan di-assign', example: '550e8400-e29b-41d4-a716-446655440001' })
+  defaultProgramId!: string;
 
   @ApiProperty({ description: 'Tahun periode program', example: 2026 })
-  year!: number;
+  period!: number;
 }
