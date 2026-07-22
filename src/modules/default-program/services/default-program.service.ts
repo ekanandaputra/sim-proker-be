@@ -4,7 +4,7 @@ import { ProgramStatus } from '@prisma/client';
 import { EntityNotFoundException } from '@common/exceptions';
 import { UnitService } from '../../unit/services/unit.service';
 import { IkuService } from '../../iku/services/iku.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, AssignDefaultProgramDto } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, AssignDefaultProgramDto, AssignDefaultProgramIndicatorDto } from '../dto/default-program.dto';
 import { ProgramService } from '../../program/services/program.service';
 import { randomBytes } from 'crypto';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
@@ -163,7 +163,7 @@ export class DefaultProgramService {
           unitId,
           name: ind.name,
           unit: ind.unit,
-          target: ind.target ? Number(ind.target) : null,
+          status: ProgramStatus.ASSIGNED_TO_UNIT,
           order: ind.order,
         }))
       });
@@ -174,9 +174,82 @@ export class DefaultProgramService {
           unitId,
           name: dp.title, // Default name based on program title or default program title
           unit: 'N/A', // Default unit
+          status: ProgramStatus.ASSIGNED_TO_UNIT,
         }
       });
     }
+
+    return { createdCount: 1 };
+  }
+
+  async assignIndicatorToUnit(dto: AssignDefaultProgramIndicatorDto, userId: string, token: string): Promise<{ createdCount: number }> {
+    const { unitId, defaultProgramIndicatorId, period } = dto;
+
+    const ind = await this.prisma.defaultProgramIndicator.findUnique({
+      where: { id: defaultProgramIndicatorId },
+      include: { defaultProgram: true },
+    });
+
+    if (!ind) {
+      throw new EntityNotFoundException('DefaultProgramIndicator', defaultProgramIndicatorId);
+    }
+
+    const dp = ind.defaultProgram;
+
+    // Find the program for this unit and period matching the default program
+    let program: any = await this.prisma.program.findFirst({
+      where: {
+        year: period,
+        title: dp.title,
+        indicators: {
+          some: { unitId },
+        },
+      }
+    });
+
+    // If program doesn't exist, create it (fallback scenario if they assign indicator before program)
+    if (!program) {
+      const startDate = new Date(`${period}-01-01T00:00:00Z`);
+      const endDate = new Date(`${period}-12-31T23:59:59Z`);
+      const randomStr = randomBytes(3).toString('hex').toUpperCase();
+      const code = `PRG-${period}-${randomStr}`;
+
+      program = await this.programService.create({
+        code,
+        title: dp.title,
+        description: dp.description || undefined,
+        objective: '',
+        year: period,
+        startDate,
+        endDate,
+        budget: 0,
+        status: ProgramStatus.ASSIGNED_TO_UNIT,
+      }, userId);
+    }
+
+    // Check if this indicator is already assigned
+    const existingIndicator = await this.prisma.programIndicator.findFirst({
+      where: {
+        programId: program.id,
+        unitId,
+        name: ind.name,
+      }
+    });
+
+    if (existingIndicator) {
+      return { createdCount: 0 };
+    }
+
+    await this.prisma.programIndicator.create({
+      data: {
+        programId: program.id,
+        unitId,
+        name: ind.name,
+        unit: ind.unit,
+        status: ProgramStatus.ASSIGNED_TO_UNIT,
+        order: ind.order,
+      }
+    });
 
     return { createdCount: 1 };
   }

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req 
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -67,6 +67,20 @@ export class DefaultProgramController {
   ) {
     const token = req.headers.authorization as string;
     return this.defaultProgramService.assignToUnit(dto, userId, token);
+  }
+
+  @Post('indicators/assign')
+  @ApiOperation({ summary: 'Assign a default program indicator to a unit manually' })
+  @ApiBody({ type: AssignDefaultProgramIndicatorDto })
+  @ApiResponse({ status: 201, description: 'Default program indicator assigned successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  async assignIndicatorToUnit(
+    @Body(new ZodValidationPipe(assignDefaultProgramIndicatorSchema)) dto: AssignDefaultProgramIndicatorDto,
+    @CurrentUser('userId') userId: string,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.defaultProgramService.assignIndicatorToUnit(dto, userId, token);
   }
 
   @Put(':id')

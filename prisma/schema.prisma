@@ -104,10 +104,14 @@ model ProgramIndicator {
   id          String   @id @default(uuid())
   programId   String   @map("program_id")
   unitId      String   @map("unit_id")
-  name        String   @db.VarChar(255)
-  unit        String   @db.VarChar(50) // e.g. "Dokumen", "Persen"
-  target      Decimal? @db.Decimal(10, 2)
-  order       Int      @default(0)
+  name        String        @db.VarChar(255)
+  unit        String        @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  targetQ1    Decimal?      @map("target_q1") @db.Decimal(10, 2)
+  targetQ2    Decimal?      @map("target_q2") @db.Decimal(10, 2)
+  targetQ3    Decimal?      @map("target_q3") @db.Decimal(10, 2)
+  targetQ4    Decimal?      @map("target_q4") @db.Decimal(10, 2)
+  status      ProgramStatus @default(DRAFT)
+  order       Int           @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -296,7 +300,6 @@ model DefaultProgramIndicator {
   defaultProgramId String         @map("default_program_id")
   name             String         @db.VarChar(255)
   unit             String         @db.VarChar(50) // e.g. "Dokumen", "Persen"
-  target           Decimal?       @db.Decimal(10, 2)
   order            Int            @default(0)
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")

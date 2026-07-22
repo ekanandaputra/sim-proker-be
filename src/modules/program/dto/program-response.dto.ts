@@ -21,7 +21,7 @@ export class ProgramResponseDto {
   @ApiProperty({ example: 2025, description: 'Year of the program' })
   year!: number;
 
-  @ApiProperty({ type: [ProgramIndicatorResponseDto], description: 'Indicators assigned to units for this program' })
+  @ApiProperty({ type: () => [ProgramIndicatorResponseDto], description: 'Indicators assigned to units for this program' })
   indicators!: ProgramIndicatorResponseDto[];
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', nullable: true, description: 'Category UUID for this program' })
