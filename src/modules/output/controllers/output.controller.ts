@@ -18,7 +18,7 @@ export class OutputController {
 
   @Get('activities/:id/outputs')
   @ApiOperation({ summary: 'List outputs for an activity' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiPaginatedResponse(OutputResponseDto)
   async findByActivity(@Param('id') activityId: string) {
     return this.outputService.findByActivityId(activityId);
@@ -26,21 +26,11 @@ export class OutputController {
 
   @Post('activities/:id/outputs')
   @ApiOperation({ summary: 'Create output for an activity' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiResponse({ status: 201, description: 'Output created', type: OutputResponseDto })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['metricType', 'target', 'unit'],
-      properties: {
-        metricType: { type: 'string', example: 'Publication' },
-        target: { type: 'number', example: 5 },
-        realization: { type: 'number', example: 0 },
-        unit: { type: 'string', example: 'pcs' },
-        description: { type: 'string', example: 'Jumlah publikasi yang ditargetkan' },
-      },
-    },
-  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Activity not found' })
+  @ApiBody({ type: CreateOutputDto })
   async create(
     @Param('id') activityId: string,
     @Body(new ZodValidationPipe(createOutputSchema)) dto: CreateOutputDto,
@@ -50,8 +40,11 @@ export class OutputController {
 
   @Patch('outputs/:id')
   @ApiOperation({ summary: 'Update output' })
-  @ApiParam({ name: 'id', description: 'Output UUID' })
+  @ApiParam({ name: 'id', description: 'Output UUID', type: 'string' })
+  @ApiBody({ type: UpdateOutputDto })
   @ApiResponse({ status: 200, type: OutputResponseDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Output not found' })
   async update(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateOutputSchema)) dto: UpdateOutputDto,
@@ -62,7 +55,9 @@ export class OutputController {
   @Delete('outputs/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete output' })
-  @ApiParam({ name: 'id', description: 'Output UUID' })
+  @ApiParam({ name: 'id', description: 'Output UUID', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Output deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Output not found' })
   async remove(@Param('id') id: string) {
     await this.outputService.remove(id);
     return { message: 'Output deleted successfully' };

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export const createDefaultProgramSchema = z.object({
   ikuId: z.string().min(1, 'ikuId is required'),
@@ -9,43 +9,43 @@ export const createDefaultProgramSchema = z.object({
 });
 
 export class CreateDefaultProgramDto {
-  @ApiProperty()
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' })
   ikuId!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'IKU-01', description: 'IKU Code' })
   ikuCode!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Program Peningkatan Kualitas', description: 'Default program title' })
   title!: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 'Deskripsi program', description: 'Optional description' })
   description?: string;
 }
 
 export const updateDefaultProgramSchema = createDefaultProgramSchema.partial();
 
 export class UpdateDefaultProgramDto {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' })
   ikuId?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 'IKU-01', description: 'IKU Code' })
   ikuCode?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 'Program Peningkatan Kualitas', description: 'Default program title' })
   title?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 'Deskripsi program', description: 'Optional description' })
   description?: string;
 }
 
 export class DefaultProgramDto {
-  @ApiProperty() id!: string;
-  @ApiProperty() ikuId!: string;
-  @ApiProperty() ikuCode!: string;
-  @ApiProperty() title!: string;
-  @ApiProperty({ nullable: true }) description!: string | null;
-  @ApiProperty() createdAt!: Date;
-  @ApiProperty() updatedAt!: Date;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Default Program UUID' }) id!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' }) ikuId!: string;
+  @ApiProperty({ example: 'IKU-01', description: 'IKU Code' }) ikuCode!: string;
+  @ApiProperty({ example: 'Program Peningkatan Kualitas', description: 'Default program title' }) title!: string;
+  @ApiProperty({ nullable: true, example: 'Deskripsi program', description: 'Optional description' }) description!: string | null;
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
 }
 
 export const assignDefaultProgramSchema = z.object({

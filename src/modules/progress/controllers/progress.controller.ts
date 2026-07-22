@@ -18,7 +18,7 @@ export class ProgressController {
 
   @Get('activities/:id/progress')
   @ApiOperation({ summary: 'List progress logs for an activity', description: 'Returns progress history in descending order.' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiPaginatedResponse(ProgressResponseDto)
   async findByActivity(@Param('id') activityId: string) {
     return this.progressService.findByActivityId(activityId);
@@ -26,18 +26,11 @@ export class ProgressController {
 
   @Post('activities/:id/progress')
   @ApiOperation({ summary: 'Log progress for an activity', description: 'Creates a new progress log entry. Never updates previous logs.' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiResponse({ status: 201, description: 'Progress logged', type: ProgressResponseDto })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['progress'],
-      properties: {
-        progress: { type: 'integer', minimum: 0, maximum: 100, example: 75 },
-        note: { type: 'string', example: 'Sudah selesai tahap persiapan' },
-      },
-    },
-  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Activity not found' })
+  @ApiBody({ type: CreateProgressDto })
   async create(
     @Param('id') activityId: string,
     @Body(new ZodValidationPipe(createProgressSchema)) dto: CreateProgressDto,

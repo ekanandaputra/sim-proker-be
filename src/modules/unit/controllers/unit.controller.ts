@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -29,12 +29,14 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Get unit by ID' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @Get(':id')
   async getUnitById(@Req() req: Request, @Param('id') id: string) {
     return this.unitService.getUnitById(id, this.extractToken(req));
   }
 
   @ApiOperation({ summary: 'Get unit details including IKUs and assigned users' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiResponse({ status: 200, type: UnitDetailsResponseDto })
   @Get(':id/details')
   async getUnitDetails(@Req() req: Request, @Param('id') id: string) {
@@ -66,6 +68,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Update a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiBody({ type: UpdateUnitDto })
   @Roles(Role.ADMIN)
   @Put(':id')
@@ -74,6 +77,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Delete a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @Roles(Role.ADMIN)
   @Delete(':id')
   async deleteUnit(@Req() req: Request, @Param('id') id: string) {
@@ -81,6 +85,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Assign users to a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiBody({ type: AssignUnitPayloadDto })
   @Roles(Role.ADMIN)
   @Post(':id/assign')
@@ -89,6 +94,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Get all users in a unit (proxied to auth service)' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
