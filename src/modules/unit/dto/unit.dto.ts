@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DefaultProgramDto } from '../../default-program/dto/default-program.dto';
 
 export class CreateUnitDto {
   @ApiProperty({ example: 'Unit A' })
@@ -107,6 +108,9 @@ export class UnitIkuDetailDto {
 
   @ApiProperty({ type: IkuMetadataDto })
   iku!: IkuMetadataDto;
+
+  @ApiProperty({ type: [DefaultProgramDto] })
+  defaultPrograms!: DefaultProgramDto[];
 }
 
 export class UnitDetailsResponseDto {

@@ -1,5 +1,6 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { PrismaService } from '@database/prisma/prisma.service';
 import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
 import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
@@ -11,7 +12,10 @@ export class UnitService {
   private readonly authUrl = getAppConfig().AUTH_SERVICE_URL;
   private readonly ikuUrl = getAppConfig().IKU_SERVICE_URL;
 
-  constructor(private readonly httpService: HttpService) { }
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
+  ) { }
 
   async getUnits(token: string, query?: any): Promise<PaginatedResponse<any>> {
     const { data } = await firstValueFrom(
@@ -199,10 +203,34 @@ export class UnitService {
     const ikus = ikuResponse?.ikus || [];
     const users = usersResponse?.items || [];
 
+    // Get all default programs for the IKUs
+    const ikuIds = ikus.map((i: any) => i.ikuId);
+    let defaultProgramsByIku: Record<string, any[]> = {};
+
+    if (ikuIds.length > 0) {
+      const defaultPrograms = await this.prisma.defaultProgram.findMany({
+        where: {
+          ikuId: { in: ikuIds }
+        }
+      });
+
+      defaultProgramsByIku = defaultPrograms.reduce((acc, dp) => {
+        if (!acc[dp.ikuId]) acc[dp.ikuId] = [];
+        acc[dp.ikuId].push(dp);
+        return acc;
+      }, {} as Record<string, any[]>);
+    }
+
+    // Attach default programs to IKUs
+    const ikusWithDefaultPrograms = ikus.map((i: any) => ({
+      ...i,
+      defaultPrograms: defaultProgramsByIku[i.ikuId] || []
+    }));
+
     return {
       unit,
       users,
-      ikus,
+      ikus: ikusWithDefaultPrograms,
     };
   }
 }
