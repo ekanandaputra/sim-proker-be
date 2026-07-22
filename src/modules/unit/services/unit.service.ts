@@ -211,6 +211,9 @@ export class UnitService {
       const defaultPrograms = await this.prisma.defaultProgram.findMany({
         where: {
           ikuId: { in: ikuIds }
+        },
+        include: {
+          indicators: true
         }
       });
 

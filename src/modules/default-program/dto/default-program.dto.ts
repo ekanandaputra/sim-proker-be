@@ -1,11 +1,31 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class CreateDefaultProgramIndicatorDto {
+  @ApiProperty({ example: 'Jumlah Laporan', description: 'Indicator name' })
+  name!: string;
+
+  @ApiProperty({ example: 'Dokumen', description: 'Indicator unit' })
+  unit!: string;
+
+  @ApiPropertyOptional({ example: 10, description: 'Optional target value' })
+  target?: number | null;
+
+  @ApiPropertyOptional({ example: 1, description: 'Order of the indicator' })
+  order?: number;
+}
+
 export const createDefaultProgramSchema = z.object({
   ikuId: z.string().min(1, 'ikuId is required'),
   ikuCode: z.string().min(1, 'ikuCode is required'),
   title: z.string().min(1, 'title is required'),
   description: z.string().optional(),
+  indicators: z.array(z.object({
+    name: z.string().min(1, 'indicator name is required'),
+    unit: z.string().min(1, 'indicator unit is required'),
+    target: z.number().nullable().optional(),
+    order: z.number().int().default(0),
+  })).optional(),
 });
 
 export class CreateDefaultProgramDto {
@@ -20,6 +40,12 @@ export class CreateDefaultProgramDto {
 
   @ApiPropertyOptional({ example: 'Deskripsi program', description: 'Optional description' })
   description?: string;
+
+  @ApiPropertyOptional({
+    type: [CreateDefaultProgramIndicatorDto],
+    description: 'Array of indicators for this default program'
+  })
+  indicators?: CreateDefaultProgramIndicatorDto[];
 }
 
 export const updateDefaultProgramSchema = createDefaultProgramSchema.partial();
@@ -36,6 +62,23 @@ export class UpdateDefaultProgramDto {
 
   @ApiPropertyOptional({ example: 'Deskripsi program', description: 'Optional description' })
   description?: string;
+
+  @ApiPropertyOptional({
+    type: [CreateDefaultProgramIndicatorDto],
+    description: 'Array of indicators for this default program'
+  })
+  indicators?: CreateDefaultProgramIndicatorDto[];
+}
+
+export class DefaultProgramIndicatorDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003', description: 'Indicator UUID' }) id!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Default Program UUID' }) defaultProgramId!: string;
+  @ApiProperty({ example: 'Jumlah Laporan' }) name!: string;
+  @ApiProperty({ example: 'Dokumen' }) unit!: string;
+  @ApiProperty({ nullable: true, example: 10, type: Number }) target!: any;
+  @ApiProperty({ example: 1 }) order!: number;
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
 }
 
 export class DefaultProgramDto {
@@ -44,6 +87,7 @@ export class DefaultProgramDto {
   @ApiProperty({ example: 'IKU-01', description: 'IKU Code' }) ikuCode!: string;
   @ApiProperty({ example: 'Program Peningkatan Kualitas', description: 'Default program title' }) title!: string;
   @ApiProperty({ nullable: true, example: 'Deskripsi program', description: 'Optional description' }) description!: string | null;
+  @ApiProperty({ type: () => [DefaultProgramIndicatorDto], description: 'List of indicators for this default program' }) indicators!: DefaultProgramIndicatorDto[];
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
 }

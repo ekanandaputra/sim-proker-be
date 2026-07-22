@@ -282,7 +282,27 @@ model DefaultProgram {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // Relations
+  indicators  DefaultProgramIndicator[]
+
   @@index([ikuId])
   @@index([ikuCode])
   @@map("default_programs")
+}
+
+/// Default program indicator template
+model DefaultProgramIndicator {
+  id               String         @id @default(uuid())
+  defaultProgramId String         @map("default_program_id")
+  name             String         @db.VarChar(255)
+  unit             String         @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  target           Decimal?       @db.Decimal(10, 2)
+  order            Int            @default(0)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  defaultProgram   DefaultProgram @relation(fields: [defaultProgramId], references: [id], onDelete: Cascade)
+  
+  @@index([defaultProgramId])
+  @@map("default_program_indicators")
 }

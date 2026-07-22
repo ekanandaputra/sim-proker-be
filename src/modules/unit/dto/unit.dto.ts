@@ -109,7 +109,7 @@ export class UnitIkuDetailDto {
   @ApiProperty({ type: IkuMetadataDto })
   iku!: IkuMetadataDto;
 
-  @ApiProperty({ type: [DefaultProgramDto] })
+  @ApiProperty({ type: () => [DefaultProgramDto] })
   defaultPrograms!: DefaultProgramDto[];
 }
 

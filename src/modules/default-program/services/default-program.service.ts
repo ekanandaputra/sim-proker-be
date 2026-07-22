@@ -39,6 +39,7 @@ export class DefaultProgramService {
         skip,
         take: limit,
         orderBy: { [sortBy || 'createdAt']: sortOrder },
+        include: { indicators: true },
       }),
       this.prisma.defaultProgram.count({ where }),
     ]);
@@ -59,6 +60,7 @@ export class DefaultProgramService {
   async findById(id: string): Promise<DefaultProgramDto> {
     const program = await this.prisma.defaultProgram.findUnique({
       where: { id },
+      include: { indicators: true },
     });
     if (!program) {
       throw new EntityNotFoundException('DefaultProgram', id);
@@ -70,20 +72,41 @@ export class DefaultProgramService {
     return this.prisma.defaultProgram.findMany({
       where: { ikuId },
       orderBy: { createdAt: 'desc' },
+      include: { indicators: true },
     });
   }
 
   async create(data: CreateDefaultProgramDto): Promise<DefaultProgramDto> {
+    const { indicators, ...rest } = data;
     return this.prisma.defaultProgram.create({
-      data,
+      data: {
+        ...rest,
+        indicators: indicators?.length ? {
+          create: indicators
+        } : undefined
+      },
+      include: { indicators: true },
     });
   }
 
   async update(id: string, data: UpdateDefaultProgramDto): Promise<DefaultProgramDto> {
     await this.findById(id); // Check existence
+    const { indicators, ...rest } = data;
+    
+    // For simplicity, if indicators are provided in update, we replace all existing ones.
+    // In a real app, you might want a separate endpoint for indicators CRUD.
+    const updateData: any = { ...rest };
+    if (indicators) {
+      updateData.indicators = {
+        deleteMany: {}, // Delete all old indicators
+        create: indicators // Create new ones
+      };
+    }
+
     return this.prisma.defaultProgram.update({
       where: { id },
-      data,
+      data: updateData,
+      include: { indicators: true },
     });
   }
 
@@ -133,14 +156,27 @@ export class DefaultProgramService {
       status: ProgramStatus.ASSIGNED_TO_UNIT,
     }, userId);
 
-    await this.prisma.programIndicator.create({
-      data: {
-        programId: program.id,
-        unitId,
-        name: dp.title, // Default name based on program title or default program title
-        unit: 'N/A', // Default unit
-      }
-    });
+    if (dp.indicators && dp.indicators.length > 0) {
+      await this.prisma.programIndicator.createMany({
+        data: dp.indicators.map((ind) => ({
+          programId: program.id,
+          unitId,
+          name: ind.name,
+          unit: ind.unit,
+          target: ind.target ? Number(ind.target) : null,
+          order: ind.order,
+        }))
+      });
+    } else {
+      await this.prisma.programIndicator.create({
+        data: {
+          programId: program.id,
+          unitId,
+          name: dp.title, // Default name based on program title or default program title
+          unit: 'N/A', // Default unit
+        }
+      });
+    }
 
     return { createdCount: 1 };
   }
