@@ -12,7 +12,10 @@ export class AuthIntegrationService {
   constructor(private readonly httpService: HttpService) {}
 
   async getAllUsers(token?: string): Promise<AuthUserDto[]> {
-    const headers = token ? { Authorization: token } : undefined;
+    const headers: Record<string, string> = {
+      'x-service-name': 'sim-iku',
+      ...(token && { Authorization: token }),
+    };
     
     const { data } = await firstValueFrom(
       this.httpService.get<{ data: AuthUserDto[] }>(`${this.authUrl}/api/v1/users`, { headers }).pipe(
@@ -31,7 +34,10 @@ export class AuthIntegrationService {
   }
 
   async getAllUnits(token?: string): Promise<AuthUnitDto[]> {
-    const headers = token ? { Authorization: token } : undefined;
+    const headers: Record<string, string> = {
+      'x-service-name': 'sim-iku',
+      ...(token && { Authorization: token }),
+    };
 
     const { data } = await firstValueFrom(
       this.httpService.get<{ data: AuthUnitDto[] }>(`${this.authUrl}/api/v1/units`, { headers }).pipe(
