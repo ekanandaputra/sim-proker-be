@@ -9,16 +9,16 @@ export class AuthIntegrationService {
   private readonly logger = new Logger(AuthIntegrationService.name);
   private readonly authUrl = getAppConfig().AUTH_SERVICE_URL;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   async getAllUsers(token?: string): Promise<AuthUserDto[]> {
     const headers: Record<string, string> = {
       'x-service-name': 'sim-iku',
       ...(token && { Authorization: token }),
     };
-    
+
     const { data } = await firstValueFrom(
-      this.httpService.get<{ data: AuthUserDto[] }>(`${this.authUrl}/api/v1/users`, { headers }).pipe(
+      this.httpService.get<{ data: AuthUserDto[] }>(`${this.authUrl}/api/users`, { headers }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to fetch users from Auth Service: ${error.message}`);
           throw new HttpException(
@@ -30,7 +30,7 @@ export class AuthIntegrationService {
     );
 
     // Assuming Auth Service wraps response in standard `{ isSuccess, data, ... }` format
-    return data.data || (data as any); 
+    return data.data || (data as any);
   }
 
   async getAllUnits(token?: string): Promise<AuthUnitDto[]> {
@@ -40,7 +40,7 @@ export class AuthIntegrationService {
     };
 
     const { data } = await firstValueFrom(
-      this.httpService.get<{ data: AuthUnitDto[] }>(`${this.authUrl}/api/v1/units`, { headers }).pipe(
+      this.httpService.get<{ data: AuthUnitDto[] }>(`${this.authUrl}/api/units`, { headers }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to fetch units from Auth Service: ${error.message}`);
           throw new HttpException(
