@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
 import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
@@ -27,6 +28,39 @@ export class DefaultProgramController {
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (asc/desc)' })
   async findAll(@Query(new ZodValidationPipe(paginationQuerySchema)) query: PaginationQuery) {
     return this.defaultProgramService.findAll(query);
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export default programs to CSV' })
+  @ApiResponse({ status: 200, description: 'CSV file downloaded' })
+  async exportCsv(@Res() res: Response) {
+    const csv = await this.defaultProgramService.exportCsv();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-programs.csv"');
+    res.send(csv);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import default programs from CSV' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'CSV file imported successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importCsv(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    return this.defaultProgramService.importCsv(file.buffer);
   }
 
   @Get('by-iku/:ikuId')

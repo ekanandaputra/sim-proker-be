@@ -8,7 +8,7 @@ import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, As
 import { ProgramService } from '../../program/services/program.service';
 import { randomBytes } from 'crypto';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
-
+import * as Papa from 'papaparse';
 @Injectable()
 export class DefaultProgramService {
   private readonly logger = new Logger(DefaultProgramService.name);
@@ -240,5 +240,59 @@ export class DefaultProgramService {
     });
 
     return { createdCount: 1 };
+  }
+
+  async exportCsv(): Promise<string> {
+    const defaultPrograms = await this.prisma.defaultProgram.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const csvData = defaultPrograms.map((dp) => ({
+      'IKU ID': dp.ikuId,
+      'IKU Code': dp.ikuCode,
+      'Title': dp.title,
+      'Description': dp.description || '',
+    }));
+
+    return Papa.unparse(csvData);
+  }
+
+  async importCsv(buffer: Buffer): Promise<{ createdCount: number }> {
+    const csvString = buffer.toString('utf-8');
+    const result = Papa.parse(csvString, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(`CSV Parsing Error: ${result.errors[0].message}`);
+    }
+
+    const rows: any[] = result.data;
+    let createdCount = 0;
+
+    for (const row of rows) {
+      const ikuId = row['IKU ID'];
+      const ikuCode = row['IKU Code'];
+      const title = row['Title'];
+      const description = row['Description'] || null;
+
+      if (!ikuId || !ikuCode || !title) {
+        this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+        continue;
+      }
+
+      await this.prisma.defaultProgram.create({
+        data: {
+          ikuId,
+          ikuCode,
+          title,
+          description,
+        },
+      });
+      createdCount++;
+    }
+
+    return { createdCount };
   }
 }
