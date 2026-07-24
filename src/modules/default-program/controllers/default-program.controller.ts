@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes, ApiProduces } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
 import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
@@ -32,7 +32,19 @@ export class DefaultProgramController {
 
   @Get('export')
   @ApiOperation({ summary: 'Export default programs to CSV' })
-  @ApiResponse({ status: 200, description: 'CSV file downloaded' })
+  @ApiProduces('text/csv')
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file downloaded',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async exportCsv(@Res() res: Response) {
     const csv = await this.defaultProgramService.exportCsv();
     res.setHeader('Content-Type', 'text/csv');
@@ -65,7 +77,19 @@ export class DefaultProgramController {
 
   @Get('indicators/export')
   @ApiOperation({ summary: 'Export default program indicators to CSV' })
-  @ApiResponse({ status: 200, description: 'CSV file downloaded' })
+  @ApiProduces('text/csv')
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file downloaded',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async exportIndicatorsCsv(@Res() res: Response) {
     const csv = await this.defaultProgramService.exportIndicatorsCsv();
     res.setHeader('Content-Type', 'text/csv');
