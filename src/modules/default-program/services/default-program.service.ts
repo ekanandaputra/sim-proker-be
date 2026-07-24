@@ -9,6 +9,7 @@ import { ProgramService } from '../../program/services/program.service';
 import { randomBytes } from 'crypto';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
 import * as Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 @Injectable()
 export class DefaultProgramService {
   private readonly logger = new Logger(DefaultProgramService.name);
@@ -242,19 +243,22 @@ export class DefaultProgramService {
     return { createdCount: 1 };
   }
 
-  async exportCsv(): Promise<string> {
+  async exportExcel(): Promise<Buffer> {
     const defaultPrograms = await this.prisma.defaultProgram.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
-    const csvData = defaultPrograms.map((dp) => ({
-      'IKU ID': dp.ikuId,
+    const excelData = defaultPrograms.map((dp) => ({
       'IKU Code': dp.ikuCode,
       'Title': dp.title,
       'Description': dp.description || '',
     }));
 
-    return Papa.unparse(csvData);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Default Programs');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
   async importCsv(buffer: Buffer): Promise<{ createdCount: number }> {

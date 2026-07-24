@@ -31,13 +31,13 @@ export class DefaultProgramController {
   }
 
   @Get('export')
-  @ApiOperation({ summary: 'Export default programs to CSV' })
-  @ApiProduces('text/csv')
+  @ApiOperation({ summary: 'Export default programs to Excel' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @ApiResponse({
     status: 200,
-    description: 'CSV file downloaded',
+    description: 'Excel file downloaded',
     content: {
-      'text/csv': {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
         schema: {
           type: 'string',
           format: 'binary',
@@ -45,11 +45,11 @@ export class DefaultProgramController {
       },
     },
   })
-  async exportCsv(@Res() res: Response) {
-    const csv = await this.defaultProgramService.exportCsv();
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="default-programs.csv"');
-    res.send(csv);
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.defaultProgramService.exportExcel();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-programs.xlsx"');
+    res.send(buffer);
   }
 
   @Post('import')
