@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DefaultProgramDto } from '../../default-program/dto/default-program.dto';
+import { ProgramStatus } from '@prisma/client';
 
 export class CreateUnitDto {
   @ApiProperty({ example: 'Unit A' })
@@ -122,4 +123,87 @@ export class UnitDetailsResponseDto {
 
   @ApiProperty({ type: [UnitIkuDetailDto] })
   ikus!: UnitIkuDetailDto[];
+}
+
+export class UnitProgramDto {
+  @ApiProperty({ example: "50c42d0a-e798-4d41-be97-31593d422bbe" })
+  id!: string;
+  
+  @ApiProperty({ example: "PRG-01" })
+  code!: string;
+  
+  @ApiProperty({ example: "Program title" })
+  title!: string;
+  
+  @ApiProperty({ example: "description", required: false })
+  description?: string | null;
+  
+  @ApiProperty({ example: "objective", required: false })
+  objective?: string | null;
+  
+  @ApiProperty({ example: 2026 })
+  year!: number;
+  
+  @ApiProperty({ example: "user-id" })
+  createdBy!: string;
+  
+  @ApiProperty({ example: "2026-07-21T04:46:27.563Z" })
+  createdAt!: Date;
+  
+  @ApiProperty({ example: "2026-07-21T04:46:27.563Z" })
+  updatedAt!: Date;
+}
+
+export class UnitProgramIndicatorRealizationDto {
+  @ApiProperty({ example: "id" })
+  id!: string;
+  
+  @ApiProperty({ example: 1 })
+  month!: number;
+  
+  @ApiProperty({ example: 10 })
+  realization!: number;
+  
+  @ApiProperty({ example: "remark", required: false })
+  remark?: string | null;
+}
+
+export class UnitProgramIndicatorDto {
+  @ApiProperty({ example: "id" })
+  id!: string;
+  
+  @ApiProperty({ example: "name" })
+  name!: string;
+  
+  @ApiProperty({ example: "unit" })
+  unit!: string;
+  
+  @ApiProperty({ example: 10, required: false })
+  targetQ1?: number | null;
+  
+  @ApiProperty({ example: 20, required: false })
+  targetQ2?: number | null;
+  
+  @ApiProperty({ example: 30, required: false })
+  targetQ3?: number | null;
+  
+  @ApiProperty({ example: 40, required: false })
+  targetQ4?: number | null;
+  
+  @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT })
+  status!: ProgramStatus;
+  
+  @ApiProperty({ example: 1 })
+  order!: number;
+  
+  @ApiProperty({ type: [UnitProgramIndicatorRealizationDto] })
+  realizations!: UnitProgramIndicatorRealizationDto[];
+}
+
+export class UnitProgramResponseDto {
+  @ApiProperty({ type: UnitProgramDto })
+  program!: UnitProgramDto;
+  
+  @ApiProperty({ type: [UnitProgramIndicatorDto] })
+  indikator!: UnitProgramIndicatorDto[];
 }
