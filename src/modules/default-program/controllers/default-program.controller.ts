@@ -63,6 +63,39 @@ export class DefaultProgramController {
     return this.defaultProgramService.importCsv(file.buffer);
   }
 
+  @Get('indicators/export')
+  @ApiOperation({ summary: 'Export default program indicators to CSV' })
+  @ApiResponse({ status: 200, description: 'CSV file downloaded' })
+  async exportIndicatorsCsv(@Res() res: Response) {
+    const csv = await this.defaultProgramService.exportIndicatorsCsv();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-program-indicators.csv"');
+    res.send(csv);
+  }
+
+  @Post('indicators/import')
+  @ApiOperation({ summary: 'Import default program indicators from CSV' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'CSV file imported successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importIndicatorsCsv(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    return this.defaultProgramService.importIndicatorsCsv(file.buffer);
+  }
+
   @Get('by-iku/:ikuId')
   @ApiOperation({ summary: 'Get default programs by IKU ID' })
   @ApiParam({ name: 'ikuId', description: 'IKU UUID', type: 'string' })

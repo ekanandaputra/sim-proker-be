@@ -295,4 +295,63 @@ export class DefaultProgramService {
 
     return { createdCount };
   }
+
+  async exportIndicatorsCsv(): Promise<string> {
+    const indicators = await this.prisma.defaultProgramIndicator.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        defaultProgram: true
+      }
+    });
+
+    const csvData = indicators.map((ind) => ({
+      'Default Program ID': ind.defaultProgramId,
+      'Default Program Title': ind.defaultProgram.title,
+      'Indicator Name': ind.name,
+      'Unit': ind.unit,
+      'Order': ind.order,
+    }));
+
+    return Papa.unparse(csvData);
+  }
+
+  async importIndicatorsCsv(buffer: Buffer): Promise<{ createdCount: number }> {
+    const csvString = buffer.toString('utf-8');
+    const result = Papa.parse(csvString, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(`CSV Parsing Error: ${result.errors[0].message}`);
+    }
+
+    const rows: any[] = result.data;
+    let createdCount = 0;
+
+    for (const row of rows) {
+      const defaultProgramId = row['Default Program ID'];
+      const name = row['Indicator Name'];
+      const unit = row['Unit'];
+      const order = row['Order'] ? parseInt(row['Order'], 10) : 0;
+
+      if (!defaultProgramId || !name || !unit) {
+        this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+        continue;
+      }
+
+      await this.prisma.defaultProgramIndicator.create({
+        data: {
+          defaultProgramId,
+          name,
+          unit,
+          order: isNaN(order) ? 0 : order,
+        },
+      });
+      createdCount++;
+    }
+
+    return { createdCount };
+  }
 }
+
