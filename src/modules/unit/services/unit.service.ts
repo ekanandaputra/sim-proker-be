@@ -34,11 +34,12 @@ export class UnitService {
     );
 
     const items = data.data || data;
+    const authPagination = data.pagination;
 
-    const page = Number(query?.page) || 1;
-    const limit = Number(query?.limit) || 10;
-    const totalItems = 0 // in auth service not return total items;
-    const totalPages = Math.ceil(totalItems / limit) || 0;
+    const page = Number(query?.page) || (authPagination ? authPagination.page : 1);
+    const limit = Number(query?.limit) || (authPagination ? authPagination.limit : 10);
+    const totalItems = authPagination?.total ?? (Array.isArray(items) ? items.length : 0);
+    const totalPages = authPagination?.totalPages ?? (Math.ceil(totalItems / limit) || 0);
 
     const pagination: PaginationMeta = {
       page,
