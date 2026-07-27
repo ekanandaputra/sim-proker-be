@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { ProgramStatus } from '@prisma/client';
 import { EntityNotFoundException } from '@common/exceptions';
@@ -250,7 +250,7 @@ export class DefaultProgramService {
     });
 
     if (existingIndicator) {
-      return { createdCount: 0 };
+      throw new BadRequestException(`Indikator dengan nama '${ind.name}' sudah diassign pada tahun ${period}`);
     }
 
     await this.prisma.programIndicator.create({
