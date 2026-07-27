@@ -139,56 +139,69 @@ export class DefaultProgramService {
 
     const dp = await this.findById(defaultProgramId);
 
-    // Check for duplicates
-    const existingProgram = await this.prisma.program.findFirst({
+    // Find if the program already exists for this year and title
+    let program: any = await this.prisma.program.findFirst({
       where: {
         year: period,
         title: dp.title,
-        indicators: {
-          some: { unitId },
-        },
       }
     });
 
-    if (existingProgram) {
-      return { createdCount: 0 }; // Skip to avoid duplicates
+    if (!program) {
+      const randomStr = randomBytes(3).toString('hex').toUpperCase();
+      const code = `PRG-${period}-${randomStr}`;
+
+      program = await this.programService.create({
+        code,
+        title: dp.title,
+        description: dp.description || undefined,
+        objective: '',
+        year: period,
+      }, userId);
     }
 
-    const randomStr = randomBytes(3).toString('hex').toUpperCase();
-    const code = `PRG-${period}-${randomStr}`;
+    // Check existing indicators for this unit in the program to avoid duplicates
+    const existingIndicators = await this.prisma.programIndicator.findMany({
+      where: {
+        programId: program.id,
+        unitId,
+      }
+    });
+    const existingIndicatorNames = new Set(existingIndicators.map(i => i.name));
 
-    const program = await this.programService.create({
-      code,
-      title: dp.title,
-      description: dp.description || undefined,
-      objective: '',
-      year: period,
-    }, userId);
+    let createdCount = 0;
 
     if (dp.indicators && dp.indicators.length > 0) {
-      await this.prisma.programIndicator.createMany({
-        data: dp.indicators.map((ind) => ({
-          programId: program.id,
-          unitId,
-          name: ind.name,
-          unit: ind.unit,
-          status: ProgramStatus.ASSIGNED_TO_UNIT,
-          order: ind.order,
-        }))
-      });
+      const indicatorsToCreate = dp.indicators.filter(ind => !existingIndicatorNames.has(ind.name));
+      if (indicatorsToCreate.length > 0) {
+        await this.prisma.programIndicator.createMany({
+          data: indicatorsToCreate.map((ind) => ({
+            programId: program.id,
+            unitId,
+            name: ind.name,
+            unit: ind.unit,
+            status: ProgramStatus.ASSIGNED_TO_UNIT,
+            order: ind.order,
+          }))
+        });
+        createdCount += indicatorsToCreate.length;
+      }
     } else {
-      await this.prisma.programIndicator.create({
-        data: {
-          programId: program.id,
-          unitId,
-          name: dp.title, // Default name based on program title or default program title
-          unit: 'N/A', // Default unit
-          status: ProgramStatus.ASSIGNED_TO_UNIT,
-        }
-      });
+      if (!existingIndicatorNames.has(dp.title)) {
+        await this.prisma.programIndicator.create({
+          data: {
+            programId: program.id,
+            unitId,
+            name: dp.title, // Default name based on program title or default program title
+            unit: 'N/A', // Default unit
+            status: ProgramStatus.ASSIGNED_TO_UNIT,
+          }
+        });
+        createdCount++;
+      }
     }
 
-    return { createdCount: 1 };
+    return { createdCount };
   }
 
   async assignIndicatorToUnit(dto: AssignDefaultProgramIndicatorDto, userId: string, token: string): Promise<{ createdCount: number }> {
@@ -205,14 +218,11 @@ export class DefaultProgramService {
 
     const dp = ind.defaultProgram;
 
-    // Find the program for this unit and period matching the default program
+    // Find if the program already exists for this year and title
     let program: any = await this.prisma.program.findFirst({
       where: {
         year: period,
         title: dp.title,
-        indicators: {
-          some: { unitId },
-        },
       }
     });
 
