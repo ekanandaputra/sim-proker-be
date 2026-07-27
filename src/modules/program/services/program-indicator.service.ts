@@ -3,18 +3,41 @@ import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-realization.dto';
+import { UnitService } from '../../unit/services/unit.service';
 
 @Injectable()
 export class ProgramIndicatorService {
   private readonly logger = new Logger(ProgramIndicatorService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly unitService: UnitService,
+  ) {}
 
-  async findAllByProgramId(programId: string) {
-    return this.prisma.programIndicator.findMany({
+  async findAllByProgramId(programId: string, token: string) {
+    const indicators = await this.prisma.programIndicator.findMany({
       where: { programId },
       orderBy: { order: 'asc' },
     });
+
+    // Fetch unit info for all unique unitIds
+    const uniqueUnitIds = [...new Set(indicators.map(i => i.unitId).filter(Boolean))];
+    const unitMap = new Map();
+    
+    for (const unitId of uniqueUnitIds) {
+      try {
+        const unitInfo = await this.unitService.getUnitById(unitId, token);
+        unitMap.set(unitId, unitInfo);
+      } catch (err) {
+        this.logger.error(`Failed to fetch unit ${unitId}`);
+      }
+    }
+    
+    return indicators.map(indicator => ({
+      ...indicator,
+      unit: unitMap.get(indicator.unitId) || null,
+      unit_measurement: indicator.unit, // preserve the original unit measurement string if needed, although user wants 'property unit'
+    }));
   }
 
   async create(programId: string, dto: CreateProgramIndicatorDto) {

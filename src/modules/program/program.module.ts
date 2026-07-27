@@ -8,8 +8,10 @@ import { ProgramRepository } from './repositories/program.repository';
 import { PROGRAM_REPOSITORY } from './repositories/program.repository.interface';
 import { getAppConfig } from '@common/config';
 
+import { UnitModule } from '../unit/unit.module';
+
 @Module({
-  imports: [],
+  imports: [UnitModule],
   controllers: [ProgramController, ProgramIndicatorController],
   providers: [
     ProgramService,

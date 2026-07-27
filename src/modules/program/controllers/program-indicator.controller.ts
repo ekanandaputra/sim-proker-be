@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -18,8 +19,9 @@ export class ProgramIndicatorController {
   @ApiOperation({ summary: 'Get all indicators for a program' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiResponse({ status: 200, type: () => [ProgramIndicatorResponseDto] })
-  async findAll(@Param('programId') programId: string) {
-    return this.indicatorService.findAllByProgramId(programId);
+  async findAll(@Param('programId') programId: string, @Req() req: Request) {
+    const token = req.headers.authorization as string;
+    return this.indicatorService.findAllByProgramId(programId, token);
   }
 
   @Post()

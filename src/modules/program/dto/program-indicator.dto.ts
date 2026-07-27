@@ -90,8 +90,11 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' })
   name!: string;
 
-  @ApiProperty({ example: 'Dokumen', description: 'Unit of measurement (satuan)' })
-  unit!: string;
+  @ApiProperty({ description: 'Unit detail object assigned to this indicator', type: Object })
+  unit!: any;
+
+  @ApiProperty({ example: 'Dokumen', description: 'Unit of measurement (satuan)', required: false })
+  unit_measurement?: string;
 
   @ApiProperty({ nullable: true, example: 10, type: Number }) targetQ1!: any;
   @ApiProperty({ nullable: true, example: 20, type: Number }) targetQ2!: any;
