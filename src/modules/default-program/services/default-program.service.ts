@@ -4,7 +4,7 @@ import { ProgramStatus } from '@prisma/client';
 import { EntityNotFoundException } from '@common/exceptions';
 import { UnitService } from '../../unit/services/unit.service';
 import { IkuService } from '../../iku/services/iku.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, AssignDefaultProgramDto, AssignDefaultProgramIndicatorDto } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, AssignDefaultProgramDto, AssignDefaultProgramIndicatorDto, CreateDefaultProgramIndicatorDto } from '../dto/default-program.dto';
 import { ProgramService } from '../../program/services/program.service';
 import { randomBytes } from 'crypto';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
@@ -29,7 +29,6 @@ export class DefaultProgramService {
       ? {
           OR: [
             { title: { contains: search } },
-            { ikuCode: { contains: search } },
           ],
         }
       : {};
@@ -116,6 +115,21 @@ export class DefaultProgramService {
     await this.prisma.defaultProgram.delete({
       where: { id },
     });
+  }
+
+  async addIndicator(defaultProgramId: string, data: CreateDefaultProgramIndicatorDto): Promise<DefaultProgramDto> {
+    await this.findById(defaultProgramId); // Check existence
+    
+    await this.prisma.defaultProgramIndicator.create({
+      data: {
+        defaultProgramId,
+        name: data.name,
+        unit: data.unit,
+        order: data.order || 0,
+      }
+    });
+
+    return this.findById(defaultProgramId);
   }
 
   async assignToUnit(dto: AssignDefaultProgramDto, userId: string, token: string): Promise<{ createdCount: number }> {
@@ -249,7 +263,7 @@ export class DefaultProgramService {
     });
 
     const excelData = defaultPrograms.map((dp) => ({
-      'IKU Code': dp.ikuCode,
+      'IKU ID': dp.ikuId,
       'Title': dp.title,
       'Description': dp.description || '',
     }));
@@ -277,11 +291,10 @@ export class DefaultProgramService {
 
     for (const row of rows) {
       const ikuId = row['IKU ID'];
-      const ikuCode = row['IKU Code'];
       const title = row['Title'];
       const description = row['Description'] || null;
 
-      if (!ikuId || !ikuCode || !title) {
+      if (!ikuId || !title) {
         this.logger.warn(`Skipping invalid CSV row: missing required fields`);
         continue;
       }
@@ -289,7 +302,6 @@ export class DefaultProgramService {
       await this.prisma.defaultProgram.create({
         data: {
           ikuId,
-          ikuCode,
           title,
           description,
         },

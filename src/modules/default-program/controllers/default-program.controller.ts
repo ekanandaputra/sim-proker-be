@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes, ApiProduces } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema, CreateDefaultProgramIndicatorDto, addDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -144,6 +144,20 @@ export class DefaultProgramController {
   @ApiResponse({ status: 400, description: 'Validation failed' })
   async create(@Body(new ZodValidationPipe(createDefaultProgramSchema)) dto: CreateDefaultProgramDto) {
     return this.defaultProgramService.create(dto);
+  }
+
+  @Post(':id/indicators')
+  @ApiOperation({ summary: 'Add a new indicator to an existing default program' })
+  @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
+  @ApiBody({ type: CreateDefaultProgramIndicatorDto })
+  @ApiResponse({ status: 201, type: DefaultProgramDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Default program not found' })
+  async addIndicator(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(addDefaultProgramIndicatorSchema)) dto: CreateDefaultProgramIndicatorDto
+  ) {
+    return this.defaultProgramService.addIndicator(id, dto);
   }
 
   @Post('assign-to-unit')

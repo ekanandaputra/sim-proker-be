@@ -14,7 +14,6 @@ export class CreateDefaultProgramIndicatorDto {
 
 export const createDefaultProgramSchema = z.object({
   ikuId: z.string().min(1, 'ikuId is required'),
-  ikuCode: z.string().min(1, 'ikuCode is required'),
   title: z.string().min(1, 'title is required'),
   description: z.string().optional(),
   indicators: z.array(z.object({
@@ -24,12 +23,15 @@ export const createDefaultProgramSchema = z.object({
   })).optional(),
 });
 
+export const addDefaultProgramIndicatorSchema = z.object({
+  name: z.string().min(1, 'indicator name is required'),
+  unit: z.string().min(1, 'indicator unit is required'),
+  order: z.number().int().default(0).optional(),
+});
+
 export class CreateDefaultProgramDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' })
   ikuId!: string;
-
-  @ApiProperty({ example: 'IKU-01', description: 'IKU Code' })
-  ikuCode!: string;
 
   @ApiProperty({ example: 'Program Peningkatan Kualitas', description: 'Default program title' })
   title!: string;
@@ -49,9 +51,6 @@ export const updateDefaultProgramSchema = createDefaultProgramSchema.partial();
 export class UpdateDefaultProgramDto {
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' })
   ikuId?: string;
-
-  @ApiPropertyOptional({ example: 'IKU-01', description: 'IKU Code' })
-  ikuCode?: string;
 
   @ApiPropertyOptional({ example: 'Program Peningkatan Kualitas', description: 'Default program title' })
   title?: string;
@@ -79,7 +78,6 @@ export class DefaultProgramIndicatorDto {
 export class DefaultProgramDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Default Program UUID' }) id!: string;
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'IKU UUID' }) ikuId!: string;
-  @ApiProperty({ example: 'IKU-01', description: 'IKU Code' }) ikuCode!: string;
   @ApiProperty({ example: 'Program Peningkatan Kualitas', description: 'Default program title' }) title!: string;
   @ApiProperty({ nullable: true, example: 'Deskripsi program', description: 'Optional description' }) description!: string | null;
   @ApiProperty({ type: () => [DefaultProgramIndicatorDto], description: 'List of indicators for this default program' }) indicators!: DefaultProgramIndicatorDto[];

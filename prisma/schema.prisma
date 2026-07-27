@@ -288,7 +288,6 @@ model AuditLog {
 model DefaultProgram {
   id          String   @id @default(uuid())
   ikuId       String   @map("iku_id") @db.VarChar(100)
-  ikuCode     String   @map("iku_code") @db.VarChar(50)
   title       String   @db.VarChar(255)
   description String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
@@ -298,7 +297,6 @@ model DefaultProgram {
   indicators  DefaultProgramIndicator[]
 
   @@index([ikuId])
-  @@index([ikuCode])
   @@map("default_programs")
 }
 
