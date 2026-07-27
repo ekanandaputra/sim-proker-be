@@ -407,13 +407,20 @@ export class DefaultProgramService {
     return { items };
   }
 
-  async exportExcel(): Promise<Buffer> {
+  async exportExcel(token: string): Promise<Buffer> {
     const defaultPrograms = await this.prisma.defaultProgram.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
+    // Fetch all IKUs to build id -> code map
+    const ikuResult = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
+    const ikuIdToCode = new Map<string, string>();
+    for (const iku of ikuResult.items || []) {
+      ikuIdToCode.set(iku.id, iku.code);
+    }
+
     const excelData = defaultPrograms.map((dp) => ({
-      'IKU ID': dp.ikuId,
+      'IKU Code': ikuIdToCode.get(dp.ikuId) || dp.ikuId,
       'Title': dp.title,
       'Description': dp.description || '',
     }));

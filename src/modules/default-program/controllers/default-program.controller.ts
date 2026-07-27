@@ -45,8 +45,9 @@ export class DefaultProgramController {
       },
     },
   })
-  async exportExcel(@Res() res: Response) {
-    const buffer = await this.defaultProgramService.exportExcel();
+  async exportExcel(@Res() res: Response, @Req() req: Request) {
+    const token = req.headers.authorization as string;
+    const buffer = await this.defaultProgramService.exportExcel(token);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="default-programs.xlsx"');
     res.send(buffer);
