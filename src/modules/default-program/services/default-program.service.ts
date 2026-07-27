@@ -425,28 +425,44 @@ export class DefaultProgramService {
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
-  async importCsv(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
-    const csvString = buffer.toString('utf-8');
-    const result = Papa.parse(csvString, {
-      header: true,
-      skipEmptyLines: true,
-    });
+  async importExcel(buffer: Buffer, token: string): Promise<{ createdCount: number; skippedCount: number }> {
+    // Parse XLSX file
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new BadRequestException('Excel file has no sheets');
+    }
+    const rows: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(`CSV Parsing Error: ${result.errors[0].message}`);
+    if (rows.length === 0) {
+      throw new BadRequestException('Excel file has no data rows');
     }
 
-    const rows: any[] = result.data;
+    // Fetch all IKUs to build a code -> id map
+    const ikuResult = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
+    const ikuCodeToId = new Map<string, string>();
+    for (const iku of ikuResult.items || []) {
+      ikuCodeToId.set(iku.code, iku.id);
+    }
+
     let createdCount = 0;
     let skippedCount = 0;
 
     for (const row of rows) {
-      const ikuId = row['IKU ID'];
+      const ikuCode = row['IKU Code'];
       const title = row['Title'];
       const description = row['Description'] || null;
 
-      if (!ikuId || !title) {
-        this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+      if (!ikuCode || !title) {
+        this.logger.warn(`Skipping invalid row: missing required fields (IKU Code or Title)`);
+        continue;
+      }
+
+      // Resolve IKU Code to IKU ID
+      const ikuId = ikuCodeToId.get(ikuCode);
+      if (!ikuId) {
+        this.logger.warn(`Skipping row: IKU Code '${ikuCode}' not found`);
+        skippedCount++;
         continue;
       }
 
@@ -456,7 +472,7 @@ export class DefaultProgramService {
       });
 
       if (existing) {
-        this.logger.warn(`Skipping duplicate default program: ikuId=${ikuId}, title=${title}`);
+        this.logger.warn(`Skipping duplicate default program: ikuCode=${ikuCode}, title=${title}`);
         skippedCount++;
         continue;
       }

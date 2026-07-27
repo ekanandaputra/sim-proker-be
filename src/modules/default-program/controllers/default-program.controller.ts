@@ -53,7 +53,7 @@ export class DefaultProgramController {
   }
 
   @Post('import')
-  @ApiOperation({ summary: 'Import default programs from CSV' })
+  @ApiOperation({ summary: 'Import default programs from Excel (XLSX)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -66,13 +66,14 @@ export class DefaultProgramController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'CSV file imported successfully' })
+  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
   @UseInterceptors(FileInterceptor('file'))
-  async importCsv(@UploadedFile() file: Express.Multer.File) {
+  async importExcel(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.defaultProgramService.importCsv(file.buffer);
+    const token = req.headers.authorization as string;
+    return this.defaultProgramService.importExcel(file.buffer, token);
   }
 
   @Get('indicators/export')
