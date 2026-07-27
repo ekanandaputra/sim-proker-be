@@ -60,12 +60,11 @@ export class IkuIntegrationService {
     };
   }
 
-  async getIkuUnits(id: string, token?: string, query?: any): Promise<PaginatedResponse<any>> {
+  async getIkuUnits(id: string, token?: string): Promise<any[]> {
     const headers = token ? { Authorization: token } : undefined;
-    const params = query ? { page: query.page, limit: query.limit } : undefined;
 
     const { data } = await firstValueFrom(
-      this.httpService.get(`${this.ikuUrl}/api/ikus/${id}/units`, { headers, params }).pipe(
+      this.httpService.get(`${this.ikuUrl}/api/ikus/${id}/units`, { headers }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to fetch units for IKU ${id}: ${error.message}`);
           throw new HttpException(
@@ -78,21 +77,7 @@ export class IkuIntegrationService {
 
     const resData = data?.data || data;
     const items = resData?.data || resData || [];
-    const pagination = resData?.pagination || data?.pagination;
 
-    const page = Number(query?.page) || (pagination ? pagination.page : 1);
-    const limit = Number(query?.limit) || (pagination ? pagination.limit : 10);
-    const totalItems = pagination?.total ?? (Array.isArray(items) ? items.length : 0);
-    const totalPages = pagination?.totalPages ?? (Math.ceil(totalItems / limit) || 0);
-
-    return {
-      items,
-      pagination: {
-        page,
-        limit,
-        totalItems,
-        totalPages,
-      }
-    };
+    return items;
   }
 }

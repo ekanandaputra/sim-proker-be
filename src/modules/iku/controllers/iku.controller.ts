@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards, Req, Query, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { IkuService } from '../services/iku.service';
 import { IkuResponseDto } from '../dto/iku.dto';
 import { UnitDetailDataDto } from '../../unit/dto/unit.dto';
@@ -35,15 +35,12 @@ export class IkuController {
 
   @Get(':id/units')
   @ApiOperation({ summary: 'Get all units assigned to a specific IKU' })
-  @ApiPaginatedResponse(UnitDetailDataDto)
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page (default: 10)' })
+  @ApiResponse({ status: 200, type: [UnitDetailDataDto] })
   async getIkuUnits(
     @Req() req: Request,
     @Param('id') id: string,
-    @Query(new ZodValidationPipe(paginationQuerySchema)) query: PaginationQuery,
   ) {
     const token = req.headers.authorization;
-    return this.ikuService.getIkuUnits(id, token, query);
+    return this.ikuService.getIkuUnits(id, token);
   }
 }

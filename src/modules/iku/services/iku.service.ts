@@ -14,8 +14,8 @@ export class IkuService {
     return this.ikuIntegrationService.getAllIkus(token, query);
   }
 
-  async getIkuUnits(id: string, token?: string, query?: any): Promise<PaginatedResponse<any>> {
+  async getIkuUnits(id: string, token?: string): Promise<any[]> {
     this.logger.log(`Fetching units for IKU ${id} from integration service`);
-    return this.ikuIntegrationService.getIkuUnits(id, token, query);
+    return this.ikuIntegrationService.getIkuUnits(id, token);
   }
 }
