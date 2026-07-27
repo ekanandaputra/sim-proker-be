@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes, ApiProduces } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema, CreateDefaultProgramIndicatorDto, addDefaultProgramIndicatorSchema } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema, CreateDefaultProgramIndicatorDto, addDefaultProgramIndicatorSchema, AssignmentStructureResponseDto } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -118,6 +118,33 @@ export class DefaultProgramController {
       throw new Error('No file uploaded');
     }
     return this.defaultProgramService.importIndicatorsCsv(file.buffer);
+  }
+
+  @Get('assignment-structure')
+  @ApiOperation({ summary: 'Get IKU - Program - Indicator - Unit assignment structure' })
+  @ApiQuery({ name: 'year', required: true, type: Number, description: 'Tahun periode (e.g. 2024)' })
+  @ApiQuery({ name: 'ikuId', required: false, type: String, description: 'Filter by IKU ID' })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter by Unit ID' })
+  @ApiQuery({ name: 'program', required: false, type: String, description: 'Filter by program title' })
+  @ApiResponse({ status: 200, description: 'Assignment structure retrieved successfully', type: AssignmentStructureResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid year parameter' })
+  async getAssignmentStructure(
+    @Query('year') year: string,
+    @Req() req: Request,
+    @Query('ikuId') ikuId?: string,
+    @Query('unitId') unitId?: string,
+    @Query('program') programTitle?: string,
+  ) {
+    const token = req.headers.authorization as string;
+    const yearNum = parseInt(year, 10);
+    if (isNaN(yearNum)) {
+      throw new Error('year query parameter is required and must be a number');
+    }
+    return this.defaultProgramService.getAssignmentStructure(yearNum, token, {
+      ikuId,
+      unitId,
+      programTitle,
+    });
   }
 
   @Get('by-iku/:ikuId')

@@ -118,3 +118,85 @@ export class AssignDefaultProgramIndicatorDto {
   @ApiProperty({ description: 'Tahun periode program', example: 2026 })
   period!: number;
 }
+
+// ============================================================================
+// Assignment Structure Response DTOs
+// ============================================================================
+
+export class AssignedUnitDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Unit UUID' })
+  unitId!: string;
+
+  @ApiProperty({ example: 'Teknik Mesin', description: 'Nama unit' })
+  unitName!: string;
+}
+
+export class AssignmentIndicatorDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003', description: 'Default Program Indicator UUID' })
+  id!: string;
+
+  @ApiProperty({ example: 'Jumlah Publikasi', description: 'Nama indikator' })
+  name!: string;
+
+  @ApiProperty({ example: 'Dokumen', description: 'Satuan indikator' })
+  unit!: string;
+
+  @ApiProperty({ example: 1, description: 'Urutan indikator' })
+  order!: number;
+
+  @ApiProperty({ type: () => [AssignedUnitDto], description: 'Daftar unit yang sudah di-assign indikator ini' })
+  assignedUnits!: AssignedUnitDto[];
+
+  @ApiProperty({ example: true, description: 'Apakah indikator sudah di-assign ke minimal 1 unit' })
+  isAssigned!: boolean;
+}
+
+export class AssignmentProgramDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'Default Program UUID' })
+  id!: string;
+
+  @ApiProperty({ example: 'Program Penelitian', description: 'Judul program' })
+  title!: string;
+
+  @ApiProperty({ nullable: true, example: 'Meningkatkan kualitas dan kuantitas penelitian', description: 'Deskripsi program' })
+  description!: string | null;
+
+  @ApiProperty({ example: 1, description: 'Urutan program' })
+  order!: number;
+
+  @ApiProperty({ type: () => [AssignmentIndicatorDto], description: 'Daftar indikator program' })
+  indicators!: AssignmentIndicatorDto[];
+}
+
+export class AssignmentIkuDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'IKU UUID' })
+  id!: string;
+
+  @ApiProperty({ example: 'IKU-01', description: 'Kode IKU' })
+  code!: string;
+
+  @ApiProperty({ example: 'Peningkatan Tridharma Perguruan Tinggi', description: 'Nama IKU' })
+  name!: string;
+
+  @ApiProperty({ nullable: true, example: 'Deskripsi IKU', description: 'Deskripsi IKU' })
+  description!: string | null;
+}
+
+export class AssignmentIkuItemDto {
+  @ApiProperty({ type: () => AssignmentIkuDto, description: 'Data IKU' })
+  iku!: AssignmentIkuDto;
+
+  @ApiProperty({ example: 5, description: 'Total program di bawah IKU ini' })
+  totalPrograms!: number;
+
+  @ApiProperty({ example: 14, description: 'Total indikator di bawah IKU ini' })
+  totalIndicators!: number;
+
+  @ApiProperty({ type: () => [AssignmentProgramDto], description: 'Daftar program beserta indikator dan unit assignment' })
+  programs!: AssignmentProgramDto[];
+}
+
+export class AssignmentStructureResponseDto {
+  @ApiProperty({ type: () => [AssignmentIkuItemDto], description: 'Daftar IKU beserta struktur program, indikator, dan unit assignment' })
+  items!: AssignmentIkuItemDto[];
+}

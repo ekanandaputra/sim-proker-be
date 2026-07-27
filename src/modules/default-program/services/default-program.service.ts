@@ -267,6 +267,146 @@ export class DefaultProgramService {
     return { createdCount: 1 };
   }
 
+  async getAssignmentStructure(year: number, token: string, filters?: { ikuId?: string; unitId?: string; programTitle?: string }) {
+    // 1. Fetch all IKUs from external service
+    const ikuResult = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
+    let ikuList = ikuResult.items || [];
+
+    // Apply IKU filter if provided
+    if (filters?.ikuId) {
+      ikuList = ikuList.filter((iku: any) => iku.id === filters.ikuId);
+    }
+
+    // 2. Fetch all default programs with indicators from local DB
+    const allDefaultPrograms = await this.prisma.defaultProgram.findMany({
+      include: { indicators: { orderBy: { order: 'asc' } } },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Group default programs by ikuId
+    const dpByIku = new Map<string, typeof allDefaultPrograms>();
+    for (const dp of allDefaultPrograms) {
+      const list = dpByIku.get(dp.ikuId) || [];
+      list.push(dp);
+      dpByIku.set(dp.ikuId, list);
+    }
+
+    // 3. Fetch all program indicators for the given year (to check assignment status)
+    const assignedIndicators = await this.prisma.programIndicator.findMany({
+      where: {
+        program: { year },
+      },
+      include: {
+        program: true,
+      },
+    });
+
+    // Build a lookup: programTitle + indicatorName -> list of { unitId }
+    const assignmentMap = new Map<string, { unitId: string }[]>();
+    for (const ai of assignedIndicators) {
+      const key = `${ai.program.title}::${ai.name}`;
+      const list = assignmentMap.get(key) || [];
+      list.push({ unitId: ai.unitId });
+      assignmentMap.set(key, list);
+    }
+
+    // 4. Collect all unique unitIds from assignments for batch fetching
+    const allUnitIds = new Set<string>();
+    for (const entries of assignmentMap.values()) {
+      for (const entry of entries) {
+        allUnitIds.add(entry.unitId);
+      }
+    }
+
+    // 5. Fetch unit info for all unique unitIds
+    const unitInfoMap = new Map<string, { id: string; name: string }>();
+    const unitFetchPromises = Array.from(allUnitIds).map(async (unitId) => {
+      try {
+        const unitInfo = await this.unitService.getUnitById(unitId, token);
+        unitInfoMap.set(unitId, { id: unitId, name: unitInfo.name || unitInfo.unitName || unitId });
+      } catch (err) {
+        this.logger.warn(`Failed to fetch unit info for ${unitId}`);
+        unitInfoMap.set(unitId, { id: unitId, name: unitId });
+      }
+    });
+    await Promise.all(unitFetchPromises);
+
+    // 6. Build the hierarchical response
+    const items = ikuList.map((iku: any) => {
+      const defaultPrograms = dpByIku.get(iku.id) || [];
+
+      // Apply program title filter if provided
+      let filteredPrograms = defaultPrograms;
+      if (filters?.programTitle) {
+        filteredPrograms = filteredPrograms.filter(dp => dp.title === filters.programTitle);
+      }
+
+      let totalIndicators = 0;
+
+      const programs = filteredPrograms.map((dp, dpIndex) => {
+        const indicators = dp.indicators.map((ind, indIndex) => {
+          const key = `${dp.title}::${ind.name}`;
+          const assignments = assignmentMap.get(key) || [];
+
+          // Apply unit filter if provided
+          let filteredAssignments = assignments;
+          if (filters?.unitId) {
+            filteredAssignments = assignments.filter(a => a.unitId === filters.unitId);
+          }
+
+          const assignedUnits = filteredAssignments.map(a => {
+            const unitInfo = unitInfoMap.get(a.unitId);
+            return {
+              unitId: a.unitId,
+              unitName: unitInfo?.name || a.unitId,
+            };
+          });
+
+          const isAssigned = assignedUnits.length > 0;
+
+          totalIndicators++;
+
+          return {
+            id: ind.id,
+            name: ind.name,
+            unit: ind.unit,
+            order: ind.order || indIndex + 1,
+            assignedUnits,
+            isAssigned,
+          };
+        });
+
+        return {
+          id: dp.id,
+          title: dp.title,
+          description: dp.description,
+          order: dpIndex + 1,
+          indicators,
+        };
+      });
+
+      // If unit filter is provided, only include programs that have at least one indicator matching
+      let finalPrograms = programs;
+      if (filters?.unitId) {
+        finalPrograms = programs.filter(p => p.indicators.some(i => i.isAssigned));
+      }
+
+      return {
+        iku: {
+          id: iku.id,
+          code: iku.code,
+          name: iku.name,
+          description: iku.description,
+        },
+        totalPrograms: filteredPrograms.length,
+        totalIndicators,
+        programs: finalPrograms,
+      };
+    });
+
+    return { items };
+  }
+
   async exportExcel(): Promise<Buffer> {
     const defaultPrograms = await this.prisma.defaultProgram.findMany({
       orderBy: { createdAt: 'desc' },
