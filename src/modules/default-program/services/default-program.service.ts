@@ -497,7 +497,7 @@ export class DefaultProgramService {
     return { createdCount, skippedCount };
   }
 
-  async exportIndicatorsCsv(): Promise<string> {
+  async exportIndicatorsExcel(): Promise<Buffer> {
     const indicators = await this.prisma.defaultProgramIndicator.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -505,60 +505,79 @@ export class DefaultProgramService {
       }
     });
 
-    const csvData = indicators.map((ind) => ({
-      'Default Program ID': ind.defaultProgramId,
+    const excelData = indicators.map((ind) => ({
       'Default Program Title': ind.defaultProgram.title,
       'Indicator Name': ind.name,
       'Unit': ind.unit,
-      'Order': ind.order,
     }));
 
-    return Papa.unparse(csvData);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Default Program Indicators');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
-  async importIndicatorsCsv(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
-    const csvString = buffer.toString('utf-8');
-    const result = Papa.parse(csvString, {
-      header: true,
-      skipEmptyLines: true,
-    });
+  async importIndicatorsExcel(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
+    // Parse XLSX file
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new BadRequestException('Excel file has no sheets');
+    }
+    const rows: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(`CSV Parsing Error: ${result.errors[0].message}`);
+    if (rows.length === 0) {
+      throw new BadRequestException('Excel file has no data rows');
     }
 
-    const rows: any[] = result.data;
+    // Cache: Default Program Title -> DefaultProgram record (or null if not found)
+    const dpCache = new Map<string, { id: string } | null>();
+
     let createdCount = 0;
     let skippedCount = 0;
 
     for (const row of rows) {
-      const defaultProgramId = row['Default Program ID'];
+      const defaultProgramTitle = row['Default Program Title'];
       const name = row['Indicator Name'];
       const unit = row['Unit'];
-      const order = row['Order'] ? parseInt(row['Order'], 10) : 0;
 
-      if (!defaultProgramId || !name || !unit) {
-        this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+      if (!defaultProgramTitle || !name || !unit) {
+        this.logger.warn(`Skipping invalid row: missing required fields (Default Program Title, Indicator Name, or Unit)`);
         continue;
       }
 
-      // Check for duplicate: same defaultProgramId + name
+      // Resolve Default Program by title
+      if (!dpCache.has(defaultProgramTitle)) {
+        const found = await this.prisma.defaultProgram.findFirst({
+          where: { title: defaultProgramTitle },
+        });
+        dpCache.set(defaultProgramTitle, found ? { id: found.id } : null);
+      }
+
+      const dp = dpCache.get(defaultProgramTitle);
+      if (!dp) {
+        this.logger.warn(`Skipping row: Default Program '${defaultProgramTitle}' not found in database`);
+        skippedCount++;
+        continue;
+      }
+
+      // Check for duplicate indicator
       const existing = await this.prisma.defaultProgramIndicator.findFirst({
-        where: { defaultProgramId, name },
+        where: { defaultProgramId: dp.id, name },
       });
 
       if (existing) {
-        this.logger.warn(`Skipping duplicate indicator: defaultProgramId=${defaultProgramId}, name=${name}`);
+        this.logger.warn(`Skipping duplicate indicator: program='${defaultProgramTitle}', name='${name}'`);
         skippedCount++;
         continue;
       }
 
       await this.prisma.defaultProgramIndicator.create({
         data: {
-          defaultProgramId,
+          defaultProgramId: dp.id,
           name,
           unit,
-          order: isNaN(order) ? 0 : order,
         },
       });
       createdCount++;

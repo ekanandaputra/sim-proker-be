@@ -78,13 +78,13 @@ export class DefaultProgramController {
   }
 
   @Get('indicators/export')
-  @ApiOperation({ summary: 'Export default program indicators to CSV' })
-  @ApiProduces('text/csv')
+  @ApiOperation({ summary: 'Export default program indicators to Excel' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @ApiResponse({
     status: 200,
-    description: 'CSV file downloaded',
+    description: 'Excel file downloaded',
     content: {
-      'text/csv': {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
         schema: {
           type: 'string',
           format: 'binary',
@@ -92,15 +92,15 @@ export class DefaultProgramController {
       },
     },
   })
-  async exportIndicatorsCsv(@Res() res: Response) {
-    const csv = await this.defaultProgramService.exportIndicatorsCsv();
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="default-program-indicators.csv"');
-    res.send(csv);
+  async exportIndicatorsExcel(@Res() res: Response) {
+    const buffer = await this.defaultProgramService.exportIndicatorsExcel();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-program-indicators.xlsx"');
+    res.send(buffer);
   }
 
   @Post('indicators/import')
-  @ApiOperation({ summary: 'Import default program indicators from CSV' })
+  @ApiOperation({ summary: 'Import default program indicators from Excel (XLSX)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -113,13 +113,13 @@ export class DefaultProgramController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'CSV file imported successfully' })
+  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
   @UseInterceptors(FileInterceptor('file'))
-  async importIndicatorsCsv(@UploadedFile() file: Express.Multer.File) {
+  async importIndicatorsExcel(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.defaultProgramService.importIndicatorsCsv(file.buffer);
+    return this.defaultProgramService.importIndicatorsExcel(file.buffer);
   }
 
   @Get('assignment-structure')
