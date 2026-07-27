@@ -425,7 +425,7 @@ export class DefaultProgramService {
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
-  async importCsv(buffer: Buffer): Promise<{ createdCount: number }> {
+  async importCsv(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
     const csvString = buffer.toString('utf-8');
     const result = Papa.parse(csvString, {
       header: true,
@@ -438,6 +438,7 @@ export class DefaultProgramService {
 
     const rows: any[] = result.data;
     let createdCount = 0;
+    let skippedCount = 0;
 
     for (const row of rows) {
       const ikuId = row['IKU ID'];
@@ -446,6 +447,17 @@ export class DefaultProgramService {
 
       if (!ikuId || !title) {
         this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+        continue;
+      }
+
+      // Check for duplicate: same ikuId + title
+      const existing = await this.prisma.defaultProgram.findFirst({
+        where: { ikuId, title },
+      });
+
+      if (existing) {
+        this.logger.warn(`Skipping duplicate default program: ikuId=${ikuId}, title=${title}`);
+        skippedCount++;
         continue;
       }
 
@@ -459,7 +471,7 @@ export class DefaultProgramService {
       createdCount++;
     }
 
-    return { createdCount };
+    return { createdCount, skippedCount };
   }
 
   async exportIndicatorsCsv(): Promise<string> {
@@ -481,7 +493,7 @@ export class DefaultProgramService {
     return Papa.unparse(csvData);
   }
 
-  async importIndicatorsCsv(buffer: Buffer): Promise<{ createdCount: number }> {
+  async importIndicatorsCsv(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
     const csvString = buffer.toString('utf-8');
     const result = Papa.parse(csvString, {
       header: true,
@@ -494,6 +506,7 @@ export class DefaultProgramService {
 
     const rows: any[] = result.data;
     let createdCount = 0;
+    let skippedCount = 0;
 
     for (const row of rows) {
       const defaultProgramId = row['Default Program ID'];
@@ -503,6 +516,17 @@ export class DefaultProgramService {
 
       if (!defaultProgramId || !name || !unit) {
         this.logger.warn(`Skipping invalid CSV row: missing required fields`);
+        continue;
+      }
+
+      // Check for duplicate: same defaultProgramId + name
+      const existing = await this.prisma.defaultProgramIndicator.findFirst({
+        where: { defaultProgramId, name },
+      });
+
+      if (existing) {
+        this.logger.warn(`Skipping duplicate indicator: defaultProgramId=${defaultProgramId}, name=${name}`);
+        skippedCount++;
         continue;
       }
 
@@ -517,7 +541,7 @@ export class DefaultProgramService {
       createdCount++;
     }
 
-    return { createdCount };
+    return { createdCount, skippedCount };
   }
 }
 
