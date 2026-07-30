@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
-import { ProgramStatus } from '@prisma/client';
-import { DashboardResponseDto } from '../dto/dashboard-response.dto';
+
+import { AdminDashboardResponseDto, UnitDashboardResponseDto } from '../dto/dashboard-response.dto';
 
 @Injectable()
 export class DashboardService {
@@ -9,50 +9,86 @@ export class DashboardService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboard(): Promise<DashboardResponseDto> {
+  async getAdminDashboard(): Promise<AdminDashboardResponseDto> {
     const [
       totalPrograms,
-      runningPrograms,
-      completedPrograms,
-      delayedActivities,
-      budgetResult,
-      programsByStatus,
-      programsByUnit,
+      totalIndicators,
+      totalActivities,
+      indicatorsGrouped,
+      indicators,
     ] = await Promise.all([
       this.prisma.program.count(),
-      this.prisma.program.count({ where: { status: ProgramStatus.IN_PROGRESS } }),
-      this.prisma.program.count({ where: { status: ProgramStatus.COMPLETED } }),
-      this.prisma.activity.count({ where: { status: 'DELAYED' } }),
-      this.prisma.program.aggregate({ _sum: { budget: true } }),
-      this.prisma.program.groupBy({
+      this.prisma.programIndicator.count(),
+      this.prisma.activity.count(),
+      this.prisma.programIndicator.groupBy({
         by: ['status'],
-        _count: { _all: true },
+        _count: {
+          id: true,
+        },
       }),
-      this.prisma.program.groupBy({
-        by: ['unitId'],
-        _count: { _all: true },
+      this.prisma.programIndicator.findMany({
+        select: { unitId: true, programId: true },
       }),
     ]);
 
-    const totalBudget = Number(budgetResult._sum.budget ?? 0);
-    const completionPercentage =
-      totalPrograms > 0 ? Math.round((completedPrograms / totalPrograms) * 10000) / 100 : 0;
+    const indicatorsByStatus = indicatorsGrouped.map((group) => ({
+      status: group.status,
+      count: group._count.id,
+    }));
+
+    const programsByUnitMap = new Map<string, Set<string>>();
+    indicators.forEach(ind => {
+      if (!programsByUnitMap.has(ind.unitId)) {
+        programsByUnitMap.set(ind.unitId, new Set());
+      }
+      programsByUnitMap.get(ind.unitId)!.add(ind.programId);
+    });
+
+    const programsByUnit = Array.from(programsByUnitMap.entries()).map(([unitId, programs]) => ({
+      unitId,
+      count: programs.size,
+    }));
 
     return {
       totalPrograms,
-      runningPrograms,
-      completedPrograms,
-      delayedPrograms: delayedActivities,
-      totalBudget,
-      completionPercentage,
-      programsByUnit: programsByUnit.map((g) => ({
-        unitId: g.unitId,
-        count: g._count._all,
-      })),
-      programsByStatus: programsByStatus.map((g) => ({
-        status: g.status,
-        count: g._count._all,
-      })),
+      totalIndicators,
+      totalActivities,
+      indicatorsByStatus,
+      programsByUnit,
+    };
+  }
+
+  async getUnitDashboard(unitId: string): Promise<UnitDashboardResponseDto> {
+    const [
+      indicatorsGrouped,
+      indicators,
+    ] = await Promise.all([
+      this.prisma.programIndicator.groupBy({
+        by: ['status'],
+        where: { unitId },
+        _count: {
+          id: true,
+        },
+      }),
+      this.prisma.programIndicator.findMany({
+        where: { unitId },
+        select: { programId: true },
+      }),
+    ]);
+
+    const totalIndicators = indicators.length;
+    const uniquePrograms = new Set(indicators.map(ind => ind.programId));
+    const totalPrograms = uniquePrograms.size;
+
+    const indicatorsByStatus = indicatorsGrouped.map((group) => ({
+      status: group.status,
+      count: group._count.id,
+    }));
+
+    return {
+      totalPrograms,
+      totalIndicators,
+      indicatorsByStatus,
     };
   }
 }

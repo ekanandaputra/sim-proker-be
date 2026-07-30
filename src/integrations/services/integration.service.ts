@@ -15,29 +15,25 @@ export class IntegrationService {
   async getPrograms(prisma: PrismaService): Promise<IntegrationProgramDto[]> {
     const programs = await prisma.program.findMany({
       orderBy: { createdAt: 'desc' },
+      include: { indicators: true },
     });
 
     return programs.map((p) => ({
       id: p.id,
       code: p.code,
       title: p.title,
-      status: p.status,
       year: p.year,
-      unitId: p.unitId,
-      startDate: p.startDate,
-      endDate: p.endDate,
-      budget: Number(p.budget),
+      unitId: p.indicators[0]?.unitId ?? null,
     }));
   }
 
   async getProgramById(prisma: PrismaService, id: string): Promise<IntegrationProgramDto> {
-    const p = await prisma.program.findUnique({ where: { id } });
+    const p = await prisma.program.findUnique({ where: { id }, include: { indicators: true } });
     if (!p) throw new EntityNotFoundException('Program', id);
 
     return {
-      id: p.id, code: p.code, title: p.title, status: p.status,
-      year: p.year, unitId: p.unitId, startDate: p.startDate,
-      endDate: p.endDate, budget: Number(p.budget),
+      id: p.id, code: p.code, title: p.title,
+      year: p.year, unitId: p.indicators[0]?.unitId ?? null,
     };
   }
 

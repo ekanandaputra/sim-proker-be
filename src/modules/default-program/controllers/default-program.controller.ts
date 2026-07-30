@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Req, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiConsumes, ApiProduces } from '@nestjs/swagger';
 import { DefaultProgramService } from '../services/default-program.service';
-import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema } from '../dto/default-program.dto';
+import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, createDefaultProgramSchema, updateDefaultProgramSchema, AssignDefaultProgramDto, assignDefaultProgramSchema, AssignDefaultProgramIndicatorDto, assignDefaultProgramIndicatorSchema, CreateDefaultProgramIndicatorDto, addDefaultProgramIndicatorSchema, AssignmentStructureResponseDto } from '../dto/default-program.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -29,8 +30,128 @@ export class DefaultProgramController {
     return this.defaultProgramService.findAll(query);
   }
 
+  @Get('export')
+  @ApiOperation({ summary: 'Export default programs to Excel' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file downloaded',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async exportExcel(@Res() res: Response, @Req() req: Request) {
+    const token = req.headers.authorization as string;
+    const buffer = await this.defaultProgramService.exportExcel(token);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-programs.xlsx"');
+    res.send(buffer);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import default programs from Excel (XLSX)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importExcel(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    const token = req.headers.authorization as string;
+    return this.defaultProgramService.importExcel(file.buffer, token);
+  }
+
+  @Get('indicators/export')
+  @ApiOperation({ summary: 'Export default program indicators to Excel' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file downloaded',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async exportIndicatorsExcel(@Res() res: Response) {
+    const buffer = await this.defaultProgramService.exportIndicatorsExcel();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="default-program-indicators.xlsx"');
+    res.send(buffer);
+  }
+
+  @Post('indicators/import')
+  @ApiOperation({ summary: 'Import default program indicators from Excel (XLSX)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importIndicatorsExcel(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    return this.defaultProgramService.importIndicatorsExcel(file.buffer);
+  }
+
+  @Get('assignment-structure')
+  @ApiOperation({ summary: 'Get IKU - Program - Indicator - Unit assignment structure' })
+  @ApiQuery({ name: 'year', required: true, type: Number, description: 'Tahun periode (e.g. 2024)' })
+  @ApiQuery({ name: 'ikuId', required: false, type: String, description: 'Filter by IKU ID' })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter by Unit ID' })
+  @ApiQuery({ name: 'program', required: false, type: String, description: 'Filter by program title' })
+  @ApiResponse({ status: 200, description: 'Assignment structure retrieved successfully', type: AssignmentStructureResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid year parameter' })
+  async getAssignmentStructure(
+    @Query('year') year: string,
+    @Req() req: Request,
+    @Query('ikuId') ikuId?: string,
+    @Query('unitId') unitId?: string,
+    @Query('program') programTitle?: string,
+  ) {
+    const token = req.headers.authorization as string;
+    const yearNum = parseInt(year, 10);
+    if (isNaN(yearNum)) {
+      throw new Error('year query parameter is required and must be a number');
+    }
+    return this.defaultProgramService.getAssignmentStructure(yearNum, token, {
+      ikuId,
+      unitId,
+      programTitle,
+    });
+  }
+
   @Get('by-iku/:ikuId')
   @ApiOperation({ summary: 'Get default programs by IKU ID' })
+  @ApiParam({ name: 'ikuId', description: 'IKU UUID', type: 'string' })
   @ApiResponse({ status: 200, type: [DefaultProgramDto] })
   async findByIkuId(@Param('ikuId') ikuId: string) {
     return this.defaultProgramService.findByIkuId(ikuId);
@@ -38,21 +159,41 @@ export class DefaultProgramController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get default program by ID' })
+  @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
   @ApiResponse({ status: 200, type: DefaultProgramDto })
+  @ApiResponse({ status: 404, description: 'Default program not found' })
   async findById(@Param('id') id: string) {
     return this.defaultProgramService.findById(id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create new default program' })
+  @ApiBody({ type: CreateDefaultProgramDto })
   @ApiResponse({ status: 201, type: DefaultProgramDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
   async create(@Body(new ZodValidationPipe(createDefaultProgramSchema)) dto: CreateDefaultProgramDto) {
     return this.defaultProgramService.create(dto);
   }
 
+  @Post(':id/indicators')
+  @ApiOperation({ summary: 'Add a new indicator to an existing default program' })
+  @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
+  @ApiBody({ type: CreateDefaultProgramIndicatorDto })
+  @ApiResponse({ status: 201, type: DefaultProgramDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Default program not found' })
+  async addIndicator(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(addDefaultProgramIndicatorSchema)) dto: CreateDefaultProgramIndicatorDto
+  ) {
+    return this.defaultProgramService.addIndicator(id, dto);
+  }
+
   @Post('assign-to-unit')
-  @ApiOperation({ summary: 'Assign default programs to a unit for a specific year' })
+  @ApiOperation({ summary: 'Assign a default program to a unit for a specific period' })
+  @ApiBody({ type: AssignDefaultProgramDto })
   @ApiResponse({ status: 201, description: 'Default programs assigned successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
   async assignToUnit(
     @Body(new ZodValidationPipe(assignDefaultProgramSchema)) dto: AssignDefaultProgramDto,
     @CurrentUser('userId') userId: string,
@@ -62,9 +203,27 @@ export class DefaultProgramController {
     return this.defaultProgramService.assignToUnit(dto, userId, token);
   }
 
+  @Post('indicators/assign')
+  @ApiOperation({ summary: 'Assign a default program indicator to a unit manually' })
+  @ApiBody({ type: AssignDefaultProgramIndicatorDto })
+  @ApiResponse({ status: 201, description: 'Default program indicator assigned successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  async assignIndicatorToUnit(
+    @Body(new ZodValidationPipe(assignDefaultProgramIndicatorSchema)) dto: AssignDefaultProgramIndicatorDto,
+    @CurrentUser('userId') userId: string,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.defaultProgramService.assignIndicatorToUnit(dto, userId, token);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update default program' })
+  @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
+  @ApiBody({ type: UpdateDefaultProgramDto })
   @ApiResponse({ status: 200, type: DefaultProgramDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 404, description: 'Default program not found' })
   async update(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateDefaultProgramSchema)) dto: UpdateDefaultProgramDto
@@ -74,7 +233,9 @@ export class DefaultProgramController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete default program' })
+  @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
   @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Default program not found' })
   async remove(@Param('id') id: string) {
     await this.defaultProgramService.remove(id);
     return { success: true };

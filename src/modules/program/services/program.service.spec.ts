@@ -8,6 +8,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 describe('ProgramService', () => {
   let service: ProgramService;
   let repository: IProgramRepository;
+  let auditLogService: any;
 
   const mockProgram = {
     id: 'test-uuid-1',
@@ -16,7 +17,6 @@ describe('ProgramService', () => {
     description: 'Test description',
     objective: 'Test objective',
     year: 2025,
-    unitId: 'unit-uuid-1',
     categoryId: 'cat-uuid-1',
     status: ProgramStatus.DRAFT,
     startDate: new Date('2025-01-01'),
@@ -40,7 +40,11 @@ describe('ProgramService', () => {
       delete: vi.fn(),
     };
 
-    service = new ProgramService(repository);
+    auditLogService = {
+      log: vi.fn(),
+    };
+
+    service = new ProgramService(repository, auditLogService);
   });
 
   describe('findAll', () => {
@@ -91,7 +95,6 @@ describe('ProgramService', () => {
 
       expect(result.id).toBe('test-uuid-1');
       expect(result.title).toBe('Test Program');
-      expect(result.categoryName).toBe('Penelitian');
     });
 
     it('should throw EntityNotFoundException when not found', async () => {
@@ -110,7 +113,6 @@ describe('ProgramService', () => {
         code: 'PRG-2025-001',
         title: 'Test Program',
         year: 2025,
-        unitId: 'unit-uuid-1',
         categoryId: 'cat-uuid-1',
         startDate: new Date('2025-01-01'),
         endDate: new Date('2025-12-31'),
@@ -130,7 +132,6 @@ describe('ProgramService', () => {
         code: 'PRG-2025-001',
         title: 'Duplicate',
         year: 2025,
-        unitId: 'unit-uuid-1',
         categoryId: 'cat-uuid-1',
         startDate: new Date('2025-01-01'),
         endDate: new Date('2025-12-31'),

@@ -23,7 +23,7 @@ export class EvidenceController {
 
   @Get('activities/:id/evidences')
   @ApiOperation({ summary: 'List evidences for an activity' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiPaginatedResponse(EvidenceResponseDto)
   async findByActivity(@Param('id') activityId: string) {
     return this.evidenceService.findByActivityId(activityId);
@@ -33,7 +33,7 @@ export class EvidenceController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload evidence file for an activity' })
-  @ApiParam({ name: 'id', description: 'Activity UUID' })
+  @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -44,6 +44,8 @@ export class EvidenceController {
     },
   })
   @ApiResponse({ status: 201, description: 'Evidence uploaded', type: EvidenceResponseDto })
+  @ApiResponse({ status: 400, description: 'Validation failed or file too large' })
+  @ApiResponse({ status: 404, description: 'Activity not found' })
   async upload(
     @Param('id') activityId: string,
     @UploadedFile(
@@ -60,7 +62,9 @@ export class EvidenceController {
   @Delete('evidences/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete evidence' })
-  @ApiParam({ name: 'id', description: 'Evidence UUID' })
+  @ApiParam({ name: 'id', description: 'Evidence UUID', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Evidence deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Evidence not found' })
   async remove(@Param('id') id: string) {
     await this.evidenceService.remove(id);
     return { message: 'Evidence deleted successfully' };

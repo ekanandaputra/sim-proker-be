@@ -6,6 +6,7 @@ import {
 } from '../repositories/program.repository.interface';
 import { CreateProgramDto } from '../dto/create-program.dto';
 import { UpdateProgramDto } from '../dto/update-program.dto';
+import { AssignProgramDto } from '../dto/assign-program.dto';
 import { ProgramQueryDto } from '../dto/program-query.dto';
 import { ProgramResponseDto } from '../dto/program-response.dto';
 import { ProgramMapper } from '../mapper/program.mapper';
@@ -32,17 +33,13 @@ export class ProgramService {
 
     const where: Prisma.ProgramWhereInput = {};
 
-    if (query.status) {
-      where.status = query.status;
-    }
     if (query.year) {
       where.year = query.year;
     }
     if (query.unitId) {
-      where.unitId = query.unitId;
-    }
-    if (query.categoryId) {
-      where.categoryId = query.categoryId;
+      where.indicators = {
+        some: { unitId: query.unitId },
+      };
     }
     if (query.search) {
       where.OR = [
@@ -94,11 +91,6 @@ export class ProgramService {
       description: dto.description,
       objective: dto.objective,
       year: dto.year,
-      unitId: dto.unitId,
-      category: dto.categoryId ? { connect: { id: dto.categoryId } } : undefined,
-      startDate: dto.startDate,
-      endDate: dto.endDate,
-      budget: dto.budget,
       createdBy: userId,
     });
 
@@ -113,9 +105,53 @@ export class ProgramService {
       newValue: {
         code: program.code,
         title: program.title,
-        status: program.status,
         year: program.year,
-        budget: Number(program.budget),
+      },
+    });
+
+    return ProgramMapper.toResponse(
+      program as typeof program & { category?: { name: string } | null },
+    );
+  }
+
+  async assignToUnit(id: string, dto: AssignProgramDto, userId: string): Promise<ProgramResponseDto> {
+    const existing = await this.programRepository.findById(id);
+    if (!existing) {
+      throw new EntityNotFoundException('Program', id);
+    }
+
+    const newCode = `${existing.code}-${dto.year}-${Math.floor(Math.random() * 1000)}`;
+
+    const program = await this.programRepository.create({
+      code: newCode,
+      title: existing.title,
+      description: existing.description,
+      objective: existing.objective,
+      year: dto.year,
+      createdBy: userId,
+      indicators: dto.unitId ? {
+        create: [
+          {
+            unitId: dto.unitId,
+            name: 'Default Indicator',
+            unit: 'N/A',
+          }
+        ]
+      } : undefined,
+    });
+
+    this.logger.log(`Program assigned to unit: ${program.id} (from ${existing.id}) by user ${userId}`);
+
+    await this.auditLogService.log({
+      action: 'CREATE',
+      entityType: 'Program',
+      entityId: program.id,
+      userId,
+      newValue: {
+        code: program.code,
+        title: program.title,
+        year: program.year,
+        clonedFrom: existing.id,
       },
     });
 
@@ -139,29 +175,13 @@ export class ProgramService {
       code: existing.code,
       title: existing.title,
       description: existing.description,
-      status: existing.status,
       year: existing.year,
-      budget: Number(existing.budget),
     };
 
     const updateData: Prisma.ProgramUpdateInput = {
       ...dto,
       updatedBy: userId,
     };
-
-    // If categoryId is provided, use connect syntax
-    if (dto.categoryId) {
-      updateData.category = { connect: { id: dto.categoryId } };
-      delete (updateData as Record<string, unknown>)['categoryId'];
-    }
-
-    // Handle date coercion
-    if (dto.startDate) {
-      updateData.startDate = dto.startDate;
-    }
-    if (dto.endDate) {
-      updateData.endDate = dto.endDate;
-    }
 
     const program = await this.programRepository.update(id, updateData);
 
@@ -178,9 +198,7 @@ export class ProgramService {
         code: program.code,
         title: program.title,
         description: program.description,
-        status: program.status,
         year: program.year,
-        budget: Number(program.budget),
       },
     });
 
@@ -207,7 +225,6 @@ export class ProgramService {
       oldValue: {
         code: existing.code,
         title: existing.title,
-        status: existing.status,
         year: existing.year,
       },
     });

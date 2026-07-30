@@ -26,6 +26,8 @@ import {
   CreateProgramDto,
   updateProgramSchema,
   UpdateProgramDto,
+  assignProgramSchema,
+  AssignProgramDto,
   programQuerySchema,
   ProgramResponseDto,
 } from '../dto';
@@ -54,7 +56,7 @@ export class ProgramController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'SUBMITTED', 'REVISION', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
+  @ApiQuery({ name: 'status', required: false, enum: ['ASSIGNED_TO_UNIT', 'DRAFT', 'SUBMITTED', 'REVISION', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
   @ApiQuery({ name: 'year', required: false, type: Number })
   @ApiQuery({ name: 'unitId', required: false, type: String })
   @ApiQuery({ name: 'categoryId', required: false, type: String })
@@ -112,6 +114,24 @@ export class ProgramController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.programService.update(id, dto, user.userId);
+  }
+
+  @Post(':id/assign')
+  @Roles(Role.ADMIN, Role.UNIT_ADMIN)
+  @ApiOperation({
+    summary: 'Assign program to unit for a new year',
+    description: 'Clone an existing program for a new year and optionally assign it to a unit. Automatically sets status to ASSIGNED_TO_UNIT.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Program UUID to clone' })
+  @ApiBody({ type: AssignProgramDto })
+  @ApiResponse({ status: 201, description: 'Program cloned and assigned', type: ProgramResponseDto })
+  @ApiResponse({ status: 404, description: 'Program not found' })
+  async assignToUnit(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(assignProgramSchema)) dto: AssignProgramDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.programService.assignToUnit(id, dto, user.userId);
   }
 
   @Delete(':id')

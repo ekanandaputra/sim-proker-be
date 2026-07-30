@@ -1,7 +1,8 @@
-import { Controller, Get, UseGuards, Req, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, UseGuards, Req, Query, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { IkuService } from '../services/iku.service';
 import { IkuResponseDto } from '../dto/iku.dto';
+import { UnitDetailDataDto } from '../../unit/dto/unit.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Request } from 'express';
@@ -30,5 +31,16 @@ export class IkuController {
   ) {
     const token = req.headers.authorization;
     return this.ikuService.getAllIkus(token, query);
+  }
+
+  @Get(':id/units')
+  @ApiOperation({ summary: 'Get all units assigned to a specific IKU' })
+  @ApiResponse({ status: 200, type: [UnitDetailDataDto] })
+  async getIkuUnits(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ) {
+    const token = req.headers.authorization;
+    return this.ikuService.getIkuUnits(id, token);
   }
 }

@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody, ApiCreatedResponse, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Request } from 'express';
-import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { JwtAuthGuard, JwtPayload } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Role } from '@common/constants/roles.constant';
 import { UnitService } from '../services/unit.service';
-import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto, UnitDetailDataDto, UnitProgramResponseDto } from '../dto/unit.dto';
 
 @ApiTags('Unit Management')
 @ApiBearerAuth()
@@ -28,10 +29,26 @@ export class UnitController {
     return this.unitService.getUnits(this.extractToken(req), query);
   }
 
+  @ApiOperation({ summary: 'Get units assigned to the current user' })
+  @ApiResponse({ status: 200, type: [UnitDetailDataDto], description: 'List of units assigned to the current user' })
+  @Get('my-units')
+  async getMyUnits(@Req() req: Request, @CurrentUser() user: JwtPayload) {
+    return this.unitService.getUserUnits(user.userId, this.extractToken(req));
+  }
+
   @ApiOperation({ summary: 'Get unit by ID' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @Get(':id')
   async getUnitById(@Req() req: Request, @Param('id') id: string) {
     return this.unitService.getUnitById(id, this.extractToken(req));
+  }
+
+  @ApiOperation({ summary: 'Get unit details including IKUs and assigned users' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
+  @ApiResponse({ status: 200, type: UnitDetailsResponseDto })
+  @Get(':id/details')
+  async getUnitDetails(@Req() req: Request, @Param('id') id: string) {
+    return this.unitService.getUnitDetails(id, this.extractToken(req));
   }
 
   @ApiOperation({ summary: 'Create new unit' })
@@ -59,6 +76,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Update a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiBody({ type: UpdateUnitDto })
   @Roles(Role.ADMIN)
   @Put(':id')
@@ -67,6 +85,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Delete a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @Roles(Role.ADMIN)
   @Delete(':id')
   async deleteUnit(@Req() req: Request, @Param('id') id: string) {
@@ -74,6 +93,7 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Assign users to a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiBody({ type: AssignUnitPayloadDto })
   @Roles(Role.ADMIN)
   @Post(':id/assign')
@@ -82,11 +102,22 @@ export class UnitController {
   }
 
   @ApiOperation({ summary: 'Get all users in a unit (proxied to auth service)' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
   @Get(':id/users')
   async getUnitUsers(@Req() req: Request, @Param('id') id: string, @Query() query: any) {
     return this.unitService.getUnitUsers(id, this.extractToken(req), query);
+  }
+
+  @ApiOperation({ summary: 'Get programs assigned to a unit' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (default to current year)' })
+  @ApiResponse({ status: 200, type: [UnitProgramResponseDto], description: 'List of programs and indicators assigned to the unit' })
+  @Get(':id/programs')
+  async getUnitPrograms(@Param('id') id: string, @Query('year') year?: string) {
+    const filterYear = year ? Number(year) : new Date().getFullYear();
+    return this.unitService.getUnitPrograms(id, filterYear);
   }
 }

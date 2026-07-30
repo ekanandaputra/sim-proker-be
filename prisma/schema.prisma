@@ -15,6 +15,7 @@ datasource db {
 // ============================================================================
 
 enum ProgramStatus {
+  ASSIGNED_TO_UNIT
   DRAFT
   SUBMITTED
   REVISION
@@ -60,9 +61,6 @@ model ProgramCategory {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  programs Program[]
-
   @@map("program_categories")
 }
 
@@ -74,12 +72,6 @@ model Program {
   description String?       @db.Text
   objective   String?       @db.Text
   year        Int
-  unitId      String?       @map("unit_id")
-  categoryId  String?       @map("category_id")
-  status      ProgramStatus @default(DRAFT)
-  startDate   DateTime      @map("start_date")
-  endDate     DateTime      @map("end_date")
-  budget      Decimal       @default(0) @db.Decimal(15, 2)
 
   createdBy String   @map("created_by")
   updatedBy String?  @map("updated_by")
@@ -87,16 +79,56 @@ model Program {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  category   ProgramCategory? @relation(fields: [categoryId], references: [id])
   activities Activity[]
   members    ProgramMember[]
   approvals  Approval[]
+  indicators ProgramIndicator[]
 
-  @@index([unitId])
-  @@index([categoryId])
-  @@index([status])
   @@index([year])
   @@map("programs")
+}
+
+/// Program Indicator (Assigned to Unit)
+model ProgramIndicator {
+  id          String   @id @default(uuid())
+  programId   String   @map("program_id")
+  unitId      String   @map("unit_id")
+  name        String        @db.VarChar(255)
+  unit        String        @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  targetQ1    Decimal?      @map("target_q1") @db.Decimal(10, 2)
+  targetQ2    Decimal?      @map("target_q2") @db.Decimal(10, 2)
+  targetQ3    Decimal?      @map("target_q3") @db.Decimal(10, 2)
+  targetQ4    Decimal?      @map("target_q4") @db.Decimal(10, 2)
+  status      ProgramStatus @default(DRAFT)
+  order       Int           @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  realizations ProgramIndicatorRealization[]
+  
+  @@index([programId])
+  @@index([unitId])
+  @@map("program_indicators")
+}
+
+/// Program Indicator Realization per month
+model ProgramIndicatorRealization {
+  id          String   @id @default(uuid())
+  indicatorId String   @map("indicator_id")
+  month       Int      @db.SmallInt
+  realization Decimal  @db.Decimal(10, 2)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  indicator   ProgramIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@unique([indicatorId, month])
+  @@index([indicatorId])
+  @@map("program_indicator_realizations")
 }
 
 /// Program Member assignment
@@ -256,13 +288,30 @@ model AuditLog {
 model DefaultProgram {
   id          String   @id @default(uuid())
   ikuId       String   @map("iku_id") @db.VarChar(100)
-  ikuCode     String   @map("iku_code") @db.VarChar(50)
   title       String   @db.VarChar(255)
   description String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // Relations
+  indicators  DefaultProgramIndicator[]
+
   @@index([ikuId])
-  @@index([ikuCode])
   @@map("default_programs")
+}
+
+/// Default program indicator template
+model DefaultProgramIndicator {
+  id               String         @id @default(uuid())
+  defaultProgramId String         @map("default_program_id")
+  name             String         @db.VarChar(255)
+  unit             String         @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  order            Int            @default(0)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  defaultProgram   DefaultProgram @relation(fields: [defaultProgramId], references: [id], onDelete: Cascade)
+  
+  @@index([defaultProgramId])
+  @@map("default_program_indicators")
 }

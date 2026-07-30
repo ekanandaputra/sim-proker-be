@@ -59,4 +59,25 @@ export class IkuIntegrationService {
       }
     };
   }
+
+  async getIkuUnits(id: string, token?: string): Promise<any[]> {
+    const headers = token ? { Authorization: token } : undefined;
+
+    const { data } = await firstValueFrom(
+      this.httpService.get(`${this.ikuUrl}/api/ikus/${id}/units`, { headers }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to fetch units for IKU ${id}: ${error.message}`);
+          throw new HttpException(
+            'Failed to retrieve units from IKU Service',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+
+    const resData = data?.data || data;
+    const items = resData?.data || resData || [];
+
+    return items;
+  }
 }
