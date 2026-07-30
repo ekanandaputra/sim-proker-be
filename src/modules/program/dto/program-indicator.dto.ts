@@ -11,6 +11,8 @@ export const createProgramIndicatorSchema = z.object({
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
+  budget: z.number().nullable().optional(),
+  picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
   status: z.nativeEnum(ProgramStatus).optional(),
   order: z.number().int().default(0),
 });
@@ -36,6 +38,12 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
+
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
+  budget?: number | null;
+
+  @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
+  picIds?: string[];
 
   @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
   status?: ProgramStatus;
@@ -69,6 +77,12 @@ export class UpdateProgramIndicatorDto {
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
 
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
+  budget?: number | null;
+
+  @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
+  picIds?: string[];
+
   @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
   status?: ProgramStatus;
 
@@ -100,6 +114,8 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ nullable: true, example: 20, type: Number }) targetQ2!: any;
   @ApiProperty({ nullable: true, example: 30, type: Number }) targetQ3!: any;
   @ApiProperty({ nullable: true, example: 40, type: Number }) targetQ4!: any;
+  @ApiProperty({ nullable: true, example: 15000000.00, type: Number }) budget?: any;
+  @ApiProperty({ description: 'Array of PIC User UUIDs', type: [String], required: false }) picIds?: string[];
   @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT }) status!: ProgramStatus;
   @ApiProperty({ example: 1 }) order!: number;
 

@@ -106,6 +106,7 @@ model ProgramIndicator {
   targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
   targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
   targetQ4  Decimal?      @map("target_q4") @db.Decimal(10, 2)
+  budget    Decimal?      @db.Decimal(15, 2)
   status    ProgramStatus @default(DRAFT)
   order     Int           @default(0)
   createdAt DateTime      @default(now()) @map("created_at")
@@ -114,10 +115,26 @@ model ProgramIndicator {
   // Relations
   program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
   realizations ProgramIndicatorRealization[]
+  pics         ProgramIndicatorPic[]
 
   @@index([programId])
   @@index([unitId])
   @@map("program_indicators")
+}
+
+/// PICs assigned to Program Indicator
+model ProgramIndicatorPic {
+  id          String   @id @default(uuid())
+  indicatorId String   @map("indicator_id")
+  userId      String   @map("user_id") @db.VarChar(36)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  indicator ProgramIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+
+  @@unique([indicatorId, userId])
+  @@index([indicatorId])
+  @@index([userId])
+  @@map("program_indicator_pics")
 }
 
 /// Program Indicator Realization per month

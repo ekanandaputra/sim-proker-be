@@ -18,6 +18,9 @@ export class ProgramIndicatorService {
     const indicators = await this.prisma.programIndicator.findMany({
       where: { programId },
       orderBy: { order: 'asc' },
+      include: {
+        pics: true,
+      }
     });
 
     // Fetch unit info for all unique unitIds
@@ -37,25 +40,39 @@ export class ProgramIndicatorService {
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
       unit_measurement: indicator.unit, // preserve the original unit measurement string if needed, although user wants 'property unit'
+      picIds: indicator.pics.map(p => p.userId),
     }));
   }
 
   async create(programId: string, dto: CreateProgramIndicatorDto) {
+    const { picIds, ...rest } = dto;
     // Check if program exists
     const program = await this.prisma.program.findUnique({ where: { id: programId } });
     if (!program) {
       throw new EntityNotFoundException('Program', programId);
     }
 
-    return this.prisma.programIndicator.create({
+    const indicator = await this.prisma.programIndicator.create({
       data: {
-        ...dto,
+        ...rest,
         programId,
+        pics: picIds ? {
+          create: picIds.map(userId => ({ userId }))
+        } : undefined
       },
+      include: {
+        pics: true,
+      }
     });
+
+    return {
+      ...indicator,
+      picIds: indicator.pics.map(p => p.userId),
+    };
   }
 
   async update(programId: string, id: string, dto: UpdateProgramIndicatorDto) {
+    const { picIds, ...rest } = dto;
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id, programId },
     });
@@ -63,10 +80,24 @@ export class ProgramIndicatorService {
       throw new EntityNotFoundException('ProgramIndicator', id);
     }
 
-    return this.prisma.programIndicator.update({
+    const updated = await this.prisma.programIndicator.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        pics: picIds ? {
+          deleteMany: {},
+          create: picIds.map(userId => ({ userId }))
+        } : undefined
+      },
+      include: {
+        pics: true,
+      }
     });
+
+    return {
+      ...updated,
+      picIds: updated.pics.map(p => p.userId),
+    };
   }
 
   async remove(programId: string, id: string) {
