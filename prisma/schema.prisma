@@ -131,11 +131,28 @@ model ProgramIndicatorRealization {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  indicator ProgramIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  indicator ProgramIndicator      @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  documents RealizationDocument[]
 
   @@unique([indicatorId, month])
   @@index([indicatorId])
   @@map("program_indicator_realizations")
+}
+
+/// Junction table for ProgramIndicatorRealization and Document
+model RealizationDocument {
+  id            String   @id @default(uuid())
+  realizationId String   @map("realization_id")
+  documentId    String   @map("document_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  realization ProgramIndicatorRealization @relation(fields: [realizationId], references: [id], onDelete: Cascade)
+  document    Document                    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([realizationId, documentId])
+  @@index([realizationId])
+  @@index([documentId])
+  @@map("realization_documents")
 }
 
 /// Program Member assignment
@@ -227,7 +244,8 @@ model Document {
   createdAt  DateTime     @default(now()) @map("created_at")
 
   // Relations
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activity     Activity              @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  realizations RealizationDocument[]
 
   @@index([activityId])
   @@map("documents")

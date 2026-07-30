@@ -110,10 +110,20 @@ export class ProgramIndicatorService {
       throw new EntityNotFoundException('ProgramIndicator', indicatorId);
     }
 
-    return this.prisma.programIndicatorRealization.findMany({
+    const realizations = await this.prisma.programIndicatorRealization.findMany({
       where: { indicatorId },
       orderBy: { month: 'asc' },
+      include: {
+        documents: {
+          include: { document: true }
+        }
+      }
     });
+
+    return realizations.map(r => ({
+      ...r,
+      documents: r.documents.map(rd => rd.document)
+    }));
   }
 
   async upsertRealization(programId: string, indicatorId: string, dto: CreateProgramIndicatorRealizationDto) {
@@ -124,7 +134,7 @@ export class ProgramIndicatorService {
       throw new EntityNotFoundException('ProgramIndicator', indicatorId);
     }
 
-    return this.prisma.programIndicatorRealization.upsert({
+    const realization = await this.prisma.programIndicatorRealization.upsert({
       where: {
         indicatorId_month: {
           indicatorId,
@@ -134,13 +144,30 @@ export class ProgramIndicatorService {
       update: {
         realization: dto.realization,
         remark: dto.remark,
+        documents: dto.documentIds ? {
+          deleteMany: {},
+          create: dto.documentIds.map(id => ({ documentId: id })),
+        } : undefined,
       },
       create: {
         indicatorId,
         month: dto.month,
         realization: dto.realization,
         remark: dto.remark,
+        documents: dto.documentIds ? {
+          create: dto.documentIds.map(id => ({ documentId: id })),
+        } : undefined,
+      },
+      include: {
+        documents: {
+          include: { document: true }
+        }
       }
     });
+
+    return {
+      ...realization,
+      documents: realization.documents.map(d => d.document)
+    };
   }
 }
