@@ -50,10 +50,11 @@ async function bootstrap() {
     .addTag('Activities', 'Activity management within programs')
     .addTag('Outputs', 'Output / deliverable tracking')
     .addTag('Progress', 'Progress logging (append-only)')
-    .addTag('Evidences', 'Supporting document management')
+    .addTag('Documents', 'Supporting document management')
     .addTag('Approvals', 'Approval workflow')
     .addTag('Dashboard', 'Aggregated statistics')
     .addTag('Integration', 'APIs for SIM IKU and other microservices')
+    .addTag('Master Unit Type', 'Master Unit Type management')
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);

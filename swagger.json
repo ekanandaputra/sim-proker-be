@@ -932,6 +932,408 @@
         ]
       }
     },
+    "/units": {
+      "get": {
+        "operationId": "UnitController_getUnits",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all units (proxied to auth service)",
+        "tags": [
+          "Unit Management"
+        ]
+      },
+      "post": {
+        "operationId": "UnitController_createUnit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The unit has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "isSuccess": true,
+                    "message": "Success",
+                    "data": {
+                      "id": "e61aa77e-e4eb-480e-9366-4a7c3a217ccf",
+                      "name": "Unit B",
+                      "description": "Description for Unit A",
+                      "createdAt": "2026-07-06T06:00:00.839Z",
+                      "updatedAt": "2026-07-06T06:00:00.839Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new unit",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/my-units": {
+      "get": {
+        "operationId": "UnitController_getMyUnits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of units assigned to the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitDetailDataDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get units assigned to the current user",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/{id}": {
+      "get": {
+        "operationId": "UnitController_getUnitById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get unit by ID",
+        "tags": [
+          "Unit Management"
+        ]
+      },
+      "put": {
+        "operationId": "UnitController_updateUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a unit",
+        "tags": [
+          "Unit Management"
+        ]
+      },
+      "delete": {
+        "operationId": "UnitController_deleteUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a unit",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/{id}/details": {
+      "get": {
+        "operationId": "UnitController_getUnitDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitDetailsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get unit details including IKUs and assigned users",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/{id}/assign": {
+      "post": {
+        "operationId": "UnitController_assignUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignUnitPayloadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign users to a unit",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/{id}/users": {
+      "get": {
+        "operationId": "UnitController_getUnitUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all users in a unit (proxied to auth service)",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/units/{id}/programs": {
+      "get": {
+        "operationId": "UnitController_getUnitPrograms",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Filter by year (default to current year)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of programs and indicators assigned to the unit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitProgramResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get programs assigned to a unit",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
     "/programs/{id}/activities": {
       "get": {
         "description": "Returns a paginated list of activities for a given program",
@@ -2119,7 +2521,7 @@
     },
     "/default-programs/import": {
       "post": {
-        "operationId": "DefaultProgramController_importCsv",
+        "operationId": "DefaultProgramController_importExcel",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2139,7 +2541,7 @@
         },
         "responses": {
           "201": {
-            "description": "CSV file imported successfully"
+            "description": "Excel file imported successfully"
           }
         },
         "security": [
@@ -2147,7 +2549,7 @@
             "bearer": []
           }
         ],
-        "summary": "Import default programs from CSV",
+        "summary": "Import default programs from Excel (XLSX)",
         "tags": [
           "Default Program"
         ]
@@ -2155,13 +2557,13 @@
     },
     "/default-programs/indicators/export": {
       "get": {
-        "operationId": "DefaultProgramController_exportIndicatorsCsv",
+        "operationId": "DefaultProgramController_exportIndicatorsExcel",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "CSV file downloaded",
+            "description": "Excel file downloaded",
             "content": {
-              "text/csv": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -2175,7 +2577,7 @@
             "bearer": []
           }
         ],
-        "summary": "Export default program indicators to CSV",
+        "summary": "Export default program indicators to Excel",
         "tags": [
           "Default Program"
         ]
@@ -2183,7 +2585,7 @@
     },
     "/default-programs/indicators/import": {
       "post": {
-        "operationId": "DefaultProgramController_importIndicatorsCsv",
+        "operationId": "DefaultProgramController_importIndicatorsExcel",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2203,7 +2605,7 @@
         },
         "responses": {
           "201": {
-            "description": "CSV file imported successfully"
+            "description": "Excel file imported successfully"
           }
         },
         "security": [
@@ -2211,7 +2613,74 @@
             "bearer": []
           }
         ],
-        "summary": "Import default program indicators from CSV",
+        "summary": "Import default program indicators from Excel (XLSX)",
+        "tags": [
+          "Default Program"
+        ]
+      }
+    },
+    "/default-programs/assignment-structure": {
+      "get": {
+        "operationId": "DefaultProgramController_getAssignmentStructure",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "Tahun periode (e.g. 2024)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "ikuId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by IKU ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "program",
+            "required": false,
+            "in": "query",
+            "description": "Filter by program title",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assignment structure retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentStructureResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid year parameter"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get IKU - Program - Indicator - Unit assignment structure",
         "tags": [
           "Default Program"
         ]
@@ -2498,408 +2967,6 @@
         ]
       }
     },
-    "/units": {
-      "get": {
-        "operationId": "UnitController_getUnits",
-        "parameters": [
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Search query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Items per page",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all units (proxied to auth service)",
-        "tags": [
-          "Unit Management"
-        ]
-      },
-      "post": {
-        "operationId": "UnitController_createUnit",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUnitDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The unit has been successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "example": {
-                    "isSuccess": true,
-                    "message": "Success",
-                    "data": {
-                      "id": "e61aa77e-e4eb-480e-9366-4a7c3a217ccf",
-                      "name": "Unit B",
-                      "description": "Description for Unit A",
-                      "createdAt": "2026-07-06T06:00:00.839Z",
-                      "updatedAt": "2026-07-06T06:00:00.839Z"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create new unit",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/my-units": {
-      "get": {
-        "operationId": "UnitController_getMyUnits",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of units assigned to the current user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitDetailDataDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get units assigned to the current user",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/{id}": {
-      "get": {
-        "operationId": "UnitController_getUnitById",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get unit by ID",
-        "tags": [
-          "Unit Management"
-        ]
-      },
-      "put": {
-        "operationId": "UnitController_updateUnit",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUnitDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Update a unit",
-        "tags": [
-          "Unit Management"
-        ]
-      },
-      "delete": {
-        "operationId": "UnitController_deleteUnit",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete a unit",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/{id}/details": {
-      "get": {
-        "operationId": "UnitController_getUnitDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitDetailsResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get unit details including IKUs and assigned users",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/{id}/assign": {
-      "post": {
-        "operationId": "UnitController_assignUsers",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssignUnitPayloadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Assign users to a unit",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/{id}/users": {
-      "get": {
-        "operationId": "UnitController_getUnitUsers",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Search query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Items per page",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all users in a unit (proxied to auth service)",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
-    "/units/{id}/programs": {
-      "get": {
-        "operationId": "UnitController_getUnitPrograms",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Unit UUID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": false,
-            "in": "query",
-            "description": "Filter by year (default to current year)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of programs and indicators assigned to the unit",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitProgramResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get programs assigned to a unit",
-        "tags": [
-          "Unit Management"
-        ]
-      }
-    },
     "/ikus": {
       "get": {
         "operationId": "IkuController_getAllIkus",
@@ -3015,6 +3082,45 @@
           }
         ],
         "summary": "Get all IKUs",
+        "tags": [
+          "IKU"
+        ]
+      }
+    },
+    "/ikus/{id}/units": {
+      "get": {
+        "operationId": "IkuController_getIkuUnits",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitDetailDataDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all units assigned to a specific IKU",
         "tags": [
           "IKU"
         ]
@@ -3323,6 +3429,268 @@
           "Auth Integration"
         ]
       }
+    },
+    "/master-unit-types": {
+      "get": {
+        "operationId": "MasterUnitTypeController_findAll",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (asc/desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search keyword",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/MasterUnitTypeDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all master unit types",
+        "tags": [
+          "Master Unit Type"
+        ]
+      },
+      "post": {
+        "operationId": "MasterUnitTypeController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMasterUnitTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterUnitTypeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new master unit type",
+        "tags": [
+          "Master Unit Type"
+        ]
+      }
+    },
+    "/master-unit-types/{id}": {
+      "get": {
+        "operationId": "MasterUnitTypeController_findById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterUnitTypeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get master unit type by ID",
+        "tags": [
+          "Master Unit Type"
+        ]
+      },
+      "put": {
+        "operationId": "MasterUnitTypeController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMasterUnitTypeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterUnitTypeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update master unit type",
+        "tags": [
+          "Master Unit Type"
+        ]
+      },
+      "delete": {
+        "operationId": "MasterUnitTypeController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Master unit type successfully deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete master unit type",
+        "tags": [
+          "Master Unit Type"
+        ]
+      }
     }
   },
   "info": {
@@ -3363,6 +3731,10 @@
     {
       "name": "Integration",
       "description": "APIs for SIM IKU and other microservices"
+    },
+    {
+      "name": "Master Unit Type",
+      "description": "Master Unit Type management"
     }
   ],
   "servers": [],
@@ -3482,6 +3854,10 @@
             "description": "Name of the indicator"
           },
           "unit": {
+            "type": "object",
+            "description": "Unit detail object assigned to this indicator"
+          },
+          "unit_measurement": {
             "type": "string",
             "example": "Dokumen",
             "description": "Unit of measurement (satuan)"
@@ -3909,6 +4285,503 @@
         "required": [
           "month",
           "realization"
+        ]
+      },
+      "UnitDetailDataDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "name": {
+            "type": "string",
+            "example": "Unit baru"
+          },
+          "description": {
+            "type": "string",
+            "example": "Contoh update"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-07-16T05:57:46.935Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-07-16T05:57:53.912Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UnitUserDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "string"
+          },
+          "nip": {
+            "type": "string",
+            "example": "string"
+          },
+          "type": {
+            "type": "string",
+            "example": "EMPLOYEE"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "deletedAt": {
+            "type": "string",
+            "example": "2026-07-21T04:46:27.563Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-07-21T04:46:27.563Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2026-07-21T04:46:27.563Z"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "IkuMetadataDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "69391cba-5eeb-4218-80fd-596e2c096171"
+          },
+          "code": {
+            "type": "string",
+            "example": "IKU 4.2"
+          },
+          "name": {
+            "type": "string",
+            "example": "Zona Integritas yang Terdiri dari Wilayah Bebas dari korupsi (WBK)"
+          },
+          "unit": {
+            "type": "string",
+            "example": "number"
+          },
+          "isDirectInput": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "unit",
+          "isDirectInput"
+        ]
+      },
+      "DefaultProgramIndicatorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440003",
+            "description": "Indicator UUID"
+          },
+          "defaultProgramId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Default Program UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jumlah Laporan"
+          },
+          "unit": {
+            "type": "string",
+            "example": "Dokumen"
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "defaultProgramId",
+          "name",
+          "unit",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DefaultProgramDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Default Program UUID"
+          },
+          "ikuId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "IKU UUID"
+          },
+          "title": {
+            "type": "string",
+            "example": "Program Peningkatan Kualitas",
+            "description": "Default program title"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true,
+            "example": "Deskripsi program",
+            "description": "Optional description"
+          },
+          "indicators": {
+            "description": "List of indicators for this default program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DefaultProgramIndicatorDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "ikuId",
+          "title",
+          "description",
+          "indicators",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UnitIkuDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "d48e1cf2-1b39-41a6-8d2b-e9bdd08ff22b"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "ikuId": {
+            "type": "string",
+            "example": "69391cba-5eeb-4218-80fd-596e2c096171"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-07-21T04:37:50.533Z"
+          },
+          "iku": {
+            "$ref": "#/components/schemas/IkuMetadataDto"
+          },
+          "defaultPrograms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DefaultProgramDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "unitId",
+          "ikuId",
+          "createdAt",
+          "iku",
+          "defaultPrograms"
+        ]
+      },
+      "UnitDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/UnitDetailDataDto"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnitUserDetailDto"
+            }
+          },
+          "ikus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnitIkuDetailDto"
+            }
+          }
+        },
+        "required": [
+          "unit",
+          "users",
+          "ikus"
+        ]
+      },
+      "CreateUnitDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Unit A"
+          },
+          "description": {
+            "type": "string",
+            "example": "Description for Unit A"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateUnitDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Unit A"
+          },
+          "description": {
+            "type": "string",
+            "example": "Description for Unit A"
+          }
+        }
+      },
+      "AssignUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "3cff6c0a-276d-4bf9-b502-a8113a01478d"
+          },
+          "type": {
+            "type": "string",
+            "example": "PIC"
+          }
+        },
+        "required": [
+          "userId",
+          "type"
+        ]
+      },
+      "AssignUnitPayloadDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignUserDto"
+            }
+          }
+        },
+        "required": [
+          "users"
+        ]
+      },
+      "UnitProgramDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "code": {
+            "type": "string",
+            "example": "PRG-01"
+          },
+          "title": {
+            "type": "string",
+            "example": "Program title"
+          },
+          "description": {
+            "type": "object",
+            "example": "description"
+          },
+          "objective": {
+            "type": "object",
+            "example": "objective"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "createdBy": {
+            "type": "string",
+            "example": "user-id"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-21T04:46:27.563Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-21T04:46:27.563Z"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title",
+          "year",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UnitProgramIndicatorRealizationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "id"
+          },
+          "month": {
+            "type": "number",
+            "example": 1
+          },
+          "realization": {
+            "type": "number",
+            "example": 10
+          },
+          "remark": {
+            "type": "object",
+            "example": "remark"
+          }
+        },
+        "required": [
+          "id",
+          "month",
+          "realization"
+        ]
+      },
+      "UnitProgramIndicatorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "id"
+          },
+          "name": {
+            "type": "string",
+            "example": "name"
+          },
+          "unit": {
+            "type": "string",
+            "example": "unit"
+          },
+          "targetQ1": {
+            "type": "object",
+            "example": 10
+          },
+          "targetQ2": {
+            "type": "object",
+            "example": 20
+          },
+          "targetQ3": {
+            "type": "object",
+            "example": 30
+          },
+          "targetQ4": {
+            "type": "object",
+            "example": 40
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED_TO_UNIT",
+              "DRAFT",
+              "SUBMITTED",
+              "REVISION",
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "DRAFT"
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "realizations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnitProgramIndicatorRealizationDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "unit",
+          "status",
+          "order",
+          "realizations"
+        ]
+      },
+      "UnitProgramResponseDto": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "$ref": "#/components/schemas/UnitProgramDto"
+          },
+          "indikator": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnitProgramIndicatorDto"
+            }
+          }
+        },
+        "required": [
+          "program",
+          "indikator"
         ]
       },
       "ActivityResponseDto": {
@@ -4483,106 +5356,191 @@
           "indicatorsByStatus"
         ]
       },
-      "DefaultProgramIndicatorDto": {
+      "AssignmentIkuDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "IKU UUID"
+          },
+          "code": {
+            "type": "string",
+            "example": "IKU-01",
+            "description": "Kode IKU"
+          },
+          "name": {
+            "type": "string",
+            "example": "Peningkatan Tridharma Perguruan Tinggi",
+            "description": "Nama IKU"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true,
+            "example": "Deskripsi IKU",
+            "description": "Deskripsi IKU"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description"
+        ]
+      },
+      "AssignedUnitDto": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Unit UUID"
+          },
+          "unitName": {
+            "type": "string",
+            "example": "Teknik Mesin",
+            "description": "Nama unit"
+          }
+        },
+        "required": [
+          "unitId",
+          "unitName"
+        ]
+      },
+      "AssignmentIndicatorDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "example": "550e8400-e29b-41d4-a716-446655440003",
-            "description": "Indicator UUID"
-          },
-          "defaultProgramId": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "Default Program UUID"
+            "description": "Default Program Indicator UUID"
           },
           "name": {
             "type": "string",
-            "example": "Jumlah Laporan"
+            "example": "Jumlah Publikasi",
+            "description": "Nama indikator"
           },
           "unit": {
             "type": "string",
-            "example": "Dokumen"
+            "example": "Dokumen",
+            "description": "Satuan indikator"
           },
           "order": {
             "type": "number",
-            "example": 1
+            "example": 1,
+            "description": "Urutan indikator"
           },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Creation timestamp"
+          "assignedUnits": {
+            "description": "Daftar unit yang sudah di-assign indikator ini",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignedUnitDto"
+            }
           },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Update timestamp"
+          "isAssigned": {
+            "type": "boolean",
+            "example": true,
+            "description": "Apakah indikator sudah di-assign ke minimal 1 unit"
           }
         },
         "required": [
           "id",
-          "defaultProgramId",
           "name",
           "unit",
           "order",
-          "createdAt",
-          "updatedAt"
+          "assignedUnits",
+          "isAssigned"
         ]
       },
-      "DefaultProgramDto": {
+      "AssignmentProgramDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "Default Program UUID"
-          },
-          "ikuId": {
-            "type": "string",
             "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "IKU UUID"
+            "description": "Default Program UUID"
           },
           "title": {
             "type": "string",
-            "example": "Program Peningkatan Kualitas",
-            "description": "Default program title"
+            "example": "Program Penelitian",
+            "description": "Judul program"
           },
           "description": {
             "type": "object",
             "nullable": true,
-            "example": "Deskripsi program",
-            "description": "Optional description"
+            "example": "Meningkatkan kualitas dan kuantitas penelitian",
+            "description": "Deskripsi program"
+          },
+          "order": {
+            "type": "number",
+            "example": 1,
+            "description": "Urutan program"
           },
           "indicators": {
-            "description": "List of indicators for this default program",
+            "description": "Daftar indikator program",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/DefaultProgramIndicatorDto"
+              "$ref": "#/components/schemas/AssignmentIndicatorDto"
             }
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Update timestamp"
           }
         },
         "required": [
           "id",
-          "ikuId",
           "title",
           "description",
-          "indicators",
-          "createdAt",
-          "updatedAt"
+          "order",
+          "indicators"
+        ]
+      },
+      "AssignmentIkuItemDto": {
+        "type": "object",
+        "properties": {
+          "iku": {
+            "description": "Data IKU",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentIkuDto"
+              }
+            ]
+          },
+          "totalPrograms": {
+            "type": "number",
+            "example": 5,
+            "description": "Total program di bawah IKU ini"
+          },
+          "totalIndicators": {
+            "type": "number",
+            "example": 14,
+            "description": "Total indikator di bawah IKU ini"
+          },
+          "programs": {
+            "description": "Daftar program beserta indikator dan unit assignment",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentProgramDto"
+            }
+          }
+        },
+        "required": [
+          "iku",
+          "totalPrograms",
+          "totalIndicators",
+          "programs"
+        ]
+      },
+      "AssignmentStructureResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Daftar IKU beserta struktur program, indikator, dan unit assignment",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentIkuItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "CreateDefaultProgramIndicatorDto": {
@@ -4716,401 +5674,6 @@
             }
           }
         }
-      },
-      "UnitDetailDataDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
-          },
-          "name": {
-            "type": "string",
-            "example": "Unit baru"
-          },
-          "description": {
-            "type": "string",
-            "example": "Contoh update"
-          },
-          "createdAt": {
-            "type": "string",
-            "example": "2026-07-16T05:57:46.935Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "example": "2026-07-16T05:57:53.912Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UnitUserDetailDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "name": {
-            "type": "string",
-            "example": "string"
-          },
-          "nip": {
-            "type": "string",
-            "example": "string"
-          },
-          "type": {
-            "type": "string",
-            "example": "EMPLOYEE"
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "deletedAt": {
-            "type": "string",
-            "example": "2026-07-21T04:46:27.563Z"
-          },
-          "createdAt": {
-            "type": "string",
-            "example": "2026-07-21T04:46:27.563Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "example": "2026-07-21T04:46:27.563Z"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "IkuMetadataDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "69391cba-5eeb-4218-80fd-596e2c096171"
-          },
-          "code": {
-            "type": "string",
-            "example": "IKU 4.2"
-          },
-          "name": {
-            "type": "string",
-            "example": "Zona Integritas yang Terdiri dari Wilayah Bebas dari korupsi (WBK)"
-          },
-          "unit": {
-            "type": "string",
-            "example": "number"
-          },
-          "isDirectInput": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "unit",
-          "isDirectInput"
-        ]
-      },
-      "UnitIkuDetailDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "d48e1cf2-1b39-41a6-8d2b-e9bdd08ff22b"
-          },
-          "unitId": {
-            "type": "string",
-            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
-          },
-          "ikuId": {
-            "type": "string",
-            "example": "69391cba-5eeb-4218-80fd-596e2c096171"
-          },
-          "createdAt": {
-            "type": "string",
-            "example": "2026-07-21T04:37:50.533Z"
-          },
-          "iku": {
-            "$ref": "#/components/schemas/IkuMetadataDto"
-          },
-          "defaultPrograms": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DefaultProgramDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "unitId",
-          "ikuId",
-          "createdAt",
-          "iku",
-          "defaultPrograms"
-        ]
-      },
-      "UnitDetailsResponseDto": {
-        "type": "object",
-        "properties": {
-          "unit": {
-            "$ref": "#/components/schemas/UnitDetailDataDto"
-          },
-          "users": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UnitUserDetailDto"
-            }
-          },
-          "ikus": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UnitIkuDetailDto"
-            }
-          }
-        },
-        "required": [
-          "unit",
-          "users",
-          "ikus"
-        ]
-      },
-      "CreateUnitDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Unit A"
-          },
-          "description": {
-            "type": "string",
-            "example": "Description for Unit A"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "UpdateUnitDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Unit A"
-          },
-          "description": {
-            "type": "string",
-            "example": "Description for Unit A"
-          }
-        }
-      },
-      "AssignUserDto": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "string",
-            "example": "3cff6c0a-276d-4bf9-b502-a8113a01478d"
-          },
-          "type": {
-            "type": "string",
-            "example": "PIC"
-          }
-        },
-        "required": [
-          "userId",
-          "type"
-        ]
-      },
-      "AssignUnitPayloadDto": {
-        "type": "object",
-        "properties": {
-          "users": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AssignUserDto"
-            }
-          }
-        },
-        "required": [
-          "users"
-        ]
-      },
-      "UnitProgramDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
-          },
-          "code": {
-            "type": "string",
-            "example": "PRG-01"
-          },
-          "title": {
-            "type": "string",
-            "example": "Program title"
-          },
-          "description": {
-            "type": "object",
-            "example": "description"
-          },
-          "objective": {
-            "type": "object",
-            "example": "objective"
-          },
-          "year": {
-            "type": "number",
-            "example": 2026
-          },
-          "createdBy": {
-            "type": "string",
-            "example": "user-id"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-07-21T04:46:27.563Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-07-21T04:46:27.563Z"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "title",
-          "year",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UnitProgramIndicatorRealizationDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "id"
-          },
-          "month": {
-            "type": "number",
-            "example": 1
-          },
-          "realization": {
-            "type": "number",
-            "example": 10
-          },
-          "remark": {
-            "type": "object",
-            "example": "remark"
-          }
-        },
-        "required": [
-          "id",
-          "month",
-          "realization"
-        ]
-      },
-      "UnitProgramIndicatorDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "id"
-          },
-          "name": {
-            "type": "string",
-            "example": "name"
-          },
-          "unit": {
-            "type": "string",
-            "example": "unit"
-          },
-          "targetQ1": {
-            "type": "object",
-            "example": 10
-          },
-          "targetQ2": {
-            "type": "object",
-            "example": 20
-          },
-          "targetQ3": {
-            "type": "object",
-            "example": 30
-          },
-          "targetQ4": {
-            "type": "object",
-            "example": 40
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ASSIGNED_TO_UNIT",
-              "DRAFT",
-              "SUBMITTED",
-              "REVISION",
-              "APPROVED",
-              "REJECTED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "CANCELLED"
-            ],
-            "example": "DRAFT"
-          },
-          "order": {
-            "type": "number",
-            "example": 1
-          },
-          "realizations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UnitProgramIndicatorRealizationDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "unit",
-          "status",
-          "order",
-          "realizations"
-        ]
-      },
-      "UnitProgramResponseDto": {
-        "type": "object",
-        "properties": {
-          "program": {
-            "$ref": "#/components/schemas/UnitProgramDto"
-          },
-          "indikator": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UnitProgramIndicatorDto"
-            }
-          }
-        },
-        "required": [
-          "program",
-          "indikator"
-        ]
       },
       "IkuResponseDto": {
         "type": "object",
@@ -5360,6 +5923,94 @@
           "name",
           "parentId"
         ]
+      },
+      "MasterUnitTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Master Unit Type UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dokumen",
+            "description": "Name of the unit type"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NUMBER",
+              "FILE",
+              "TEXT"
+            ],
+            "example": "FILE",
+            "description": "Type of the unit (NUMBER, FILE, TEXT)"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateMasterUnitTypeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Dokumen",
+            "description": "Name of the unit type"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NUMBER",
+              "FILE",
+              "TEXT"
+            ],
+            "example": "FILE",
+            "description": "Type of the unit (NUMBER, FILE, TEXT)"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "UpdateMasterUnitTypeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Dokumen",
+            "description": "Name of the unit type"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NUMBER",
+              "FILE",
+              "TEXT"
+            ],
+            "example": "FILE",
+            "description": "Type of the unit (NUMBER, FILE, TEXT)"
+          }
+        }
       }
     }
   }

@@ -18,7 +18,7 @@ export class ActivityRepository implements IActivityRepository {
   async findById(id: string): Promise<Activity | null> {
     return this.prisma.activity.findUnique({
       where: { id },
-      include: { outputs: true, progressLogs: { orderBy: { createdAt: 'desc' } }, evidences: true },
+      include: { outputs: true, progressLogs: { orderBy: { createdAt: 'desc' } }, documents: true },
     });
   }
 
