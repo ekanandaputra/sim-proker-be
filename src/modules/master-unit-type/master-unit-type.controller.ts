@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse, ApiProduces, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { MasterUnitTypeService } from './master-unit-type.service';
 import { 
   CreateMasterUnitTypeDto, 
@@ -33,6 +35,51 @@ export class MasterUnitTypeController {
     @Query(new ZodValidationPipe(paginationQuerySchema)) query: PaginationQuery,
   ) {
     return this.masterUnitTypeService.findAll(query);
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export master unit types to Excel' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file downloaded',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.masterUnitTypeService.exportExcel();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="master-unit-types.xlsx"');
+    res.send(buffer);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import master unit types from Excel (XLSX)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async importExcel(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    return this.masterUnitTypeService.importExcel(file.buffer);
   }
 
   @Get(':id')

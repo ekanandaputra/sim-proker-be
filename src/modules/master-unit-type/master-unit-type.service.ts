@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
+import { MasterUnitTypeEnum } from '@prisma/client';
 import { EntityNotFoundException } from '@common/exceptions';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
 import { CreateMasterUnitTypeDto, UpdateMasterUnitTypeDto, MasterUnitTypeDto } from './dto/master-unit-type.dto';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class MasterUnitTypeService {
@@ -43,6 +45,80 @@ export class MasterUnitTypeService {
         totalPages,
       },
     };
+  }
+
+  async exportExcel(): Promise<Buffer> {
+    const masterUnitTypes = await this.prisma.masterUnitType.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const excelData = masterUnitTypes.map((mut) => ({
+      'Name': mut.name,
+      'Type': mut.type,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Master Unit Types');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
+
+  async importExcel(buffer: Buffer): Promise<{ createdCount: number; skippedCount: number }> {
+    // Parse XLSX file
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new BadRequestException('Excel file has no sheets');
+    }
+    const rows: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if (rows.length === 0) {
+      throw new BadRequestException('Excel file has no data rows');
+    }
+
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const row of rows) {
+      const name = row['Name'];
+      let type = row['Type'];
+
+      if (!name || !type) {
+        this.logger.warn(`Skipping invalid row: missing required fields (Name or Type)`);
+        continue;
+      }
+
+      // Convert type to uppercase to match enum
+      type = type.toString().toUpperCase();
+
+      if (!Object.values(MasterUnitTypeEnum).includes(type)) {
+         this.logger.warn(`Skipping invalid row: Type must be one of ${Object.values(MasterUnitTypeEnum).join(', ')}`);
+         skippedCount++;
+         continue;
+      }
+
+      // Check for duplicate: same name
+      const existing = await this.prisma.masterUnitType.findFirst({
+        where: { name },
+      });
+
+      if (existing) {
+        this.logger.warn(`Skipping duplicate master unit type: name=${name}`);
+        skippedCount++;
+        continue;
+      }
+
+      await this.prisma.masterUnitType.create({
+        data: {
+          name,
+          type: type as MasterUnitTypeEnum,
+        },
+      });
+      createdCount++;
+    }
+
+    return { createdCount, skippedCount };
   }
 
   async findById(id: string): Promise<MasterUnitTypeDto> {
