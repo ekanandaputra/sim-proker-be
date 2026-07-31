@@ -159,7 +159,7 @@ export class DefaultProgramService {
       data: {
         defaultProgramId,
         name: data.name,
-        unit: data.unit,
+        masterUnitTypeId: data.masterUnitTypeId,
         order: data.order || 0,
       }
     });
@@ -223,7 +223,7 @@ export class DefaultProgramService {
             programId: program.id,
             unitId,
             name: ind.name,
-            unit: ind.unit,
+            masterUnitTypeId: ind.masterUnitTypeId,
             status: ProgramStatus.ASSIGNED_TO_UNIT,
             order: ind.order,
           }))
@@ -231,16 +231,22 @@ export class DefaultProgramService {
         createdCount += indicatorsToCreate.length;
       }
     } else {
-      if (!existingIndicatorNames.has(dp.title)) {
-        await this.prisma.programIndicator.create({
-          data: {
-            programId: program.id,
-            unitId,
-            name: dp.title, // Default name based on program title or default program title
-            unit: 'N/A', // Default unit
-            status: ProgramStatus.ASSIGNED_TO_UNIT,
-          }
-        });
+        // For title, we need a default master unit type or we might have a problem if it's required.
+        // It's better to find a default one, e.g. "N/A"
+        let defaultUnit = await this.prisma.masterUnitType.findFirst({ where: { name: 'N/A' } });
+        if (!defaultUnit) {
+          defaultUnit = await this.prisma.masterUnitType.create({ data: { name: 'N/A', type: 'TEXT' } });
+        }
+        if (!existingIndicatorNames.has(dp.title)) {
+          await this.prisma.programIndicator.create({
+            data: {
+              programId: program.id,
+              unitId,
+              name: dp.title, // Default name based on program title or default program title
+              masterUnitTypeId: defaultUnit.id, // Default unit
+              status: ProgramStatus.ASSIGNED_TO_UNIT,
+            }
+          });
         createdCount++;
       }
     }
@@ -302,7 +308,7 @@ export class DefaultProgramService {
         programId: program.id,
         unitId,
         name: ind.name,
-        unit: ind.unit,
+        masterUnitTypeId: ind.masterUnitTypeId,
         status: ProgramStatus.ASSIGNED_TO_UNIT,
         order: ind.order,
       }
@@ -413,7 +419,7 @@ export class DefaultProgramService {
           return {
             id: ind.id,
             name: ind.name,
-            unit: ind.unit,
+            masterUnitTypeId: ind.masterUnitTypeId,
             order: ind.order || indIndex + 1,
             assignedUnits,
             isAssigned,
@@ -545,14 +551,15 @@ export class DefaultProgramService {
     const indicators = await this.prisma.defaultProgramIndicator.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        defaultProgram: true
+        defaultProgram: true,
+        masterUnitType: true,
       }
     });
 
     const excelData = indicators.map((ind) => ({
       'Default Program Title': ind.defaultProgram.title,
       'Indicator Name': ind.name,
-      'Unit': ind.unit,
+      'Unit': ind.masterUnitType.name,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -617,11 +624,24 @@ export class DefaultProgramService {
         continue;
       }
 
+      // Find or Create MasterUnitType
+      let masterUnitType = await this.prisma.masterUnitType.findFirst({
+        where: { name: unit }
+      });
+      if (!masterUnitType) {
+        masterUnitType = await this.prisma.masterUnitType.create({
+          data: {
+            name: unit,
+            type: 'TEXT',
+          }
+        });
+      }
+
       await this.prisma.defaultProgramIndicator.create({
         data: {
           defaultProgramId: dp.id,
           name,
-          unit,
+          masterUnitTypeId: masterUnitType.id,
         },
       });
       createdCount++;

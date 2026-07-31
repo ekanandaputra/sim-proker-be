@@ -101,7 +101,7 @@ model ProgramIndicator {
   programId String        @map("program_id")
   unitId    String        @map("unit_id")
   name      String        @db.VarChar(255)
-  unit      String        @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  masterUnitTypeId String         @map("master_unit_type_id")
   targetQ1  Decimal?      @map("target_q1") @db.Decimal(10, 2)
   targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
   targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
@@ -114,6 +114,7 @@ model ProgramIndicator {
 
   // Relations
   program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  masterUnitType MasterUnitType              @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
   realizations ProgramIndicatorRealization[]
   pics         ProgramIndicatorPic[]
 
@@ -348,12 +349,13 @@ model DefaultProgramIndicator {
   id               String   @id @default(uuid())
   defaultProgramId String   @map("default_program_id")
   name             String   @db.VarChar(255)
-  unit             String   @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  masterUnitTypeId String   @map("master_unit_type_id")
   order            Int      @default(0)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   defaultProgram DefaultProgram @relation(fields: [defaultProgramId], references: [id], onDelete: Cascade)
+  masterUnitType MasterUnitType @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
 
   @@index([defaultProgramId])
   @@map("default_program_indicators")
@@ -376,6 +378,9 @@ model MasterUnitType {
   type      MasterUnitTypeEnum
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
+
+  defaultProgramIndicators DefaultProgramIndicator[]
+  programIndicators        ProgramIndicator[]
 
   @@map("master_unit_types")
 }

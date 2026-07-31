@@ -5,8 +5,8 @@ export class CreateDefaultProgramIndicatorDto {
   @ApiProperty({ example: 'Jumlah Laporan', description: 'Indicator name' })
   name!: string;
 
-  @ApiProperty({ example: 'Dokumen', description: 'Indicator unit' })
-  unit!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  masterUnitTypeId!: string;
 
   @ApiPropertyOptional({ example: 1, description: 'Order of the indicator' })
   order?: number;
@@ -18,14 +18,14 @@ export const createDefaultProgramSchema = z.object({
   description: z.string().optional(),
   indicators: z.array(z.object({
     name: z.string().min(1, 'indicator name is required'),
-    unit: z.string().min(1, 'indicator unit is required'),
+    masterUnitTypeId: z.string().uuid('masterUnitTypeId must be a valid UUID'),
     order: z.number().int().default(0),
   })).optional(),
 });
 
 export const addDefaultProgramIndicatorSchema = z.object({
   name: z.string().min(1, 'indicator name is required'),
-  unit: z.string().min(1, 'indicator unit is required'),
+  masterUnitTypeId: z.string().uuid('masterUnitTypeId must be a valid UUID'),
   order: z.number().int().default(0).optional(),
 });
 
@@ -69,7 +69,7 @@ export class DefaultProgramIndicatorDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003', description: 'Indicator UUID' }) id!: string;
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Default Program UUID' }) defaultProgramId!: string;
   @ApiProperty({ example: 'Jumlah Laporan' }) name!: string;
-  @ApiProperty({ example: 'Dokumen' }) unit!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x' }) masterUnitTypeId!: string;
   @ApiProperty({ example: 1 }) order!: number;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
@@ -138,8 +138,8 @@ export class AssignmentIndicatorDto {
   @ApiProperty({ example: 'Jumlah Publikasi', description: 'Nama indikator' })
   name!: string;
 
-  @ApiProperty({ example: 'Dokumen', description: 'Satuan indikator' })
-  unit!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  masterUnitTypeId!: string;
 
   @ApiProperty({ example: 1, description: 'Urutan indikator' })
   order!: number;

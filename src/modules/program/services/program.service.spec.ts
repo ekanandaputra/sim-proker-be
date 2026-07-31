@@ -44,7 +44,14 @@ describe('ProgramService', () => {
       log: vi.fn(),
     };
 
-    service = new ProgramService(repository, auditLogService);
+    const prismaService = {
+      masterUnitType: {
+        findFirst: vi.fn(),
+        create: vi.fn(),
+      }
+    };
+
+    service = new ProgramService(repository, auditLogService, prismaService as any);
   });
 
   describe('findAll', () => {

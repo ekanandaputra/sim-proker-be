@@ -41,6 +41,7 @@ export class ProgramIndicatorService {
       orderBy: { order: 'asc' },
       include: {
         pics: true,
+        masterUnitType: true,
       }
     });
 
@@ -60,7 +61,7 @@ export class ProgramIndicatorService {
     return indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
-      unit_measurement: indicator.unit, // preserve the original unit measurement string if needed, although user wants 'property unit'
+      masterUnitType: indicator.masterUnitType,
       picIds: indicator.pics.map(p => p.userId),
     }));
   }
