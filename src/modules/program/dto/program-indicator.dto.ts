@@ -13,7 +13,6 @@ export const createProgramIndicatorSchema = z.object({
   targetQ4: z.number().nullable().optional(),
   budget: z.number().nullable().optional(),
   picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
-  status: z.nativeEnum(ProgramStatus).optional(),
   order: z.number().int().default(0),
 });
 
@@ -44,9 +43,6 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
-
-  @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
-  status?: ProgramStatus;
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
@@ -82,9 +78,6 @@ export class UpdateProgramIndicatorDto {
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
-
-  @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
-  status?: ProgramStatus;
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
