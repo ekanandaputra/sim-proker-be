@@ -4,6 +4,9 @@ import { EntityNotFoundException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-realization.dto';
 import { UnitService } from '../../unit/services/unit.service';
+import { AuditLogService } from '../../audit-log/services/audit-log.service';
+import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
+import { AuditAction } from '@prisma/client';
 
 @Injectable()
 export class ProgramIndicatorService {
@@ -12,12 +15,33 @@ export class ProgramIndicatorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
+    private readonly auditLogService: AuditLogService,
+    private readonly authIntegrationService: AuthIntegrationService,
   ) {}
+
+  private async getPicNames(picIds: string[], token?: string): Promise<{ id: string; name: string }[]> {
+    if (!picIds || picIds.length === 0) return [];
+    try {
+      // Fetch users with a large limit to hopefully catch the PICs
+      const response = await this.authIntegrationService.getAllUsers(token, { page: 1, limit: 10000, sortOrder: 'desc' });
+      const users = response.items || [];
+      return picIds.map(id => {
+        const found = users.find(u => u.id === id);
+        return { id, name: found?.name || id };
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to fetch pic names: ${(e as Error).message}`);
+      return picIds.map(id => ({ id, name: id }));
+    }
+  }
 
   async findAllByProgramId(programId: string, token: string) {
     const indicators = await this.prisma.programIndicator.findMany({
       where: { programId },
       orderBy: { order: 'asc' },
+      include: {
+        pics: true,
+      }
     });
 
     // Fetch unit info for all unique unitIds
@@ -37,41 +61,105 @@ export class ProgramIndicatorService {
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
       unit_measurement: indicator.unit, // preserve the original unit measurement string if needed, although user wants 'property unit'
+      picIds: indicator.pics.map(p => p.userId),
     }));
   }
 
-  async create(programId: string, dto: CreateProgramIndicatorDto) {
+  async create(programId: string, dto: CreateProgramIndicatorDto, user: { id: string, name: string }, token?: string) {
+    const { picIds, ...rest } = dto;
     // Check if program exists
     const program = await this.prisma.program.findUnique({ where: { id: programId } });
     if (!program) {
       throw new EntityNotFoundException('Program', programId);
     }
 
-    return this.prisma.programIndicator.create({
+    const indicator = await this.prisma.programIndicator.create({
       data: {
-        ...dto,
+        ...rest,
         programId,
+        pics: picIds ? {
+          create: picIds.map(userId => ({ userId }))
+        } : undefined
       },
+      include: {
+        pics: true,
+      }
     });
+
+    const picsWithName = await this.getPicNames(indicator.pics.map(p => p.userId), token);
+
+    await this.auditLogService.log({
+      action: AuditAction.CREATE,
+      entityType: 'ProgramIndicator',
+      entityId: indicator.id,
+      userId: user.id,
+      userName: user.name,
+      newValue: {
+        ...indicator,
+        pics: picsWithName,
+      } as unknown as Record<string, unknown>
+    });
+
+    return {
+      ...indicator,
+      picIds: indicator.pics.map(p => p.userId),
+    };
   }
 
-  async update(programId: string, id: string, dto: UpdateProgramIndicatorDto) {
+  async update(programId: string, id: string, dto: UpdateProgramIndicatorDto, user: { id: string, name: string }, token?: string) {
+    const { picIds, ...rest } = dto;
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id, programId },
+      include: { pics: true }
     });
     if (!indicator) {
       throw new EntityNotFoundException('ProgramIndicator', id);
     }
+    
+    const oldPicsWithName = await this.getPicNames(indicator.pics.map(p => p.userId), token);
 
-    return this.prisma.programIndicator.update({
+    const updated = await this.prisma.programIndicator.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        pics: picIds ? {
+          deleteMany: {},
+          create: picIds.map(userId => ({ userId }))
+        } : undefined
+      },
+      include: {
+        pics: true,
+      }
     });
+
+    const newPicsWithName = await this.getPicNames(updated.pics.map(p => p.userId), token);
+
+    await this.auditLogService.log({
+      action: AuditAction.UPDATE,
+      entityType: 'ProgramIndicator',
+      entityId: updated.id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: {
+        ...indicator,
+        pics: oldPicsWithName,
+      } as unknown as Record<string, unknown>,
+      newValue: {
+        ...updated,
+        pics: newPicsWithName,
+      } as unknown as Record<string, unknown>
+    });
+
+    return {
+      ...updated,
+      picIds: updated.pics.map(p => p.userId),
+    };
   }
 
-  async remove(programId: string, id: string) {
+  async remove(programId: string, id: string, user: { id: string, name: string }) {
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id, programId },
+      include: { pics: true }
     });
     if (!indicator) {
       throw new EntityNotFoundException('ProgramIndicator', id);
@@ -80,9 +168,18 @@ export class ProgramIndicatorService {
     await this.prisma.programIndicator.delete({
       where: { id },
     });
+
+    await this.auditLogService.log({
+      action: AuditAction.DELETE,
+      entityType: 'ProgramIndicator',
+      entityId: id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: indicator as unknown as Record<string, unknown>,
+    });
   }
 
-  async setTarget(programId: string, id: string, dto: SetIndicatorTargetDto) {
+  async setTarget(programId: string, id: string, dto: SetIndicatorTargetDto, user: { id: string, name: string }) {
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id, programId },
     });
@@ -93,13 +190,25 @@ export class ProgramIndicatorService {
     // Ubah status ke IN_PROGRESS jika sebelumnya ASSIGNED_TO_UNIT
     const newStatus = indicator.status === 'ASSIGNED_TO_UNIT' ? 'IN_PROGRESS' : indicator.status;
 
-    return this.prisma.programIndicator.update({
+    const updated = await this.prisma.programIndicator.update({
       where: { id },
       data: {
         ...dto,
         status: newStatus,
       },
     });
+
+    await this.auditLogService.log({
+      action: AuditAction.UPDATE,
+      entityType: 'ProgramIndicator',
+      entityId: id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: indicator as unknown as Record<string, unknown>,
+      newValue: updated as unknown as Record<string, unknown>,
+    });
+
+    return updated;
   }
 
   async getRealizations(programId: string, indicatorId: string) {
@@ -110,13 +219,23 @@ export class ProgramIndicatorService {
       throw new EntityNotFoundException('ProgramIndicator', indicatorId);
     }
 
-    return this.prisma.programIndicatorRealization.findMany({
+    const realizations = await this.prisma.programIndicatorRealization.findMany({
       where: { indicatorId },
       orderBy: { month: 'asc' },
+      include: {
+        documents: {
+          include: { document: true }
+        }
+      }
     });
+
+    return realizations.map(r => ({
+      ...r,
+      documents: r.documents.map(rd => rd.document)
+    }));
   }
 
-  async upsertRealization(programId: string, indicatorId: string, dto: CreateProgramIndicatorRealizationDto) {
+  async upsertRealization(programId: string, indicatorId: string, dto: CreateProgramIndicatorRealizationDto, user: { id: string, name: string }) {
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id: indicatorId, programId },
     });
@@ -124,7 +243,17 @@ export class ProgramIndicatorService {
       throw new EntityNotFoundException('ProgramIndicator', indicatorId);
     }
 
-    return this.prisma.programIndicatorRealization.upsert({
+    const oldRealization = await this.prisma.programIndicatorRealization.findUnique({
+      where: {
+        indicatorId_month: {
+          indicatorId,
+          month: dto.month,
+        }
+      },
+      include: { documents: { include: { document: true } } }
+    });
+
+    const realization = await this.prisma.programIndicatorRealization.upsert({
       where: {
         indicatorId_month: {
           indicatorId,
@@ -134,13 +263,40 @@ export class ProgramIndicatorService {
       update: {
         realization: dto.realization,
         remark: dto.remark,
+        documents: dto.documentIds ? {
+          deleteMany: {},
+          create: dto.documentIds.map(id => ({ documentId: id })),
+        } : undefined,
       },
       create: {
         indicatorId,
         month: dto.month,
         realization: dto.realization,
         remark: dto.remark,
+        documents: dto.documentIds ? {
+          create: dto.documentIds.map(id => ({ documentId: id })),
+        } : undefined,
+      },
+      include: {
+        documents: {
+          include: { document: true }
+        }
       }
     });
+
+    await this.auditLogService.log({
+      action: oldRealization ? AuditAction.UPDATE : AuditAction.CREATE,
+      entityType: 'ProgramIndicatorRealization',
+      entityId: realization.id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: oldRealization ? (oldRealization as unknown as Record<string, unknown>) : undefined,
+      newValue: realization as unknown as Record<string, unknown>,
+    });
+
+    return {
+      ...realization,
+      documents: realization.documents.map(d => d.document)
+    };
   }
 }

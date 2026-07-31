@@ -6,6 +6,8 @@ import { UnitService } from '../../unit/services/unit.service';
 import { IkuService } from '../../iku/services/iku.service';
 import { CreateDefaultProgramDto, UpdateDefaultProgramDto, DefaultProgramDto, AssignDefaultProgramDto, AssignDefaultProgramIndicatorDto, CreateDefaultProgramIndicatorDto } from '../dto/default-program.dto';
 import { ProgramService } from '../../program/services/program.service';
+import { AuditLogService } from '../../audit-log/services/audit-log.service';
+import { AuditAction } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PaginationQuery, PaginatedResponse } from '@common/dto/pagination.dto';
 import * as Papa from 'papaparse';
@@ -19,6 +21,7 @@ export class DefaultProgramService {
     private readonly programService: ProgramService,
     private readonly unitService: UnitService,
     private readonly ikuService: IkuService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async findAll(query: PaginationQuery): Promise<PaginatedResponse<DefaultProgramDto>> {
@@ -76,9 +79,9 @@ export class DefaultProgramService {
     });
   }
 
-  async create(data: CreateDefaultProgramDto): Promise<DefaultProgramDto> {
+  async create(data: CreateDefaultProgramDto, user: { id: string, name: string }): Promise<DefaultProgramDto> {
     const { indicators, ...rest } = data;
-    return this.prisma.defaultProgram.create({
+    const created = await this.prisma.defaultProgram.create({
       data: {
         ...rest,
         indicators: indicators?.length ? {
@@ -87,10 +90,21 @@ export class DefaultProgramService {
       },
       include: { indicators: true },
     });
+
+    await this.auditLogService.log({
+      action: AuditAction.CREATE,
+      entityType: 'DefaultProgram',
+      entityId: created.id,
+      userId: user.id,
+      userName: user.name,
+      newValue: created as unknown as Record<string, unknown>,
+    });
+
+    return created;
   }
 
-  async update(id: string, data: UpdateDefaultProgramDto): Promise<DefaultProgramDto> {
-    await this.findById(id); // Check existence
+  async update(id: string, data: UpdateDefaultProgramDto, user: { id: string, name: string }): Promise<DefaultProgramDto> {
+    const oldProgram = await this.findById(id); // Check existence
     const { indicators, ...rest } = data;
     
     // For simplicity, if indicators are provided in update, we replace all existing ones.
@@ -103,30 +117,60 @@ export class DefaultProgramService {
       };
     }
 
-    return this.prisma.defaultProgram.update({
+    const updated = await this.prisma.defaultProgram.update({
       where: { id },
       data: updateData,
       include: { indicators: true },
     });
+
+    await this.auditLogService.log({
+      action: AuditAction.UPDATE,
+      entityType: 'DefaultProgram',
+      entityId: id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: oldProgram as unknown as Record<string, unknown>,
+      newValue: updated as unknown as Record<string, unknown>,
+    });
+
+    return updated;
   }
 
-  async remove(id: string): Promise<void> {
-    await this.findById(id); // Check existence
+  async remove(id: string, user: { id: string, name: string }): Promise<void> {
+    const oldProgram = await this.findById(id); // Check existence
     await this.prisma.defaultProgram.delete({
       where: { id },
     });
+
+    await this.auditLogService.log({
+      action: AuditAction.DELETE,
+      entityType: 'DefaultProgram',
+      entityId: id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: oldProgram as unknown as Record<string, unknown>,
+    });
   }
 
-  async addIndicator(defaultProgramId: string, data: CreateDefaultProgramIndicatorDto): Promise<DefaultProgramDto> {
+  async addIndicator(defaultProgramId: string, data: CreateDefaultProgramIndicatorDto, user: { id: string, name: string }): Promise<DefaultProgramDto> {
     await this.findById(defaultProgramId); // Check existence
     
-    await this.prisma.defaultProgramIndicator.create({
+    const indicator = await this.prisma.defaultProgramIndicator.create({
       data: {
         defaultProgramId,
         name: data.name,
         unit: data.unit,
         order: data.order || 0,
       }
+    });
+
+    await this.auditLogService.log({
+      action: AuditAction.CREATE,
+      entityType: 'DefaultProgramIndicator',
+      entityId: indicator.id,
+      userId: user.id,
+      userName: user.name,
+      newValue: indicator as unknown as Record<string, unknown>,
     });
 
     return this.findById(defaultProgramId);

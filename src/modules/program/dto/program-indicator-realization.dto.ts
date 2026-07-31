@@ -1,10 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
+import { DocumentResponseDto } from '../../document/dto/document.dto';
 
 export const programIndicatorRealizationSchema = z.object({
   month: z.number().int().min(1).max(12),
   realization: z.number().nonnegative(),
   remark: z.string().optional(),
+  documentIds: z.array(z.string().uuid()).optional(),
 });
 
 export class CreateProgramIndicatorRealizationDto {
@@ -16,6 +18,9 @@ export class CreateProgramIndicatorRealizationDto {
 
   @ApiPropertyOptional({ description: 'Optional remark/note', example: 'Target exceeded due to...' })
   remark?: string;
+
+  @ApiPropertyOptional({ description: 'Array of document UUIDs to attach', example: ['550e8400-e29b-41d4-a716-446655440000'] })
+  documentIds?: string[];
 }
 
 export class ProgramIndicatorRealizationResponseDto {
@@ -39,4 +44,7 @@ export class ProgramIndicatorRealizationResponseDto {
 
   @ApiProperty()
   updatedAt!: Date;
+
+  @ApiPropertyOptional({ type: () => [DocumentResponseDto] })
+  documents?: DocumentResponseDto[];
 }

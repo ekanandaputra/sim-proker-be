@@ -1,49 +1,52 @@
 import {
   Controller, Get, Post, Delete, Param, UseGuards, UseInterceptors,
   UploadedFile, HttpCode, HttpStatus, ParseFilePipe, MaxFileSizeValidator,
+  Body, ParseEnumPipe
 } from '@nestjs/common';
 import 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { EvidenceService } from '../services/evidence.service';
-import { EvidenceResponseDto } from '../dto/evidence.dto';
+import { DocumentService } from '../services/document.service';
+import { DocumentResponseDto } from '../dto/document.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { JwtPayload } from '@common/guards';
 import { getAppConfig } from '@common/config';
+import { DocumentType } from '@prisma/client';
 
-@ApiTags('Evidences')
+@ApiTags('Documents')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
-export class EvidenceController {
-  constructor(private readonly evidenceService: EvidenceService) {}
+export class DocumentController {
+  constructor(private readonly documentService: DocumentService) {}
 
-  @Get('activities/:id/evidences')
-  @ApiOperation({ summary: 'List evidences for an activity' })
+  @Get('activities/:id/documents')
+  @ApiOperation({ summary: 'List documents for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
-  @ApiPaginatedResponse(EvidenceResponseDto)
+  @ApiPaginatedResponse(DocumentResponseDto)
   async findByActivity(@Param('id') activityId: string) {
-    return this.evidenceService.findByActivityId(activityId);
+    return this.documentService.findByActivityId(activityId);
   }
 
-  @Post('activities/:id/evidences')
+  @Post('activities/:id/documents')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload evidence file for an activity' })
+  @ApiOperation({ summary: 'Upload document file for an activity' })
   @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         file: { type: 'string', format: 'binary', description: 'The file to upload (max 10MB)' },
+        type: { type: 'string', enum: ['EVIDENCE', 'RAB', 'PROPOSAL', 'OTHER'], description: 'Type of document' },
       },
-      required: ['file'],
+      required: ['file', 'type'],
     },
   })
-  @ApiResponse({ status: 201, description: 'Evidence uploaded', type: EvidenceResponseDto })
+  @ApiResponse({ status: 201, description: 'Document uploaded', type: DocumentResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed or file too large' })
   @ApiResponse({ status: 404, description: 'Activity not found' })
   async upload(
@@ -54,19 +57,20 @@ export class EvidenceController {
       }),
     )
     file: Express.Multer.File,
+    @Body('type', new ParseEnumPipe(DocumentType)) type: DocumentType,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.evidenceService.upload(activityId, file, user.userId);
+    return this.documentService.upload(activityId, file, type, user.userId);
   }
 
-  @Delete('evidences/:id')
+  @Delete('documents/:id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete evidence' })
-  @ApiParam({ name: 'id', description: 'Evidence UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Evidence deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Evidence not found' })
+  @ApiOperation({ summary: 'Delete document' })
+  @ApiParam({ name: 'id', description: 'Document UUID', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Document deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Document not found' })
   async remove(@Param('id') id: string) {
-    await this.evidenceService.remove(id);
-    return { message: 'Evidence deleted successfully' };
+    await this.documentService.remove(id);
+    return { message: 'Document deleted successfully' };
   }
 }

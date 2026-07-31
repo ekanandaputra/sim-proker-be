@@ -171,8 +171,12 @@ export class DefaultProgramController {
   @ApiBody({ type: CreateDefaultProgramDto })
   @ApiResponse({ status: 201, type: DefaultProgramDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
-  async create(@Body(new ZodValidationPipe(createDefaultProgramSchema)) dto: CreateDefaultProgramDto) {
-    return this.defaultProgramService.create(dto);
+  async create(
+    @Body(new ZodValidationPipe(createDefaultProgramSchema)) dto: CreateDefaultProgramDto,
+    @Req() req: any
+  ) {
+    const user = { id: req.user?.id, name: req.user?.name };
+    return this.defaultProgramService.create(dto, user);
   }
 
   @Post(':id/indicators')
@@ -184,9 +188,11 @@ export class DefaultProgramController {
   @ApiResponse({ status: 404, description: 'Default program not found' })
   async addIndicator(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(addDefaultProgramIndicatorSchema)) dto: CreateDefaultProgramIndicatorDto
+    @Body(new ZodValidationPipe(addDefaultProgramIndicatorSchema)) dto: CreateDefaultProgramIndicatorDto,
+    @Req() req: any
   ) {
-    return this.defaultProgramService.addIndicator(id, dto);
+    const user = { id: req.user?.id, name: req.user?.name };
+    return this.defaultProgramService.addIndicator(id, dto, user);
   }
 
   @Post('assign-to-unit')
@@ -226,9 +232,11 @@ export class DefaultProgramController {
   @ApiResponse({ status: 404, description: 'Default program not found' })
   async update(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(updateDefaultProgramSchema)) dto: UpdateDefaultProgramDto
+    @Body(new ZodValidationPipe(updateDefaultProgramSchema)) dto: UpdateDefaultProgramDto,
+    @Req() req: any
   ) {
-    return this.defaultProgramService.update(id, dto);
+    const user = { id: req.user?.id, name: req.user?.name };
+    return this.defaultProgramService.update(id, dto, user);
   }
 
   @Delete(':id')
@@ -236,8 +244,9 @@ export class DefaultProgramController {
   @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
   @ApiResponse({ status: 200, description: 'Deleted successfully' })
   @ApiResponse({ status: 404, description: 'Default program not found' })
-  async remove(@Param('id') id: string) {
-    await this.defaultProgramService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    const user = { id: req.user?.id, name: req.user?.name };
+    await this.defaultProgramService.remove(id, user);
     return { success: true };
   }
 }

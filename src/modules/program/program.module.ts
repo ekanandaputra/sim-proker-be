@@ -9,9 +9,10 @@ import { PROGRAM_REPOSITORY } from './repositories/program.repository.interface'
 import { getAppConfig } from '@common/config';
 
 import { UnitModule } from '../unit/unit.module';
+import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
 
 @Module({
-  imports: [UnitModule],
+  imports: [UnitModule, AuthIntegrationModule],
   controllers: [ProgramController, ProgramIndicatorController],
   providers: [
     ProgramService,
