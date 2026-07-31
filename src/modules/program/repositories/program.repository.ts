@@ -34,7 +34,6 @@ export class ProgramRepository implements IProgramRepository {
         indicators: true,
         activities: true,
         members: true,
-        approvals: { orderBy: { createdAt: 'desc' } },
       },
     });
   }

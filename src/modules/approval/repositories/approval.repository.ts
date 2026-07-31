@@ -7,9 +7,9 @@ import { IApprovalRepository } from './approval.repository.interface';
 export class ApprovalRepository implements IApprovalRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findByProgramId(programId: string): Promise<Approval[]> {
+  async findByIndicatorId(indicatorId: string): Promise<Approval[]> {
     return this.prisma.approval.findMany({
-      where: { programId },
+      where: { indicatorId },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -26,9 +26,9 @@ export class ApprovalRepository implements IApprovalRepository {
     return this.prisma.approval.update({ where: { id }, data });
   }
 
-  async findLatestByProgramId(programId: string): Promise<Approval | null> {
+  async findLatestByIndicatorId(indicatorId: string): Promise<Approval | null> {
     return this.prisma.approval.findFirst({
-      where: { programId },
+      where: { indicatorId },
       orderBy: { createdAt: 'desc' },
     });
   }

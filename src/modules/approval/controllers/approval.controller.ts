@@ -17,25 +17,16 @@ import { Role } from '@common/constants';
 export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
 
-  @Post('programs/:id/submit')
-  @Roles(Role.ADMIN, Role.UNIT_ADMIN, Role.PIC)
-  @ApiOperation({ summary: 'Submit program for approval', description: 'Submits a program from DRAFT/REVISION status to the approval workflow.' })
-  @ApiParam({ name: 'id', description: 'Program UUID', type: 'string' })
-  @ApiResponse({ status: 201, description: 'Program submitted successfully', type: ApprovalResponseDto })
-  @ApiResponse({ status: 400, description: 'Validation or state error' })
-  @ApiResponse({ status: 404, description: 'Program not found' })
-  async submit(@Param('id') programId: string, @CurrentUser() user: JwtPayload) {
-    return this.approvalService.submitProgram(programId, user.userId);
-  }
 
-  @Post('approvals/:id/approve')
+
+  @Post('indicators/:id/approve')
   @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
-  @ApiOperation({ summary: 'Approve an approval request', description: 'Approves a pending request in the workflow' })
-  @ApiParam({ name: 'id', description: 'Approval UUID', type: 'string' })
+  @ApiOperation({ summary: 'Approve a program indicator', description: 'Approves a submitted program indicator' })
+  @ApiParam({ name: 'id', description: 'Program Indicator UUID', type: 'string' })
   @ApiBody({ type: ApprovalActionDto })
   @ApiResponse({ status: 201, description: 'Approval successful', type: ApprovalResponseDto })
   @ApiResponse({ status: 400, description: 'Validation or state error' })
-  @ApiResponse({ status: 404, description: 'Approval request not found' })
+  @ApiResponse({ status: 404, description: 'Program Indicator not found' })
   async approve(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
@@ -44,14 +35,14 @@ export class ApprovalController {
     return this.approvalService.approve(id, dto, user.userId);
   }
 
-  @Post('approvals/:id/reject')
+  @Post('indicators/:id/reject')
   @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
-  @ApiOperation({ summary: 'Reject an approval request', description: 'Rejects a pending request in the workflow' })
-  @ApiParam({ name: 'id', description: 'Approval UUID', type: 'string' })
+  @ApiOperation({ summary: 'Reject a program indicator', description: 'Rejects a submitted program indicator' })
+  @ApiParam({ name: 'id', description: 'Program Indicator UUID', type: 'string' })
   @ApiBody({ type: ApprovalActionDto })
   @ApiResponse({ status: 201, description: 'Rejection successful', type: ApprovalResponseDto })
   @ApiResponse({ status: 400, description: 'Validation or state error' })
-  @ApiResponse({ status: 404, description: 'Approval request not found' })
+  @ApiResponse({ status: 404, description: 'Program Indicator not found' })
   async reject(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
@@ -60,14 +51,14 @@ export class ApprovalController {
     return this.approvalService.reject(id, dto, user.userId);
   }
 
-  @Post('approvals/:id/revision')
+  @Post('indicators/:id/revision')
   @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
-  @ApiOperation({ summary: 'Request revision for an approval', description: 'Requests a revision for a pending request in the workflow' })
-  @ApiParam({ name: 'id', description: 'Approval UUID', type: 'string' })
+  @ApiOperation({ summary: 'Request revision for a program indicator', description: 'Requests a revision for a submitted program indicator' })
+  @ApiParam({ name: 'id', description: 'Program Indicator UUID', type: 'string' })
   @ApiBody({ type: ApprovalActionDto })
   @ApiResponse({ status: 201, description: 'Revision requested', type: ApprovalResponseDto })
   @ApiResponse({ status: 400, description: 'Validation or state error' })
-  @ApiResponse({ status: 404, description: 'Approval request not found' })
+  @ApiResponse({ status: 404, description: 'Program Indicator not found' })
   async revision(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
