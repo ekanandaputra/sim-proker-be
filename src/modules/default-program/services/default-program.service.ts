@@ -506,9 +506,9 @@ export class DefaultProgramService {
     let skippedCount = 0;
 
     for (const row of rows) {
-      const ikuCode = row['IKU Code'];
-      const title = row['Title'];
-      const description = row['Description'] || null;
+      const ikuCode = typeof row['IKU Code'] === 'string' ? row['IKU Code'].trim() : row['IKU Code'];
+      const title = typeof row['Title'] === 'string' ? row['Title'].trim() : row['Title'];
+      const description = typeof row['Description'] === 'string' ? row['Description'].trim() : (row['Description'] || null);
 
       if (!ikuCode || !title) {
         this.logger.warn(`Skipping invalid row: missing required fields (IKU Code or Title)`);
@@ -589,9 +589,9 @@ export class DefaultProgramService {
     let skippedCount = 0;
 
     for (const row of rows) {
-      const defaultProgramTitle = row['Default Program Title'];
-      const name = row['Indicator Name'];
-      const unit = row['Unit'];
+      const defaultProgramTitle = typeof row['Default Program Title'] === 'string' ? row['Default Program Title'].trim() : row['Default Program Title'];
+      const name = typeof row['Indicator Name'] === 'string' ? row['Indicator Name'].trim() : row['Indicator Name'];
+      const unit = typeof row['Unit'] === 'string' ? row['Unit'].trim() : row['Unit'];
 
       if (!defaultProgramTitle || !name || !unit) {
         this.logger.warn(`Skipping invalid row: missing required fields (Default Program Title, Indicator Name, or Unit)`);
