@@ -14,7 +14,7 @@ export class ApprovalActionDto {
 // ---------- Response DTO ----------
 export class ApprovalResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Approval UUID' }) id!: string;
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'Program UUID being approved' }) programId!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'Program Indicator UUID being approved' }) indicatorId!: string;
   @ApiProperty({ enum: ApprovalStatus, example: ApprovalStatus.SUBMITTED, description: 'Current approval status' }) status!: ApprovalStatus;
   @ApiProperty({ example: 1, description: 'Approval level in the workflow hierarchy' }) level!: number;
   @ApiProperty({ nullable: true, example: '550e8400-e29b-41d4-a716-446655440002', description: 'User UUID of the approver' }) approverId!: string | null;
@@ -27,7 +27,7 @@ export class ApprovalResponseDto {
 export class ApprovalMapper {
   static toResponse(a: Approval): ApprovalResponseDto {
     return {
-      id: a.id, programId: a.programId, status: a.status,
+      id: a.id, indicatorId: a.indicatorId, status: a.status,
       level: a.level, approverId: a.approverId, note: a.note,
       approvedAt: a.approvedAt, createdAt: a.createdAt,
     };

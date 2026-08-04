@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ApprovalStatus, ProgramStatus } from '@prisma/client';
 import { APPROVAL_REPOSITORY, IApprovalRepository } from '../repositories/approval.repository.interface';
-import { PROGRAM_REPOSITORY, IProgramRepository } from '@modules/program/repositories/program.repository.interface';
+import { PrismaService } from '@database/prisma/prisma.service';
 import { ApprovalActionDto, ApprovalMapper, ApprovalResponseDto } from '../dto/approval.dto';
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
 
@@ -11,84 +11,87 @@ export class ApprovalService {
 
   constructor(
     @Inject(APPROVAL_REPOSITORY) private readonly approvalRepository: IApprovalRepository,
-    @Inject(PROGRAM_REPOSITORY) private readonly programRepository: IProgramRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
-  async submitProgram(programId: string, userId: string): Promise<ApprovalResponseDto> {
-    const program = await this.programRepository.findById(programId);
-    if (!program) throw new EntityNotFoundException('Program', programId);
 
-    // Create approval record
+  async approve(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+    const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
+    if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
+
+    if (indicator.status !== ProgramStatus.SUBMITTED && indicator.status !== ProgramStatus.REVISION) {
+      throw new InvalidStateException(`ProgramIndicator can only be approved from SUBMITTED or REVISION status. Current: ${indicator.status}`);
+    }
+
     const approval = await this.approvalRepository.create({
-      status: ApprovalStatus.SUBMITTED,
-      level: 1,
-      program: { connect: { id: programId } },
+      status: ApprovalStatus.APPROVED,
+      level: 1, // level might need logic if there are multiple levels
+      indicator: { connect: { id: indicatorId } },
+      approverId: userId,
+      note: dto.note,
+      approvedAt: new Date(),
     });
 
-    this.logger.log(`Program ${programId} submitted for approval by ${userId}`);
+    // Update indicator status
+    await this.prisma.programIndicator.update({
+      where: { id: indicatorId },
+      data: { status: ProgramStatus.APPROVED }
+    });
+
+    this.logger.log(`Program Indicator ${indicatorId} approved by ${userId}`);
     return ApprovalMapper.toResponse(approval);
   }
 
-  async approve(approvalId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
-    const approval = await this.approvalRepository.findById(approvalId);
-    if (!approval) throw new EntityNotFoundException('Approval', approvalId);
+  async reject(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+    const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
+    if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
-    if (approval.status !== ApprovalStatus.SUBMITTED) {
-      throw new InvalidStateException(`Approval can only be approved from SUBMITTED status. Current: ${approval.status}`);
+    if (indicator.status !== ProgramStatus.SUBMITTED && indicator.status !== ProgramStatus.REVISION) {
+      throw new InvalidStateException(`ProgramIndicator can only be rejected from SUBMITTED or REVISION status. Current: ${indicator.status}`);
     }
 
-    const updated = await this.approvalRepository.update(approvalId, {
-      status: ApprovalStatus.APPROVED,
-      approverId: userId,
-      note: dto.note,
-      approvedAt: new Date(),
-    });
-
-    // Update program status
-    // await this.programRepository.update(approval.programId, { status: ProgramStatus.APPROVED });
-
-    this.logger.log(`Approval ${approvalId} approved by ${userId}`);
-    return ApprovalMapper.toResponse(updated);
-  }
-
-  async reject(approvalId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
-    const approval = await this.approvalRepository.findById(approvalId);
-    if (!approval) throw new EntityNotFoundException('Approval', approvalId);
-
-    if (approval.status !== ApprovalStatus.SUBMITTED) {
-      throw new InvalidStateException(`Approval can only be rejected from SUBMITTED status. Current: ${approval.status}`);
-    }
-
-    const updated = await this.approvalRepository.update(approvalId, {
+    const approval = await this.approvalRepository.create({
       status: ApprovalStatus.REJECTED,
+      level: 1,
+      indicator: { connect: { id: indicatorId } },
       approverId: userId,
       note: dto.note,
       approvedAt: new Date(),
     });
 
-    // await this.programRepository.update(approval.programId, { status: ProgramStatus.REJECTED });
+    // Update indicator status
+    await this.prisma.programIndicator.update({
+      where: { id: indicatorId },
+      data: { status: ProgramStatus.REJECTED }
+    });
 
-    this.logger.log(`Approval ${approvalId} rejected by ${userId}`);
-    return ApprovalMapper.toResponse(updated);
+    this.logger.log(`Program Indicator ${indicatorId} rejected by ${userId}`);
+    return ApprovalMapper.toResponse(approval);
   }
 
-  async requestRevision(approvalId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
-    const approval = await this.approvalRepository.findById(approvalId);
-    if (!approval) throw new EntityNotFoundException('Approval', approvalId);
+  async requestRevision(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+    const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
+    if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
-    if (approval.status !== ApprovalStatus.SUBMITTED) {
-      throw new InvalidStateException(`Revision can only be requested from SUBMITTED status. Current: ${approval.status}`);
+    if (indicator.status !== ProgramStatus.SUBMITTED) {
+      throw new InvalidStateException(`Revision can only be requested from SUBMITTED status. Current: ${indicator.status}`);
     }
 
-    const updated = await this.approvalRepository.update(approvalId, {
+    const approval = await this.approvalRepository.create({
       status: ApprovalStatus.REVISION,
+      level: 1,
+      indicator: { connect: { id: indicatorId } },
       approverId: userId,
       note: dto.note,
     });
 
-    // await this.programRepository.update(approval.programId, { status: ProgramStatus.REVISION });
+    // Update indicator status
+    await this.prisma.programIndicator.update({
+      where: { id: indicatorId },
+      data: { status: ProgramStatus.REVISION }
+    });
 
-    this.logger.log(`Approval ${approvalId} revision requested by ${userId}`);
-    return ApprovalMapper.toResponse(updated);
+    this.logger.log(`Program Indicator ${indicatorId} revision requested by ${userId}`);
+    return ApprovalMapper.toResponse(approval);
   }
 }

@@ -17,6 +17,7 @@ import {
   EntityConflictException,
 } from '@common/exceptions';
 import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
+import { PrismaService } from '@database/prisma/prisma.service';
 
 @Injectable()
 export class ProgramService {
@@ -26,6 +27,7 @@ export class ProgramService {
     @Inject(PROGRAM_REPOSITORY)
     private readonly programRepository: IProgramRepository,
     private readonly auditLogService: AuditLogService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findAll(query: ProgramQueryDto): Promise<PaginatedResponse<ProgramResponseDto>> {
@@ -122,6 +124,11 @@ export class ProgramService {
 
     const newCode = `${existing.code}-${dto.year}-${Math.floor(Math.random() * 1000)}`;
 
+    let defaultUnit = await this.prisma.masterUnitType.findFirst({ where: { name: 'N/A' } });
+    if (!defaultUnit) {
+      defaultUnit = await this.prisma.masterUnitType.create({ data: { name: 'N/A', type: 'TEXT' } });
+    }
+
     const program = await this.programRepository.create({
       code: newCode,
       title: existing.title,
@@ -134,7 +141,7 @@ export class ProgramService {
           {
             unitId: dto.unitId,
             name: 'Default Indicator',
-            unit: 'N/A',
+            masterUnitTypeId: defaultUnit.id,
           }
         ]
       } : undefined,

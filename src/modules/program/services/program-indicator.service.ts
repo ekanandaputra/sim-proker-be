@@ -41,6 +41,7 @@ export class ProgramIndicatorService {
       orderBy: { order: 'asc' },
       include: {
         pics: true,
+        masterUnitType: true,
       }
     });
 
@@ -60,7 +61,7 @@ export class ProgramIndicatorService {
     return indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
-      unit_measurement: indicator.unit, // preserve the original unit measurement string if needed, although user wants 'property unit'
+      masterUnitType: indicator.masterUnitType,
       picIds: indicator.pics.map(p => p.userId),
     }));
   }
@@ -298,5 +299,20 @@ export class ProgramIndicatorService {
       ...realization,
       documents: realization.documents.map(d => d.document)
     };
+  }
+
+  async getIndicatorUnitUsers(programId: string, indicatorId: string, token: string, query?: any) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id: indicatorId, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', indicatorId);
+    }
+
+    if (!indicator.unitId) {
+      return { items: [], pagination: null };
+    }
+
+    return this.unitService.getUnitUsers(indicator.unitId, token, query || { limit: 1000 });
   }
 }

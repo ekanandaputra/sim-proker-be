@@ -88,7 +88,6 @@ model Program {
   // Relations
   activities Activity[]
   members    ProgramMember[]
-  approvals  Approval[]
   indicators ProgramIndicator[]
 
   @@index([year])
@@ -101,21 +100,23 @@ model ProgramIndicator {
   programId String        @map("program_id")
   unitId    String        @map("unit_id")
   name      String        @db.VarChar(255)
-  unit      String        @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  masterUnitTypeId String         @map("master_unit_type_id")
   targetQ1  Decimal?      @map("target_q1") @db.Decimal(10, 2)
   targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
   targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
   targetQ4  Decimal?      @map("target_q4") @db.Decimal(10, 2)
   budget    Decimal?      @db.Decimal(15, 2)
-  status    ProgramStatus @default(DRAFT)
+  status    ProgramStatus @default(SUBMITTED)
   order     Int           @default(0)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
 
   // Relations
   program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  masterUnitType MasterUnitType              @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
   realizations ProgramIndicatorRealization[]
   pics         ProgramIndicatorPic[]
+  approvals    Approval[]
 
   @@index([programId])
   @@index([unitId])
@@ -270,19 +271,19 @@ model Document {
 
 /// Approval workflow entry
 model Approval {
-  id         String         @id @default(uuid())
-  programId  String         @map("program_id")
-  status     ApprovalStatus @default(DRAFT)
-  level      Int            @default(1) @db.SmallInt
-  approverId String?        @map("approver_id")
-  note       String?        @db.Text
-  approvedAt DateTime?      @map("approved_at")
-  createdAt  DateTime       @default(now()) @map("created_at")
+  id          String         @id @default(uuid())
+  indicatorId String         @map("indicator_id")
+  status      ApprovalStatus @default(DRAFT)
+  level       Int            @default(1) @db.SmallInt
+  approverId  String?        @map("approver_id")
+  note        String?        @db.Text
+  approvedAt  DateTime?      @map("approved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
 
   // Relations
-  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  indicator ProgramIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
 
-  @@index([programId])
+  @@index([indicatorId])
   @@index([approverId])
   @@index([status])
   @@map("approvals")
@@ -348,12 +349,13 @@ model DefaultProgramIndicator {
   id               String   @id @default(uuid())
   defaultProgramId String   @map("default_program_id")
   name             String   @db.VarChar(255)
-  unit             String   @db.VarChar(50) // e.g. "Dokumen", "Persen"
+  masterUnitTypeId String   @map("master_unit_type_id")
   order            Int      @default(0)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   defaultProgram DefaultProgram @relation(fields: [defaultProgramId], references: [id], onDelete: Cascade)
+  masterUnitType MasterUnitType @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
 
   @@index([defaultProgramId])
   @@map("default_program_indicators")
@@ -376,6 +378,9 @@ model MasterUnitType {
   type      MasterUnitTypeEnum
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
+
+  defaultProgramIndicators DefaultProgramIndicator[]
+  programIndicators        ProgramIndicator[]
 
   @@map("master_unit_types")
 }

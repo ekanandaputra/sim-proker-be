@@ -6,14 +6,13 @@ import { ProgramStatus } from '@prisma/client';
 export const createProgramIndicatorSchema = z.object({
   unitId: z.string().uuid('Unit ID must be a valid UUID'),
   name: z.string().min(1, 'Name is required').max(255),
-  unit: z.string().min(1, 'Unit (satuan) is required').max(50),
+  masterUnitTypeId: z.string().uuid('Master Unit Type ID must be a valid UUID'),
   targetQ1: z.number().nullable().optional(),
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
   budget: z.number().nullable().optional(),
   picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
-  status: z.nativeEnum(ProgramStatus).optional(),
   order: z.number().int().default(0),
 });
 
@@ -24,8 +23,8 @@ export class CreateProgramIndicatorDto {
   @ApiProperty({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' })
   name!: string;
 
-  @ApiProperty({ example: 'Dokumen', description: 'Unit of measurement (satuan)' })
-  unit!: string;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  masterUnitTypeId!: string;
 
   @ApiPropertyOptional({ example: 10, description: 'Target for Q1' })
   targetQ1?: number | null;
@@ -44,9 +43,6 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
-
-  @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
-  status?: ProgramStatus;
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
@@ -62,8 +58,8 @@ export class UpdateProgramIndicatorDto {
   @ApiPropertyOptional({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' })
   name?: string;
 
-  @ApiPropertyOptional({ example: 'Dokumen', description: 'Unit of measurement (satuan)' })
-  unit?: string;
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  masterUnitTypeId?: string;
 
   @ApiPropertyOptional({ example: 10, description: 'Target for Q1' })
   targetQ1?: number | null;
@@ -82,9 +78,6 @@ export class UpdateProgramIndicatorDto {
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
-
-  @ApiPropertyOptional({ enum: ProgramStatus, example: ProgramStatus.DRAFT, description: 'Status of the indicator' })
-  status?: ProgramStatus;
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
@@ -107,8 +100,8 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ description: 'Unit detail object assigned to this indicator', type: Object })
   unit!: any;
 
-  @ApiProperty({ example: 'Dokumen', description: 'Unit of measurement (satuan)', required: false })
-  unit_measurement?: string;
+  @ApiProperty({ description: 'Master Unit Type object for unit of measurement', required: false, type: Object })
+  masterUnitType?: any;
 
   @ApiProperty({ nullable: true, example: 10, type: Number }) targetQ1!: any;
   @ApiProperty({ nullable: true, example: 20, type: Number }) targetQ2!: any;
