@@ -110,4 +110,18 @@ export class ProgramIndicatorController {
     const user = { id: req.user?.id, name: req.user?.name };
     return this.indicatorService.upsertRealization(programId, id, dto, user);
   }
+
+  @Get(':id/users')
+  @ApiOperation({ summary: 'Get users for an indicator based on its unitId' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiResponse({ status: 200 })
+  async getIndicatorUnitUsers(
+    @Param('programId') programId: string,
+    @Param('id') id: string,
+    @Req() req: Request
+  ) {
+    const token = req.headers.authorization as string;
+    return this.indicatorService.getIndicatorUnitUsers(programId, id, token);
+  }
 }

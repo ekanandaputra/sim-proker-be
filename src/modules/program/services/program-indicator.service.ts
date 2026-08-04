@@ -300,4 +300,19 @@ export class ProgramIndicatorService {
       documents: realization.documents.map(d => d.document)
     };
   }
+
+  async getIndicatorUnitUsers(programId: string, indicatorId: string, token: string) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id: indicatorId, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', indicatorId);
+    }
+
+    if (!indicator.unitId) {
+      return { items: [], pagination: null };
+    }
+
+    return this.unitService.getUnitUsers(indicator.unitId, token, { limit: 1000 });
+  }
 }
