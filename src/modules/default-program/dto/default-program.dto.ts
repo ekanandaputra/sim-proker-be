@@ -75,7 +75,7 @@ export class DefaultProgramIndicatorDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Default Program UUID' }) defaultProgramId!: string;
   @ApiProperty({ example: 'Jumlah Laporan' }) name!: string;
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x' }) masterUnitTypeId!: string;
-  @ApiPropertyOptional({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details' }) masterUnitType?: MasterUnitTypeSimpleDto;
+  @ApiProperty({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details', nullable: true }) masterUnitType!: MasterUnitTypeSimpleDto | null;
   @ApiProperty({ example: 1 }) order!: number;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
@@ -147,8 +147,8 @@ export class AssignmentIndicatorDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
   masterUnitTypeId!: string;
 
-  @ApiPropertyOptional({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details' })
-  masterUnitType?: MasterUnitTypeSimpleDto;
+  @ApiProperty({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details', nullable: true })
+  masterUnitType!: MasterUnitTypeSimpleDto | null;
 
   @ApiProperty({ example: 1, description: 'Urutan indikator' })
   order!: number;
