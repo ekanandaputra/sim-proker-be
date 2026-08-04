@@ -42,7 +42,7 @@ export class DefaultProgramService {
         skip,
         take: limit,
         orderBy: { [sortBy || 'createdAt']: sortOrder },
-        include: { indicators: true },
+        include: { indicators: { include: { masterUnitType: true } } },
       }),
       this.prisma.defaultProgram.count({ where }),
     ]);
@@ -63,7 +63,7 @@ export class DefaultProgramService {
   async findById(id: string): Promise<DefaultProgramDto> {
     const program = await this.prisma.defaultProgram.findUnique({
       where: { id },
-      include: { indicators: true },
+      include: { indicators: { include: { masterUnitType: true } } },
     });
     if (!program) {
       throw new EntityNotFoundException('DefaultProgram', id);
@@ -75,7 +75,7 @@ export class DefaultProgramService {
     return this.prisma.defaultProgram.findMany({
       where: { ikuId },
       orderBy: { createdAt: 'desc' },
-      include: { indicators: true },
+      include: { indicators: { include: { masterUnitType: true } } },
     });
   }
 
@@ -88,7 +88,7 @@ export class DefaultProgramService {
           create: indicators
         } : undefined
       },
-      include: { indicators: true },
+      include: { indicators: { include: { masterUnitType: true } } },
     });
 
     await this.auditLogService.log({
@@ -120,7 +120,7 @@ export class DefaultProgramService {
     const updated = await this.prisma.defaultProgram.update({
       where: { id },
       data: updateData,
-      include: { indicators: true },
+      include: { indicators: { include: { masterUnitType: true } } },
     });
 
     await this.auditLogService.log({
@@ -329,7 +329,7 @@ export class DefaultProgramService {
 
     // 2. Fetch all default programs with indicators from local DB
     const allDefaultPrograms = await this.prisma.defaultProgram.findMany({
-      include: { indicators: { orderBy: { order: 'asc' } } },
+      include: { indicators: { include: { masterUnitType: true }, orderBy: { order: 'asc' } } },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -420,6 +420,7 @@ export class DefaultProgramService {
             id: ind.id,
             name: ind.name,
             masterUnitTypeId: ind.masterUnitTypeId,
+            masterUnitType: ind.masterUnitType,
             order: ind.order || indIndex + 1,
             assignedUnits,
             isAssigned,
