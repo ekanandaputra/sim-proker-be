@@ -301,7 +301,7 @@ export class ProgramIndicatorService {
     };
   }
 
-  async getIndicatorUnitUsers(programId: string, indicatorId: string, token: string) {
+  async getIndicatorUnitUsers(programId: string, indicatorId: string, token: string, query?: any) {
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id: indicatorId, programId },
     });
@@ -313,6 +313,6 @@ export class ProgramIndicatorService {
       return { items: [], pagination: null };
     }
 
-    return this.unitService.getUnitUsers(indicator.unitId, token, { limit: 1000 });
+    return this.unitService.getUnitUsers(indicator.unitId, token, query || { limit: 1000 });
   }
 }

@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationResponseDto, programIndicatorRealizationSchema } from '../dto/program-indicator-realization.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
+import { AuthUserDto } from '../../external/auth-integration/dto/auth-integration.dto';
 
 @ApiTags('Program Indicators')
 @ApiBearerAuth()
@@ -115,13 +117,16 @@ export class ProgramIndicatorController {
   @ApiOperation({ summary: 'Get users for an indicator based on its unitId' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
-  @ApiResponse({ status: 200 })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiPaginatedResponse(AuthUserDto)
   async getIndicatorUnitUsers(
     @Param('programId') programId: string,
     @Param('id') id: string,
-    @Req() req: Request
+    @Req() req: Request,
+    @Query() query: any
   ) {
     const token = req.headers.authorization as string;
-    return this.indicatorService.getIndicatorUnitUsers(programId, id, token);
+    return this.indicatorService.getIndicatorUnitUsers(programId, id, token, query);
   }
 }
