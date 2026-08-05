@@ -1,7 +1,8 @@
-import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Get, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
+import { Request } from 'express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ApprovalService } from '../services/approval.service';
-import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto } from '../dto/approval.dto';
+import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto } from '../dto/approval.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -9,6 +10,7 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtPayload } from '@common/guards';
 import { Role } from '@common/constants';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 
 @ApiTags('Approvals')
 @ApiBearerAuth()
@@ -17,6 +19,16 @@ import { Role } from '@common/constants';
 export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
 
+  @Get('indicators/submitted')
+  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @ApiOperation({ summary: 'List submitted program indicators', description: 'Returns a paginated list of program indicators with SUBMITTED status' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiPaginatedResponse(SubmittedProgramIndicatorResponseDto)
+  async getSubmittedIndicators(@Req() req: Request, @Query() query: any) {
+    const token = req.headers.authorization as string;
+    return this.approvalService.getSubmittedIndicators(token, query);
+  }
 
 
   @Post('indicators/:id/approve')

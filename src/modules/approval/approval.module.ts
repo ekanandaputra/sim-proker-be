@@ -4,9 +4,10 @@ import { ApprovalController } from './controllers/approval.controller';
 import { ApprovalService } from './services/approval.service';
 import { ApprovalRepository } from './repositories/approval.repository';
 import { APPROVAL_REPOSITORY } from './repositories/approval.repository.interface';
+import { UnitModule } from '../unit/unit.module';
 
 @Module({
-  imports: [],
+  imports: [UnitModule],
   controllers: [ApprovalController],
   providers: [
     ApprovalService,

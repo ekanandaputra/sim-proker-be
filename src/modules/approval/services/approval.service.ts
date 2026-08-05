@@ -4,6 +4,7 @@ import { APPROVAL_REPOSITORY, IApprovalRepository } from '../repositories/approv
 import { PrismaService } from '@database/prisma/prisma.service';
 import { ApprovalActionDto, ApprovalMapper, ApprovalResponseDto } from '../dto/approval.dto';
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
+import { UnitService } from '../../unit/services/unit.service';
 
 @Injectable()
 export class ApprovalService {
@@ -12,8 +13,8 @@ export class ApprovalService {
   constructor(
     @Inject(APPROVAL_REPOSITORY) private readonly approvalRepository: IApprovalRepository,
     private readonly prisma: PrismaService,
+    private readonly unitService: UnitService,
   ) {}
-
 
   async approve(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
     const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
@@ -93,5 +94,50 @@ export class ApprovalService {
 
     this.logger.log(`Program Indicator ${indicatorId} revision requested by ${userId}`);
     return ApprovalMapper.toResponse(approval);
+  }
+
+  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }) {
+    const page = query?.page ? Number(query.page) : 1;
+    const limit = query?.limit ? Number(query.limit) : 10;
+    const skip = (page - 1) * limit;
+
+    const [totalItems, indicators] = await Promise.all([
+      this.prisma.programIndicator.count({
+        where: { status: ProgramStatus.SUBMITTED },
+      }),
+      this.prisma.programIndicator.findMany({
+        where: { status: ProgramStatus.SUBMITTED },
+        include: { program: true },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const uniqueUnitIds = [...new Set(indicators.map(i => i.unitId).filter(Boolean))];
+    const unitMap = new Map();
+
+    for (const unitId of uniqueUnitIds) {
+      try {
+        const unitInfo = await this.unitService.getUnitById(unitId, token);
+        unitMap.set(unitId, unitInfo);
+      } catch (err) {
+        this.logger.error(`Failed to fetch unit ${unitId}`);
+      }
+    }
+
+    const items = indicators.map(indicator => ({
+      ...indicator,
+      unit: unitMap.get(indicator.unitId) || null,
+    }));
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    };
   }
 }
