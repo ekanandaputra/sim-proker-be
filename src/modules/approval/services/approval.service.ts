@@ -96,15 +96,22 @@ export class ApprovalService {
     return ApprovalMapper.toResponse(approval);
   }
 
-  async getSubmittedIndicators(token: string) {
-    const indicators = await this.prisma.programIndicator.findMany({
-      where: {
-        status: ProgramStatus.SUBMITTED,
-      },
-      include: {
-        program: true,
-      },
-    });
+  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }) {
+    const page = query?.page ? Number(query.page) : 1;
+    const limit = query?.limit ? Number(query.limit) : 10;
+    const skip = (page - 1) * limit;
+
+    const [totalItems, indicators] = await Promise.all([
+      this.prisma.programIndicator.count({
+        where: { status: ProgramStatus.SUBMITTED },
+      }),
+      this.prisma.programIndicator.findMany({
+        where: { status: ProgramStatus.SUBMITTED },
+        include: { program: true },
+        skip,
+        take: limit,
+      }),
+    ]);
 
     const uniqueUnitIds = [...new Set(indicators.map(i => i.unitId).filter(Boolean))];
     const unitMap = new Map();
@@ -118,9 +125,19 @@ export class ApprovalService {
       }
     }
 
-    return indicators.map(indicator => ({
+    const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
     }));
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    };
   }
 }

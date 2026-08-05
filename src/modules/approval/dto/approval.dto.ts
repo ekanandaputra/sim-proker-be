@@ -27,8 +27,28 @@ export class SubmittedProgramIndicatorResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', description: 'Indicator UUID' }) id!: string;
   @ApiProperty({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' }) name!: string;
   @ApiProperty({ example: 'SUBMITTED', description: 'Status of the indicator' }) status!: string;
-  @ApiProperty({ description: 'Program detail object assigned to this indicator', type: Object }) program!: any;
-  @ApiProperty({ description: 'Unit detail object assigned to this indicator', type: Object }) unit!: any;
+  @ApiProperty({ 
+    description: 'Program detail object assigned to this indicator', 
+    type: Object,
+    example: {
+      id: '550e8400-e29b-41d4-a716-446655440010',
+      name: 'Program Peningkatan Kualitas Mahasiswa',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }
+  }) 
+  program!: any;
+
+  @ApiProperty({ 
+    description: 'Unit detail object assigned to this indicator', 
+    type: Object,
+    example: {
+      id: '550e8400-e29b-41d4-a716-446655440020',
+      name: 'Fakultas Ilmu Komputer',
+      code: 'FILKOM'
+    }
+  }) 
+  unit!: any;
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) createdAt!: Date;
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) updatedAt!: Date;
 }
