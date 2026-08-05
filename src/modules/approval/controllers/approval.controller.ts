@@ -1,7 +1,8 @@
-import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ApprovalService } from '../services/approval.service';
-import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto } from '../dto/approval.dto';
+import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto } from '../dto/approval.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -17,6 +18,14 @@ import { Role } from '@common/constants';
 export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
 
+  @Get('indicators/submitted')
+  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @ApiOperation({ summary: 'List submitted program indicators', description: 'Returns a list of program indicators with SUBMITTED status' })
+  @ApiResponse({ status: 200, description: 'Successful response', type: [SubmittedProgramIndicatorResponseDto] })
+  async getSubmittedIndicators(@Req() req: Request) {
+    const token = req.headers.authorization as string;
+    return this.approvalService.getSubmittedIndicators(token);
+  }
 
 
   @Post('indicators/:id/approve')
