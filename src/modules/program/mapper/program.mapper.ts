@@ -23,6 +23,7 @@ export class ProgramMapper {
         unitId: ind.unitId,
         name: ind.name,
         category: ind.category,
+        isDefaultProgramIndicator: ind.isDefaultProgramIndicator,
         unit: ind.unit,
         targetQ1: ind.targetQ1 ? Number(ind.targetQ1) : null,
         targetQ2: ind.targetQ2 ? Number(ind.targetQ2) : null,

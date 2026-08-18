@@ -226,6 +226,7 @@ export class DefaultProgramService {
             name: ind.name,
             masterUnitTypeId: ind.masterUnitTypeId,
             category: ind.category,
+            isDefaultProgramIndicator: true,
             status: ProgramStatus.ASSIGNED_TO_UNIT,
             order: ind.order,
           }))
@@ -247,6 +248,7 @@ export class DefaultProgramService {
               name: dp.title, // Default name based on program title or default program title
               masterUnitTypeId: defaultUnit.id, // Default unit
               category: 'TUSI', // Default category
+              isDefaultProgramIndicator: true,
               status: ProgramStatus.ASSIGNED_TO_UNIT,
             }
           });
@@ -313,6 +315,7 @@ export class DefaultProgramService {
         name: ind.name,
         masterUnitTypeId: ind.masterUnitTypeId,
         category: ind.category,
+        isDefaultProgramIndicator: true,
         status: ProgramStatus.ASSIGNED_TO_UNIT,
         order: ind.order,
       }

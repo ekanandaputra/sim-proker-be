@@ -8,6 +8,7 @@ export const createProgramIndicatorSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   masterUnitTypeId: z.string().uuid('Master Unit Type ID must be a valid UUID'),
   category: z.nativeEnum(IndicatorCategory).default(IndicatorCategory.TUSI),
+  isDefaultProgramIndicator: z.boolean().default(false).optional(),
   targetQ1: z.number().nullable().optional(),
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
@@ -29,6 +30,9 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
   category?: IndicatorCategory;
+
+  @ApiPropertyOptional({ example: false, description: 'Flag indicating if this was created from a default program' })
+  isDefaultProgramIndicator?: boolean;
 
   @ApiPropertyOptional({ example: 10, description: 'Target for Q1' })
   targetQ1?: number | null;
@@ -67,6 +71,9 @@ export class UpdateProgramIndicatorDto {
 
   @ApiPropertyOptional({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
   category?: IndicatorCategory;
+
+  @ApiPropertyOptional({ example: false, description: 'Flag indicating if this was created from a default program' })
+  isDefaultProgramIndicator?: boolean;
 
   @ApiPropertyOptional({ example: 10, description: 'Target for Q1' })
   targetQ1?: number | null;
@@ -112,6 +119,9 @@ export class ProgramIndicatorResponseDto {
 
   @ApiProperty({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
   category!: IndicatorCategory;
+
+  @ApiProperty({ example: false, description: 'Flag indicating if this was created from a default program' })
+  isDefaultProgramIndicator!: boolean;
 
   @ApiProperty({ nullable: true, example: 10, type: Number }) targetQ1!: any;
   @ApiProperty({ nullable: true, example: 20, type: Number }) targetQ2!: any;

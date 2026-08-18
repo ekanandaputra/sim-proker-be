@@ -108,6 +108,7 @@ model ProgramIndicator {
   name      String        @db.VarChar(255)
   masterUnitTypeId String         @map("master_unit_type_id")
   category  IndicatorCategory @default(TUSI)
+  isDefaultProgramIndicator Boolean @default(false) @map("is_default_program_indicator")
   targetQ1  Decimal?      @map("target_q1") @db.Decimal(10, 2)
   targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
   targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
