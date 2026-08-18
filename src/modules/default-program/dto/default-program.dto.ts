@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IndicatorCategory } from '@prisma/client';
 
 export class CreateDefaultProgramIndicatorDto {
   @ApiProperty({ example: 'Jumlah Laporan', description: 'Indicator name' })
@@ -7,6 +8,9 @@ export class CreateDefaultProgramIndicatorDto {
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
   masterUnitTypeId!: string;
+
+  @ApiPropertyOptional({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
+  category?: IndicatorCategory;
 
   @ApiPropertyOptional({ example: 1, description: 'Order of the indicator' })
   order?: number;
@@ -19,6 +23,7 @@ export const createDefaultProgramSchema = z.object({
   indicators: z.array(z.object({
     name: z.string().min(1, 'indicator name is required'),
     masterUnitTypeId: z.string().uuid('masterUnitTypeId must be a valid UUID'),
+    category: z.nativeEnum(IndicatorCategory).default(IndicatorCategory.TUSI),
     order: z.number().int().default(0),
   })).optional(),
 });
@@ -26,6 +31,7 @@ export const createDefaultProgramSchema = z.object({
 export const addDefaultProgramIndicatorSchema = z.object({
   name: z.string().min(1, 'indicator name is required'),
   masterUnitTypeId: z.string().uuid('masterUnitTypeId must be a valid UUID'),
+  category: z.nativeEnum(IndicatorCategory).default(IndicatorCategory.TUSI).optional(),
   order: z.number().int().default(0).optional(),
 });
 
@@ -76,6 +82,7 @@ export class DefaultProgramIndicatorDto {
   @ApiProperty({ example: 'Jumlah Laporan' }) name!: string;
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x' }) masterUnitTypeId!: string;
   @ApiProperty({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details', nullable: true, example: { id: '550e8400-e29b-41d4-a716-44665544000x', name: 'Biro/Unit' } }) masterUnitType!: MasterUnitTypeSimpleDto | null;
+  @ApiProperty({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' }) category!: IndicatorCategory;
   @ApiProperty({ example: 1 }) order!: number;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Creation timestamp' }) createdAt!: Date;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Update timestamp' }) updatedAt!: Date;
@@ -149,6 +156,9 @@ export class AssignmentIndicatorDto {
 
   @ApiProperty({ type: () => MasterUnitTypeSimpleDto, description: 'Master Unit Type details', nullable: true, example: { id: '550e8400-e29b-41d4-a716-44665544000x', name: 'Biro/Unit' } })
   masterUnitType!: MasterUnitTypeSimpleDto | null;
+
+  @ApiProperty({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
+  category!: IndicatorCategory;
 
   @ApiProperty({ example: 1, description: 'Urutan indikator' })
   order!: number;

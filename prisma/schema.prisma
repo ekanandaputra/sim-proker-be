@@ -107,6 +107,7 @@ model ProgramIndicator {
   unitId    String        @map("unit_id")
   name      String        @db.VarChar(255)
   masterUnitTypeId String         @map("master_unit_type_id")
+  category  IndicatorCategory @default(TUSI)
   targetQ1  Decimal?      @map("target_q1") @db.Decimal(10, 2)
   targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
   targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
@@ -370,6 +371,7 @@ model DefaultProgramIndicator {
   id               String   @id @default(uuid())
   defaultProgramId String   @map("default_program_id")
   name             String   @db.VarChar(255)
+  category         IndicatorCategory @default(TUSI)
   masterUnitTypeId String   @map("master_unit_type_id")
   order            Int      @default(0)
   createdAt        DateTime @default(now()) @map("created_at")
@@ -385,6 +387,12 @@ model DefaultProgramIndicator {
 // ============================================================================
 // MASTER UNIT TYPE
 // ============================================================================
+
+enum IndicatorCategory {
+  TUSI
+  RUTIN
+  PENGEMBANGAN
+}
 
 enum MasterUnitTypeEnum {
   NUMBER

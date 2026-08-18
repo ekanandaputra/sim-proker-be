@@ -160,6 +160,7 @@ export class DefaultProgramService {
         defaultProgramId,
         name: data.name,
         masterUnitTypeId: data.masterUnitTypeId,
+        category: data.category || 'TUSI',
         order: data.order || 0,
       }
     });
@@ -224,6 +225,7 @@ export class DefaultProgramService {
             unitId,
             name: ind.name,
             masterUnitTypeId: ind.masterUnitTypeId,
+            category: ind.category,
             status: ProgramStatus.ASSIGNED_TO_UNIT,
             order: ind.order,
           }))
@@ -244,6 +246,7 @@ export class DefaultProgramService {
               unitId,
               name: dp.title, // Default name based on program title or default program title
               masterUnitTypeId: defaultUnit.id, // Default unit
+              category: 'TUSI', // Default category
               status: ProgramStatus.ASSIGNED_TO_UNIT,
             }
           });
@@ -309,6 +312,7 @@ export class DefaultProgramService {
         unitId,
         name: ind.name,
         masterUnitTypeId: ind.masterUnitTypeId,
+        category: ind.category,
         status: ProgramStatus.ASSIGNED_TO_UNIT,
         order: ind.order,
       }
@@ -421,6 +425,7 @@ export class DefaultProgramService {
             name: ind.name,
             masterUnitTypeId: ind.masterUnitTypeId,
             masterUnitType: ind.masterUnitType,
+            category: ind.category,
             order: ind.order || indIndex + 1,
             assignedUnits,
             isAssigned,
@@ -561,6 +566,7 @@ export class DefaultProgramService {
       'Default Program Title': ind.defaultProgram.title,
       'Indicator Name': ind.name,
       'Unit': ind.masterUnitType.name,
+      'Category': ind.category,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -593,9 +599,16 @@ export class DefaultProgramService {
       const defaultProgramTitle = typeof row['Default Program Title'] === 'string' ? row['Default Program Title'].trim() : row['Default Program Title'];
       const name = typeof row['Indicator Name'] === 'string' ? row['Indicator Name'].trim() : row['Indicator Name'];
       const unit = typeof row['Unit'] === 'string' ? row['Unit'].trim() : row['Unit'];
+      const category = typeof row['Category'] === 'string' ? row['Category'].trim().toUpperCase() : 'TUSI';
 
       if (!defaultProgramTitle || !name || !unit) {
         this.logger.warn(`Skipping invalid row: missing required fields (Default Program Title, Indicator Name, or Unit)`);
+        continue;
+      }
+
+      // Validasi kategori
+      if (!['TUSI', 'RUTIN', 'PENGEMBANGAN'].includes(category)) {
+        this.logger.warn(`Skipping row: Invalid Category '${category}'. Must be TUSI, RUTIN, or PENGEMBANGAN`);
         continue;
       }
 
@@ -643,6 +656,7 @@ export class DefaultProgramService {
           defaultProgramId: dp.id,
           name,
           masterUnitTypeId: masterUnitType.id,
+          category: category as any,
         },
       });
       createdCount++;
