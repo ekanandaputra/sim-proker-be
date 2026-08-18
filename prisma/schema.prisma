@@ -26,6 +26,7 @@ enum ProgramStatus {
   DRAFT
   SUBMITTED
   REVISION
+  INDICATOR_APPROVED
   APPROVED
   REJECTED
   IN_PROGRESS
@@ -48,6 +49,11 @@ enum ApprovalStatus {
   APPROVED
   REJECTED
   COMPLETED
+}
+
+enum ApprovalLevel {
+  INDICATOR_VERIFICATION
+  BUDGET_VERIFICATION
 }
 
 enum ProgramMemberRole {
@@ -274,7 +280,7 @@ model Approval {
   id          String         @id @default(uuid())
   indicatorId String         @map("indicator_id")
   status      ApprovalStatus @default(DRAFT)
-  level       Int            @default(1) @db.SmallInt
+  level       ApprovalLevel  @default(INDICATOR_VERIFICATION)
   approverId  String?        @map("approver_id")
   note        String?        @db.Text
   approvedAt  DateTime?      @map("approved_at")
@@ -287,6 +293,21 @@ model Approval {
   @@index([approverId])
   @@index([status])
   @@map("approvals")
+}
+
+/// Dynamic reviewer assignment for approval workflow
+model ApprovalReviewer {
+  id        String        @id @default(uuid())
+  userId    String        @map("user_id") @db.VarChar(100)
+  level     ApprovalLevel
+  ikuId     String?       @map("iku_id") @db.VarChar(100)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@unique([userId, level, ikuId])
+  @@index([level])
+  @@index([ikuId])
+  @@map("approval_reviewers")
 }
 
 // ============================================================================

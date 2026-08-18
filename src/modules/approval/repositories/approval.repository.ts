@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Approval, Prisma } from '@prisma/client';
+import { Approval, Prisma, ApprovalLevel } from '@prisma/client';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { IApprovalRepository } from './approval.repository.interface';
 
@@ -29,6 +29,13 @@ export class ApprovalRepository implements IApprovalRepository {
   async findLatestByIndicatorId(indicatorId: string): Promise<Approval | null> {
     return this.prisma.approval.findFirst({
       where: { indicatorId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findLatestByIndicatorIdAndLevel(indicatorId: string, level: ApprovalLevel): Promise<Approval | null> {
+    return this.prisma.approval.findFirst({
+      where: { indicatorId, level },
       orderBy: { createdAt: 'desc' },
     });
   }

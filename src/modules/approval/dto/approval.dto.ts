@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Approval, ApprovalStatus } from '@prisma/client';
+import { Approval, ApprovalStatus, ApprovalLevel } from '@prisma/client';
 
 // ---------- Zod Schemas ----------
 export const approvalActionSchema = z.object({
@@ -16,7 +16,7 @@ export class ApprovalResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Approval UUID' }) id!: string;
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001', description: 'Program Indicator UUID being approved' }) indicatorId!: string;
   @ApiProperty({ enum: ApprovalStatus, example: ApprovalStatus.SUBMITTED, description: 'Current approval status' }) status!: ApprovalStatus;
-  @ApiProperty({ example: 1, description: 'Approval level in the workflow hierarchy' }) level!: number;
+  @ApiProperty({ enum: ApprovalLevel, example: ApprovalLevel.INDICATOR_VERIFICATION, description: 'Approval level: INDICATOR_VERIFICATION or BUDGET_VERIFICATION' }) level!: ApprovalLevel;
   @ApiProperty({ nullable: true, example: '550e8400-e29b-41d4-a716-446655440002', description: 'User UUID of the approver' }) approverId!: string | null;
   @ApiProperty({ nullable: true, example: 'Telah disetujui', description: 'Note/comment left by the approver' }) note!: string | null;
   @ApiProperty({ nullable: true, example: '2024-01-15T00:00:00.000Z', description: 'Timestamp when approved/rejected' }) approvedAt!: Date | null;
