@@ -3,6 +3,7 @@ import { ApprovalLevel } from '@prisma/client';
 import { APPROVAL_REVIEWER_REPOSITORY, IApprovalReviewerRepository } from '../repositories/approval-reviewer.repository.interface';
 import { CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerResponseDto } from '../dto/approval-reviewer.dto';
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
+import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
 @Injectable()
 export class ApprovalReviewerService {
@@ -11,6 +12,7 @@ export class ApprovalReviewerService {
   constructor(
     @Inject(APPROVAL_REVIEWER_REPOSITORY)
     private readonly reviewerRepository: IApprovalReviewerRepository,
+    private readonly authIntegrationService: AuthIntegrationService,
   ) {}
 
   /**
@@ -18,7 +20,7 @@ export class ApprovalReviewerService {
    * For INDICATOR_VERIFICATION: creates one record per ikuId.
    * For BUDGET_VERIFICATION: creates a single record (ikuId = null).
    */
-  async create(dto: CreateApprovalReviewerInput): Promise<ApprovalReviewerResponseDto[]> {
+  async create(dto: CreateApprovalReviewerInput, token?: string): Promise<ApprovalReviewerResponseDto[]> {
     const results: ApprovalReviewerResponseDto[] = [];
 
     if (dto.level === ApprovalLevel.BUDGET_VERIFICATION) {
@@ -56,24 +58,36 @@ export class ApprovalReviewerService {
       }
     }
 
+    if (token) {
+      await this.populateUsers(results, token);
+    }
+
     return results;
   }
 
   /**
    * List all reviewers with optional filters.
    */
-  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string }): Promise<ApprovalReviewerResponseDto[]> {
+  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string }, token?: string): Promise<ApprovalReviewerResponseDto[]> {
     const reviewers = await this.reviewerRepository.findAll(filters);
-    return ApprovalReviewerMapper.toResponseList(reviewers);
+    const mapped = ApprovalReviewerMapper.toResponseList(reviewers);
+    if (token) {
+      await this.populateUsers(mapped, token);
+    }
+    return mapped;
   }
 
   /**
    * Get a single reviewer assignment by ID.
    */
-  async findById(id: string): Promise<ApprovalReviewerResponseDto> {
+  async findById(id: string, token?: string): Promise<ApprovalReviewerResponseDto> {
     const reviewer = await this.reviewerRepository.findById(id);
     if (!reviewer) throw new EntityNotFoundException('ApprovalReviewer', id);
-    return ApprovalReviewerMapper.toResponse(reviewer);
+    const mapped = ApprovalReviewerMapper.toResponse(reviewer);
+    if (token) {
+      await this.populateUsers([mapped], token);
+    }
+    return mapped;
   }
 
   /**
@@ -101,5 +115,28 @@ export class ApprovalReviewerService {
     // BUDGET_VERIFICATION: ikuId is not relevant
     const reviewer = await this.reviewerRepository.findByUserAndLevel(userId, level);
     return !!reviewer;
+  }
+
+  private async populateUsers(reviewers: ApprovalReviewerResponseDto[], token: string): Promise<void> {
+    if (reviewers.length === 0) return;
+    try {
+      const response = await this.authIntegrationService.getAllUsers(token, { page: 1, limit: 10000, sortOrder: 'desc' });
+      const users = response.items || [];
+      const userMap = new Map(users.map(u => [u.id, u]));
+
+      for (const r of reviewers) {
+        const u = userMap.get(r.userId);
+        if (u) {
+          r.user = { id: u.id, name: u.name, email: u.email, roles: u.roles };
+        } else {
+          r.user = { id: r.userId, name: 'Unknown User' };
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to fetch user names: ${(e as Error).message}`);
+      for (const r of reviewers) {
+        r.user = { id: r.userId, name: 'Unknown User' };
+      }
+    }
   }
 }

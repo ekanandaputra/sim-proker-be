@@ -9,9 +9,10 @@ import { APPROVAL_REPOSITORY } from './repositories/approval.repository.interfac
 import { ApprovalReviewerRepository } from './repositories/approval-reviewer.repository';
 import { APPROVAL_REVIEWER_REPOSITORY } from './repositories/approval-reviewer.repository.interface';
 import { UnitModule } from '../unit/unit.module';
+import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
 
 @Module({
-  imports: [UnitModule],
+  imports: [UnitModule, AuthIntegrationModule],
   controllers: [ApprovalController, ApprovalReviewerController],
   providers: [
     ApprovalService,

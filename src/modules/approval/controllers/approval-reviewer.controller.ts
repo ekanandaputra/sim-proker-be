@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery, ApiExtraModels } from '@nestjs/swagger';
 import { ApprovalReviewerService } from '../services/approval-reviewer.service';
 import { createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto } from '../dto/approval-reviewer.dto';
@@ -85,8 +86,10 @@ export class ApprovalReviewerController {
   })
   async create(
     @Body(new ZodValidationPipe(createApprovalReviewerSchema)) dto: CreateApprovalReviewerDto,
+    @Req() req: Request
   ) {
-    return this.reviewerService.create(dto);
+    const token = req.headers.authorization as string;
+    return this.reviewerService.create(dto, token);
   }
 
   @Get()
@@ -121,10 +124,12 @@ export class ApprovalReviewerController {
     },
   })
   async findAll(
+    @Req() req: Request,
     @Query('level') level?: ApprovalLevel,
     @Query('ikuId') ikuId?: string,
   ) {
-    return this.reviewerService.findAll({ level, ikuId });
+    const token = req.headers.authorization as string;
+    return this.reviewerService.findAll({ level, ikuId }, token);
   }
 
   @Get(':id')
@@ -161,8 +166,9 @@ export class ApprovalReviewerController {
       },
     },
   })
-  async findById(@Param('id') id: string) {
-    return this.reviewerService.findById(id);
+  async findById(@Param('id') id: string, @Req() req: Request) {
+    const token = req.headers.authorization as string;
+    return this.reviewerService.findById(id, token);
   }
 
   @Delete(':id')

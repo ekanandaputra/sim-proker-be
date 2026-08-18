@@ -56,6 +56,13 @@ export class ApprovalReviewerResponseDto {
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Record update timestamp' })
   updatedAt!: Date;
+
+  @ApiPropertyOptional({
+    description: 'User details',
+    type: Object,
+    example: { id: 'user-uuid-001', name: 'John Doe' },
+  })
+  user?: any;
 }
 
 // ---------- Mapper ----------
@@ -69,6 +76,7 @@ export class ApprovalReviewerMapper {
       ikuId: r.ikuId,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
+      user: r.user,
     };
   }
 
