@@ -10,13 +10,16 @@ import { getAppConfig } from '@common/config';
 
 import { UnitModule } from '../unit/unit.module';
 import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
+import { IkuModule } from '../iku/iku.module';
+import { ProgramExportService } from './services/program-export.service';
 
 @Module({
-  imports: [UnitModule, AuthIntegrationModule],
+  imports: [UnitModule, AuthIntegrationModule, IkuModule],
   controllers: [ProgramController, ProgramIndicatorController],
   providers: [
     ProgramService,
     ProgramIndicatorService,
+    ProgramExportService,
     {
       provide: PROGRAM_REPOSITORY,
       useClass: ProgramRepository,

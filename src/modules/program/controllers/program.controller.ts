@@ -10,7 +10,10 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
+  Req,
 } from '@nestjs/common';
+import { Response, Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -21,6 +24,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { ProgramService } from '../services/program.service';
+import { ProgramExportService } from '../services/program-export.service';
 import {
   createProgramSchema,
   CreateProgramDto,
@@ -46,7 +50,27 @@ import { PaginatedResponse } from '@common/dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('programs')
 export class ProgramController {
-  constructor(private readonly programService: ProgramService) {}
+  constructor(
+    private readonly programService: ProgramService,
+    private readonly programExportService: ProgramExportService,
+  ) {}
+
+  @Get('export/proker')
+  @ApiOperation({
+    summary: 'Export program indicators to Excel',
+    description: 'Export all indicators for a specific unit and year to a styled Excel format.',
+  })
+  @ApiQuery({ name: 'unitId', required: false, type: String })
+  @ApiQuery({ name: 'year', required: true, type: Number })
+  async exportProker(
+    @Query('unitId') unitId: string,
+    @Query('year') year: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.programExportService.exportProker(unitId, Number(year), token, res);
+  }
 
   @Get()
   @ApiOperation({
