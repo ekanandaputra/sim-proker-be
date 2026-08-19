@@ -118,7 +118,7 @@ export class UnitController {
   @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
   @ApiBody({ type: UnassignIkusFromUnitDto })
   @Roles(Role.ADMIN)
-  @Post(':id/ikus/unassign')
+  @Delete(':id/ikus/unassign')
   async unassignIkusFromUnit(@Req() req: Request, @Param('id') id: string, @Body() payload: UnassignIkusFromUnitDto) {
     return this.ikuIntegrationService.unassignIkusFromUnit(id, payload.ikuIds, this.extractToken(req));
   }
