@@ -196,8 +196,12 @@ export class ApprovalService {
 
     const isAdmin = user?.roles?.includes('ADMIN');
     if (!isAdmin) {
+      const userId = user?.userId || user?.id;
+      if (!userId) {
+        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+      }
       const reviewers = await this.prisma.approvalReviewer.findMany({
-        where: { userId: user.id, level: ApprovalLevel.INDICATOR_VERIFICATION },
+        where: { userId, level: ApprovalLevel.INDICATOR_VERIFICATION },
       });
       const allowedIkuIds = reviewers.map(r => r.ikuId).filter(Boolean) as string[];
       if (allowedIkuIds.length === 0) {
@@ -267,8 +271,12 @@ export class ApprovalService {
 
     const isAdmin = user?.roles?.includes('ADMIN');
     if (!isAdmin) {
+      const userId = user?.userId || user?.id;
+      if (!userId) {
+        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+      }
       const reviewer = await this.prisma.approvalReviewer.findFirst({
-        where: { userId: user.id, level: ApprovalLevel.BUDGET_VERIFICATION },
+        where: { userId, level: ApprovalLevel.BUDGET_VERIFICATION },
       });
       if (!reviewer) {
         return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
