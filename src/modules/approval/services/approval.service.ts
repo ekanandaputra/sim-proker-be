@@ -185,14 +185,35 @@ export class ApprovalService {
   /**
    * Get indicators pending verification (SUBMITTED / REVISION status — waiting for Level 1).
    */
-  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }) {
+  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
     };
+
+    const isAdmin = user?.roles?.includes('ADMIN');
+    if (!isAdmin) {
+      const reviewers = await this.prisma.approvalReviewer.findMany({
+        where: { userId: user.id, level: ApprovalLevel.INDICATOR_VERIFICATION },
+      });
+      const allowedIkuIds = reviewers.map(r => r.ikuId).filter(Boolean) as string[];
+      if (allowedIkuIds.length === 0) {
+        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+      }
+      const defaultPrograms = await this.prisma.defaultProgram.findMany({
+        where: { ikuId: { in: allowedIkuIds } },
+        select: { title: true },
+      });
+      const allowedTitles = defaultPrograms.map(dp => dp.title);
+      if (allowedTitles.length === 0) {
+        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+      }
+      where.program = { title: { in: allowedTitles } };
+    }
+
 
     const [totalItems, indicators] = await Promise.all([
       this.prisma.programIndicator.count({ where }),
@@ -235,14 +256,24 @@ export class ApprovalService {
   /**
    * Get indicators pending budget verification (INDICATOR_APPROVED status — waiting for Level 2).
    */
-  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number }) {
+  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       status: ProgramStatus.INDICATOR_APPROVED,
     };
+
+    const isAdmin = user?.roles?.includes('ADMIN');
+    if (!isAdmin) {
+      const reviewer = await this.prisma.approvalReviewer.findFirst({
+        where: { userId: user.id, level: ApprovalLevel.BUDGET_VERIFICATION },
+      });
+      if (!reviewer) {
+        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+      }
+    }
 
     const [totalItems, indicators] = await Promise.all([
       this.prisma.programIndicator.count({ where }),
