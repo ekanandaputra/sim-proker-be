@@ -212,3 +212,8 @@ export class AssignIkusToUnitDto {
   @ApiProperty({ type: [String], example: ['iku-uuid-1', 'iku-uuid-2'] })
   ikuIds!: string[];
 }
+
+export class UnassignIkusFromUnitDto {
+  @ApiProperty({ type: [String], example: ['iku-uuid-1', 'iku-uuid-2'] })
+  ikuIds!: string[];
+}
