@@ -99,4 +99,23 @@ export class IkuIntegrationService {
 
     return data?.data || data;
   }
+
+  async unassignIkusFromUnit(unitId: string, ikuIds: string[], token?: string): Promise<any> {
+    const headers = token ? { Authorization: token } : undefined;
+    const payload = { ikuIds };
+
+    const { data } = await firstValueFrom(
+      this.httpService.post(`${this.ikuUrl}/api/units/${unitId}/ikus/unassign`, payload, { headers }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to unassign IKUs from unit ${unitId}: ${error.message}`);
+          throw new HttpException(
+            'Failed to unassign IKUs from unit in IKU Service',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+
+    return data?.data || data;
+  }
 }
