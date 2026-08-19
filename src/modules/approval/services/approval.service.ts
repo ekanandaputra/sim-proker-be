@@ -194,29 +194,26 @@ export class ApprovalService {
       status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
     };
 
-    const isAdmin = user?.roles?.includes('ADMIN');
-    if (!isAdmin) {
-      const userId = user?.userId || user?.id;
-      if (!userId) {
-        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-      }
-      const reviewers = await this.prisma.approvalReviewer.findMany({
-        where: { userId, level: ApprovalLevel.INDICATOR_VERIFICATION },
-      });
-      const allowedIkuIds = reviewers.map(r => r.ikuId).filter(Boolean) as string[];
-      if (allowedIkuIds.length === 0) {
-        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-      }
-      const defaultPrograms = await this.prisma.defaultProgram.findMany({
-        where: { ikuId: { in: allowedIkuIds } },
-        select: { title: true },
-      });
-      const allowedTitles = defaultPrograms.map(dp => dp.title);
-      if (allowedTitles.length === 0) {
-        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-      }
-      where.program = { title: { in: allowedTitles } };
+    const userId = user?.userId || user?.id;
+    if (!userId) {
+      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
     }
+    const reviewers = await this.prisma.approvalReviewer.findMany({
+      where: { userId, level: ApprovalLevel.INDICATOR_VERIFICATION },
+    });
+    const allowedIkuIds = reviewers.map(r => r.ikuId).filter(Boolean) as string[];
+    if (allowedIkuIds.length === 0) {
+      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+    }
+    const defaultPrograms = await this.prisma.defaultProgram.findMany({
+      where: { ikuId: { in: allowedIkuIds } },
+      select: { title: true },
+    });
+    const allowedTitles = defaultPrograms.map(dp => dp.title);
+    if (allowedTitles.length === 0) {
+      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+    }
+    where.program = { title: { in: allowedTitles } };
 
 
     const [totalItems, indicators] = await Promise.all([
@@ -269,18 +266,15 @@ export class ApprovalService {
       status: ProgramStatus.INDICATOR_APPROVED,
     };
 
-    const isAdmin = user?.roles?.includes('ADMIN');
-    if (!isAdmin) {
-      const userId = user?.userId || user?.id;
-      if (!userId) {
-        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-      }
-      const reviewer = await this.prisma.approvalReviewer.findFirst({
-        where: { userId, level: ApprovalLevel.BUDGET_VERIFICATION },
-      });
-      if (!reviewer) {
-        return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-      }
+    const userId = user?.userId || user?.id;
+    if (!userId) {
+      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
+    }
+    const reviewer = await this.prisma.approvalReviewer.findFirst({
+      where: { userId, level: ApprovalLevel.BUDGET_VERIFICATION },
+    });
+    if (!reviewer) {
+      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
     }
 
     const [totalItems, indicators] = await Promise.all([
