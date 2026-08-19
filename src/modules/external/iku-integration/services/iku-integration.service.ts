@@ -80,4 +80,23 @@ export class IkuIntegrationService {
 
     return items;
   }
+
+  async assignIkusToUnit(unitId: string, ikuIds: string[], token?: string): Promise<any> {
+    const headers = token ? { Authorization: token } : undefined;
+    const payload = { ikuIds };
+
+    const { data } = await firstValueFrom(
+      this.httpService.post(`${this.ikuUrl}/api/units/${unitId}/ikus/assign`, payload, { headers }).pipe(
+        catchError((error) => {
+          this.logger.error(`Failed to assign IKUs to unit ${unitId}: ${error.message}`);
+          throw new HttpException(
+            'Failed to assign IKUs to unit in IKU Service',
+            error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }),
+      ),
+    );
+
+    return data?.data || data;
+  }
 }

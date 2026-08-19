@@ -29,9 +29,10 @@ export class ApprovalController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
   @ApiPaginatedResponse(SubmittedProgramIndicatorResponseDto)
-  async getSubmittedIndicators(@Req() req: Request, @Query() query: any) {
+  async getSubmittedIndicators(@Req() req: any, @Query() query: any) {
     const token = req.headers.authorization as string;
-    return this.approvalService.getSubmittedIndicators(token, query);
+    const user = req.user;
+    return this.approvalService.getSubmittedIndicators(token, query, user);
   }
 
   @Get('indicators/indicator-approved')
@@ -43,9 +44,10 @@ export class ApprovalController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
   @ApiPaginatedResponse(SubmittedProgramIndicatorResponseDto)
-  async getIndicatorApprovedIndicators(@Req() req: Request, @Query() query: any) {
+  async getIndicatorApprovedIndicators(@Req() req: any, @Query() query: any) {
     const token = req.headers.authorization as string;
-    return this.approvalService.getIndicatorApprovedIndicators(token, query);
+    const user = req.user;
+    return this.approvalService.getIndicatorApprovedIndicators(token, query, user);
   }
 
   @Post('indicators/:id/approve')
