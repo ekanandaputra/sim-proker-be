@@ -7,14 +7,18 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Role } from '@common/constants/roles.constant';
 import { UnitService } from '../services/unit.service';
-import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto, UnitDetailDataDto, UnitProgramResponseDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto, UnitDetailDataDto, UnitProgramResponseDto, AssignIkusToUnitDto } from '../dto/unit.dto';
+import { IkuIntegrationService } from '../../external/iku-integration/services/iku-integration.service';
 
 @ApiTags('Unit Management')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('units')
 export class UnitController {
-  constructor(private readonly unitService: UnitService) {}
+  constructor(
+    private readonly unitService: UnitService,
+    private readonly ikuIntegrationService: IkuIntegrationService,
+  ) {}
 
   private extractToken(req: Request): string {
     return req.headers.authorization || '';
@@ -99,6 +103,15 @@ export class UnitController {
   @Post(':id/assign')
   async assignUsers(@Req() req: Request, @Param('id') id: string, @Body() payload: AssignUnitPayloadDto) {
     return this.unitService.assignUsers(id, payload, this.extractToken(req));
+  }
+
+  @ApiOperation({ summary: 'Assign IKUs to a unit (Proxy to IKU Service)' })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
+  @ApiBody({ type: AssignIkusToUnitDto })
+  @Roles(Role.ADMIN)
+  @Post(':id/ikus/assign')
+  async assignIkusToUnit(@Req() req: Request, @Param('id') id: string, @Body() payload: AssignIkusToUnitDto) {
+    return this.ikuIntegrationService.assignIkusToUnit(id, payload.ikuIds, this.extractToken(req));
   }
 
   @ApiOperation({ summary: 'Get all users in a unit (proxied to auth service)' })

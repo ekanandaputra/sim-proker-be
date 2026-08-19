@@ -3,9 +3,10 @@ import { HttpModule } from '@nestjs/axios';
 import { UnitController } from './controllers/unit.controller';
 import { UnitService } from './services/unit.service';
 import { PrismaModule } from '@database/prisma/prisma.module';
+import { IkuIntegrationModule } from '../external/iku-integration/iku-integration.module';
 
 @Module({
-  imports: [HttpModule, PrismaModule],
+  imports: [HttpModule, PrismaModule, IkuIntegrationModule],
   controllers: [UnitController],
   providers: [UnitService],
   exports: [UnitService],
