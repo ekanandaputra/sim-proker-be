@@ -189,7 +189,15 @@ export class ProgramIndicatorService {
     }
 
     // Ubah status ke IN_PROGRESS jika sebelumnya ASSIGNED_TO_UNIT
-    const newStatus = indicator.status === 'ASSIGNED_TO_UNIT' ? 'IN_PROGRESS' : indicator.status;
+    // Namun untuk kategori TUSI dan PENGEMBANGAN, ubah ke SUBMITTED
+    let newStatus = indicator.status;
+    if (indicator.status === 'ASSIGNED_TO_UNIT') {
+      if (indicator.category === 'TUSI' || indicator.category === 'PENGEMBANGAN') {
+        newStatus = 'SUBMITTED';
+      } else {
+        newStatus = 'IN_PROGRESS';
+      }
+    }
 
     const updated = await this.prisma.programIndicator.update({
       where: { id },
