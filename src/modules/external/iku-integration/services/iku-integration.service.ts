@@ -105,7 +105,7 @@ export class IkuIntegrationService {
     const payload = { ikuIds };
 
     const { data } = await firstValueFrom(
-      this.httpService.post(`${this.ikuUrl}/api/units/${unitId}/ikus/unassign`, payload, { headers }).pipe(
+      this.httpService.delete(`${this.ikuUrl}/api/units/${unitId}/ikus/unassign`, { headers, data: payload }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to unassign IKUs from unit ${unitId}: ${error.message}`);
           throw new HttpException(
