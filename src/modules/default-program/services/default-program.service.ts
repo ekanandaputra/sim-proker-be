@@ -508,16 +508,31 @@ export class DefaultProgramService {
     const ikuResult = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
     const ikuCodeToId = new Map<string, string>();
     for (const iku of ikuResult.items || []) {
-      ikuCodeToId.set(iku.code, iku.id);
+      if (iku.code) {
+        ikuCodeToId.set(String(iku.code).trim().toLowerCase(), iku.id);
+      }
     }
 
     let createdCount = 0;
     let skippedCount = 0;
 
     for (const row of rows) {
-      const ikuCode = typeof row['IKU Code'] === 'string' ? row['IKU Code'].trim() : row['IKU Code'];
-      const title = typeof row['Title'] === 'string' ? row['Title'].trim() : row['Title'];
-      const description = typeof row['Description'] === 'string' ? row['Description'].trim() : (row['Description'] || null);
+      let ikuCode = row['IKU Code'];
+      if (ikuCode !== undefined && ikuCode !== null) {
+        ikuCode = String(ikuCode).trim();
+      }
+
+      let title = row['Title'];
+      if (title !== undefined && title !== null) {
+        title = String(title).trim();
+      }
+
+      let description = row['Description'];
+      if (description !== undefined && description !== null) {
+        description = String(description).trim();
+      } else {
+        description = null;
+      }
 
       if (!ikuCode || !title) {
         this.logger.warn(`Skipping invalid row: missing required fields (IKU Code or Title)`);
@@ -525,7 +540,7 @@ export class DefaultProgramService {
       }
 
       // Resolve IKU Code to IKU ID
-      const ikuId = ikuCodeToId.get(ikuCode);
+      const ikuId = ikuCodeToId.get(String(ikuCode).toLowerCase());
       if (!ikuId) {
         this.logger.warn(`Skipping row: IKU Code '${ikuCode}' not found`);
         skippedCount++;
@@ -599,10 +614,27 @@ export class DefaultProgramService {
     let skippedCount = 0;
 
     for (const row of rows) {
-      const defaultProgramTitle = typeof row['Default Program Title'] === 'string' ? row['Default Program Title'].trim() : row['Default Program Title'];
-      const name = typeof row['Indicator Name'] === 'string' ? row['Indicator Name'].trim() : row['Indicator Name'];
-      const unit = typeof row['Unit'] === 'string' ? row['Unit'].trim() : row['Unit'];
-      const category = typeof row['Category'] === 'string' ? row['Category'].trim().toUpperCase() : 'TUSI';
+      let defaultProgramTitle = row['Default Program Title'];
+      if (defaultProgramTitle !== undefined && defaultProgramTitle !== null) {
+        defaultProgramTitle = String(defaultProgramTitle).trim();
+      }
+      
+      let name = row['Indicator Name'];
+      if (name !== undefined && name !== null) {
+        name = String(name).trim();
+      }
+      
+      let unit = row['Unit'];
+      if (unit !== undefined && unit !== null) {
+        unit = String(unit).trim();
+      }
+      
+      let category = row['Category'];
+      if (category !== undefined && category !== null) {
+        category = String(category).trim().toUpperCase();
+      } else {
+        category = 'TUSI';
+      }
 
       if (!defaultProgramTitle || !name || !unit) {
         this.logger.warn(`Skipping invalid row: missing required fields (Default Program Title, Indicator Name, or Unit)`);
