@@ -21,7 +21,7 @@ export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
 
   @Get('indicators/submitted')
-  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @Roles(Role.ADMIN, Role.REVIEWER_INDIKATOR_PROKER)
   @ApiOperation({
     summary: 'List indicators pending indicator verification (Level 1)',
     description: 'Returns a paginated list of program indicators with SUBMITTED or REVISION status, waiting for indicator verification (Level 1).',
@@ -36,7 +36,7 @@ export class ApprovalController {
   }
 
   @Get('indicators/indicator-approved')
-  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @Roles(Role.ADMIN, Role.REVIEWER_ANGGARAN_PROKER)
   @ApiOperation({
     summary: 'List indicators pending budget verification (Level 2)',
     description: 'Returns a paginated list of program indicators with INDICATOR_APPROVED status, waiting for budget verification (Level 2).',
@@ -51,7 +51,7 @@ export class ApprovalController {
   }
 
   @Post('indicators/:id/approve')
-  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @Roles(Role.ADMIN, Role.REVIEWER_INDIKATOR_PROKER, Role.REVIEWER_ANGGARAN_PROKER)
   @ApiOperation({
     summary: 'Approve a program indicator',
     description:
@@ -135,7 +135,7 @@ export class ApprovalController {
   }
 
   @Post('indicators/:id/reject')
-  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @Roles(Role.ADMIN, Role.REVIEWER_INDIKATOR_PROKER, Role.REVIEWER_ANGGARAN_PROKER)
   @ApiOperation({
     summary: 'Reject a program indicator',
     description:
@@ -214,7 +214,7 @@ export class ApprovalController {
   }
 
   @Post('indicators/:id/revision')
-  @Roles(Role.ADMIN, Role.REVIEWER, Role.LEADER)
+  @Roles(Role.ADMIN, Role.REVIEWER_INDIKATOR_PROKER, Role.REVIEWER_ANGGARAN_PROKER)
   @ApiOperation({
     summary: 'Request revision for a program indicator',
     description:
