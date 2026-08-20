@@ -3,5 +3,6 @@ export enum Role {
   UNIT_ADMIN = 'Unit Admin',
   PIC = 'PIC',
   REVIEWER = 'Reviewer',
-  LEADER = 'Leader',
+  REVIEWER_INDIKATOR_PROKER = 'reviewer_indikator_proker',
+  REVIEWER_ANGGARAN_PROKER = 'reviewer_anggaran_proker',
 }
