@@ -267,6 +267,7 @@ export class UnitService {
       include: {
         program: true,
         masterUnitType: true,
+        pics: true,
         realizations: {
           orderBy: { month: 'asc' }
         }
@@ -298,13 +299,20 @@ export class UnitService {
       programMap.get(program.id)!.indikator.push({
         id: indicator.id,
         name: indicator.name,
-        masterUnitType: indicator.masterUnitType,
+        category: indicator.category,
+        masterUnitType: {
+          id: indicator.masterUnitType.id,
+          name: indicator.masterUnitType.name,
+          type: indicator.masterUnitType.type,
+        },
         targetQ1: indicator.targetQ1 ? Number(indicator.targetQ1) : null,
         targetQ2: indicator.targetQ2 ? Number(indicator.targetQ2) : null,
         targetQ3: indicator.targetQ3 ? Number(indicator.targetQ3) : null,
         targetQ4: indicator.targetQ4 ? Number(indicator.targetQ4) : null,
+        budget: indicator.budget ? Number(indicator.budget) : null,
         status: indicator.status,
         order: indicator.order,
+        picIds: indicator.pics.map((p) => p.userId),
         realizations: indicator.realizations.map((r) => ({
           id: r.id,
           month: r.month,
@@ -316,5 +324,6 @@ export class UnitService {
 
     return Array.from(programMap.values());
   }
+
 }
 

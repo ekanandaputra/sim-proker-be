@@ -133,13 +133,70 @@ export class UnitController {
     return this.unitService.getUnitUsers(id, this.extractToken(req), query);
   }
 
-  @ApiOperation({ summary: 'Get programs assigned to a unit' })
-  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string' })
-  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (default to current year)' })
-  @ApiResponse({ status: 200, type: [UnitProgramResponseDto], description: 'List of programs and indicators assigned to the unit' })
+  @ApiOperation({
+    summary: 'Get programs & indicators assigned to a unit for a specific year',
+    description:
+      'Returns a nested list of all programs assigned to the given unit in the specified year. ' +
+      'Each program includes its indicators (filtered by this unit), along with target per quarter, budget, category, PICs, and monthly realizations.',
+  })
+  @ApiParam({ name: 'id', description: 'Unit UUID', type: 'string', example: 'uuid-unit-123' })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    type: Number,
+    description: 'Tahun program kerja yang ingin ditampilkan (e.g., 2026)',
+    example: 2026,
+  })
+  @ApiResponse({
+    status: 200,
+    type: [UnitProgramResponseDto],
+    description: 'Daftar program beserta indikator yang di-assign ke unit pada tahun yang dipilih.',
+    schema: {
+      example: [
+        {
+          program: {
+            id: 'uuid-program-1',
+            code: 'PRG-2026-001',
+            title: 'Peningkatan Kualitas Laporan',
+            description: 'Deskripsi program',
+            objective: 'Objektif program',
+            year: 2026,
+            createdBy: 'uuid-user-admin',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          indikator: [
+            {
+              id: 'uuid-indicator-1',
+              name: 'Jumlah laporan yang diterbitkan',
+              category: 'TUSI',
+              masterUnitType: {
+                id: 'uuid-master-unit-type',
+                name: 'Dokumen',
+                type: 'NUMBER',
+              },
+              targetQ1: 2,
+              targetQ2: 3,
+              targetQ3: 4,
+              targetQ4: 5,
+              budget: 5000000,
+              status: 'SUBMITTED',
+              order: 1,
+              picIds: ['uuid-user-pic-1', 'uuid-user-pic-2'],
+              realizations: [
+                { id: 'uuid-real-1', month: 1, realization: 1, remark: 'Selesai tepat waktu' },
+                { id: 'uuid-real-2', month: 2, realization: 2, remark: null },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  })
   @Get(':id/programs')
   async getUnitPrograms(@Param('id') id: string, @Query('year') year?: string) {
     const filterYear = year ? Number(year) : new Date().getFullYear();
     return this.unitService.getUnitPrograms(id, filterYear);
   }
+
 }

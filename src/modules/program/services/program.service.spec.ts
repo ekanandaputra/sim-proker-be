@@ -54,16 +54,29 @@ describe('ProgramService', () => {
     service = new ProgramService(repository, auditLogService, prismaService as any);
   });
 
+  const mockAdminUser = {
+    userId: 'admin-uuid',
+    unitId: 'unit-uuid-admin',
+    roles: ['admin_sim_iku'],
+    name: 'Admin User',
+  };
+
+  const mockRegularUser = {
+    userId: 'user-uuid',
+    unitId: 'unit-uuid-123',
+    roles: ['PIC'],
+    name: 'Regular User',
+  };
+
   describe('findAll', () => {
-    it('should return paginated programs', async () => {
+    it('should return paginated programs for admin without unit filter', async () => {
       vi.mocked(repository.findAll).mockResolvedValue([mockProgram]);
       vi.mocked(repository.count).mockResolvedValue(1);
 
-      const result = await service.findAll({
-        page: 1,
-        limit: 10,
-        sortOrder: 'desc',
-      });
+      const result = await service.findAll(
+        { page: 1, limit: 10, sortOrder: 'desc' },
+        mockAdminUser,
+      );
 
       expect(result.items).toHaveLength(1);
       expect(result.pagination.totalItems).toBe(1);
@@ -71,16 +84,32 @@ describe('ProgramService', () => {
       expect(repository.findAll).toHaveBeenCalledOnce();
     });
 
+    it('should filter programs by user unitId for non-admin', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([]);
+      vi.mocked(repository.count).mockResolvedValue(0);
+
+      await service.findAll(
+        { page: 1, limit: 10, sortOrder: 'desc' },
+        mockRegularUser,
+      );
+
+      expect(repository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            indicators: { some: { unitId: 'unit-uuid-123' } },
+          }),
+        }),
+      );
+    });
+
     it('should apply search filter', async () => {
       vi.mocked(repository.findAll).mockResolvedValue([]);
       vi.mocked(repository.count).mockResolvedValue(0);
 
-      await service.findAll({
-        page: 1,
-        limit: 10,
-        sortOrder: 'desc',
-        search: 'test query',
-      });
+      await service.findAll(
+        { page: 1, limit: 10, sortOrder: 'desc', search: 'test query' },
+        mockAdminUser,
+      );
 
       expect(repository.findAll).toHaveBeenCalledWith(
         expect.objectContaining({
