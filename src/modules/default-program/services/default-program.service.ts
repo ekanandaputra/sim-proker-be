@@ -22,7 +22,7 @@ export class DefaultProgramService {
     private readonly unitService: UnitService,
     private readonly ikuService: IkuService,
     private readonly auditLogService: AuditLogService,
-  ) {}
+  ) { }
 
   async findAll(query: PaginationQuery): Promise<PaginatedResponse<DefaultProgramDto>> {
     const { page, limit, search, sortBy, sortOrder } = query;
@@ -30,10 +30,10 @@ export class DefaultProgramService {
 
     const where = search
       ? {
-          OR: [
-            { title: { contains: search } },
-          ],
-        }
+        OR: [
+          { title: { contains: search } },
+        ],
+      }
       : {};
 
     const [items, totalItems] = await Promise.all([
@@ -106,7 +106,7 @@ export class DefaultProgramService {
   async update(id: string, data: UpdateDefaultProgramDto, user: { id: string, name: string }): Promise<DefaultProgramDto> {
     const oldProgram = await this.findById(id); // Check existence
     const { indicators, ...rest } = data;
-    
+
     // For simplicity, if indicators are provided in update, we replace all existing ones.
     // In a real app, you might want a separate endpoint for indicators CRUD.
     const updateData: any = { ...rest };
@@ -154,7 +154,7 @@ export class DefaultProgramService {
 
   async addIndicator(defaultProgramId: string, data: CreateDefaultProgramIndicatorDto, user: { id: string, name: string }): Promise<DefaultProgramDto> {
     await this.findById(defaultProgramId); // Check existence
-    
+
     const indicator = await this.prisma.defaultProgramIndicator.create({
       data: {
         defaultProgramId,
@@ -234,24 +234,24 @@ export class DefaultProgramService {
         createdCount += indicatorsToCreate.length;
       }
     } else {
-        // For title, we need a default master unit type or we might have a problem if it's required.
-        // It's better to find a default one, e.g. "N/A"
-        let defaultUnit = await this.prisma.masterUnitType.findFirst({ where: { name: 'N/A' } });
-        if (!defaultUnit) {
-          defaultUnit = await this.prisma.masterUnitType.create({ data: { name: 'N/A', type: 'TEXT' } });
-        }
-        if (!existingIndicatorNames.has(dp.title)) {
-          await this.prisma.programIndicator.create({
-            data: {
-              programId: program.id,
-              unitId,
-              name: dp.title, // Default name based on program title or default program title
-              masterUnitTypeId: defaultUnit.id, // Default unit
-              category: 'TUSI', // Default category
-              isDefaultProgramIndicator: true,
-              status: ProgramStatus.ASSIGNED_TO_UNIT,
-            }
-          });
+      // For title, we need a default master unit type or we might have a problem if it's required.
+      // It's better to find a default one, e.g. "N/A"
+      let defaultUnit = await this.prisma.masterUnitType.findFirst({ where: { name: 'N/A' } });
+      if (!defaultUnit) {
+        defaultUnit = await this.prisma.masterUnitType.create({ data: { name: 'N/A', type: 'TEXT' } });
+      }
+      if (!existingIndicatorNames.has(dp.title)) {
+        await this.prisma.programIndicator.create({
+          data: {
+            programId: program.id,
+            unitId,
+            name: dp.title, // Default name based on program title or default program title
+            masterUnitTypeId: defaultUnit.id, // Default unit
+            category: 'TUSI', // Default category
+            isDefaultProgramIndicator: true,
+            status: ProgramStatus.ASSIGNED_TO_UNIT,
+          }
+        });
         createdCount++;
       }
     }
@@ -618,17 +618,17 @@ export class DefaultProgramService {
       if (defaultProgramTitle !== undefined && defaultProgramTitle !== null) {
         defaultProgramTitle = String(defaultProgramTitle).trim();
       }
-      
+
       let name = row['Indicator Name'];
       if (name !== undefined && name !== null) {
         name = String(name).trim();
       }
-      
+
       let unit = row['Unit'];
       if (unit !== undefined && unit !== null) {
         unit = String(unit).trim();
       }
-      
+
       let category = row['Category'];
       if (category !== undefined && category !== null) {
         category = String(category).trim().toUpperCase();
@@ -681,7 +681,7 @@ export class DefaultProgramService {
         masterUnitType = await this.prisma.masterUnitType.create({
           data: {
             name: unit,
-            type: 'TEXT',
+            type: 'NUMBER',
           }
         });
       }
