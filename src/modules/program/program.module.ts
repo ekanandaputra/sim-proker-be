@@ -4,6 +4,7 @@ import { ProgramController } from './controllers/program.controller';
 import { ProgramIndicatorController } from './controllers/program-indicator.controller';
 import { ProgramService } from './services/program.service';
 import { ProgramIndicatorService } from './services/program-indicator.service';
+import { ProgramIndicatorImportService } from './services/program-indicator-import.service';
 import { ProgramRepository } from './repositories/program.repository';
 import { PROGRAM_REPOSITORY } from './repositories/program.repository.interface';
 import { getAppConfig } from '@common/config';
@@ -20,6 +21,7 @@ import { ProgramExportService } from './services/program-export.service';
     ProgramService,
     ProgramIndicatorService,
     ProgramExportService,
+    ProgramIndicatorImportService,
     {
       provide: PROGRAM_REPOSITORY,
       useClass: ProgramRepository,
@@ -28,3 +30,4 @@ import { ProgramExportService } from './services/program-export.service';
   exports: [ProgramService],
 })
 export class ProgramModule {}
+

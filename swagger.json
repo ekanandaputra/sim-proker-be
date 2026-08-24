@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/audit-logs": {
+    "/api/v1/audit-logs": {
       "get": {
         "description": "Get a paginated list of audit logs with filtering by entity type, action, user, and date range. Admin only.",
         "operationId": "AuditLogController_findAll",
@@ -181,7 +181,7 @@
         ]
       }
     },
-    "/audit-logs/{id}": {
+    "/api/v1/audit-logs/{id}": {
       "get": {
         "description": "Get a single audit log entry with full details. Admin only.",
         "operationId": "AuditLogController_findById",
@@ -222,7 +222,158 @@
         ]
       }
     },
-    "/programs": {
+    "/api/v1/programs/export/proker": {
+      "get": {
+        "description": "Export all indicators for a specific unit and year to a styled Excel format.",
+        "operationId": "ProgramController_exportProker",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export program indicators to Excel",
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/api/v1/programs/indicators/export-assign": {
+      "get": {
+        "description": "Download file Excel berisi daftar semua indikator beserta kolom Unit Pelaksana yang sudah terisi. File ini bisa diisi/diubah kemudian di-upload kembali via endpoint import. Format kolom: Nama Program | Indikator Unit | Unit Pelaksana.",
+        "operationId": "ProgramController_exportIndicatorAssignTemplate",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "Tahun program kerja yang akan diekspor",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel (.xlsx) siap diunduh",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"assign_indikator_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export template Excel assign indikator ke unit",
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/api/v1/programs/indicators/import-assign": {
+      "post": {
+        "description": "Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. Format kolom wajib: **Nama Program** | **Indikator Unit** | **Unit Pelaksana**. Pencarian program menggunakan nama program (exact match, case-insensitive). Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive). Baris yang tidak ditemukan salah satu datanya akan di-skip (tidak error). Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.",
+        "operationId": "ProgramController_importIndicatorAssign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File Excel (.xlsx) berisi mapping indikator ke unit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hasil proses import",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "totalRows": 5,
+                    "success": 4,
+                    "skipped": 1,
+                    "details": [
+                      {
+                        "row": 2,
+                        "program": "Peningkatan Kualitas Laporan",
+                        "indicator": "Jumlah laporan diterbitkan",
+                        "unit": "BAK",
+                        "status": "success"
+                      },
+                      {
+                        "row": 3,
+                        "program": "Program Tidak Dikenal",
+                        "indicator": "Indikator X",
+                        "unit": "BAK",
+                        "status": "skipped",
+                        "reason": "Program \"Program Tidak Dikenal\" tidak ditemukan"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File tidak valid atau format tidak sesuai"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import bulk assign indikator ke unit via Excel",
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/api/v1/programs": {
       "get": {
         "description": "Get a paginated list of programs with filtering, search, and sorting support.",
         "operationId": "ProgramController_findAll",
@@ -425,7 +576,7 @@
         ]
       }
     },
-    "/programs/{id}": {
+    "/api/v1/programs/{id}": {
       "get": {
         "description": "Get a single program with its related activities, members, and approvals.",
         "operationId": "ProgramController_findById",
@@ -547,7 +698,7 @@
         ]
       }
     },
-    "/programs/{id}/assign": {
+    "/api/v1/programs/{id}/assign": {
       "post": {
         "description": "Clone an existing program for a new year and optionally assign it to a unit. Automatically sets status to ASSIGNED_TO_UNIT.",
         "operationId": "ProgramController_assignToUnit",
@@ -598,7 +749,7 @@
         ]
       }
     },
-    "/programs/{programId}/indicators": {
+    "/api/v1/programs/{programId}/indicators": {
       "get": {
         "operationId": "ProgramIndicatorController_findAll",
         "parameters": [
@@ -680,7 +831,7 @@
         ]
       }
     },
-    "/programs/{programId}/indicators/{id}": {
+    "/api/v1/programs/{programId}/indicators/{id}": {
       "put": {
         "operationId": "ProgramIndicatorController_update",
         "parameters": [
@@ -773,7 +924,7 @@
         ]
       }
     },
-    "/programs/{programId}/indicators/{id}/set-target": {
+    "/api/v1/programs/{programId}/indicators/{id}/set-target": {
       "post": {
         "operationId": "ProgramIndicatorController_setTarget",
         "parameters": [
@@ -829,7 +980,7 @@
         ]
       }
     },
-    "/programs/{programId}/indicators/{id}/realizations": {
+    "/api/v1/programs/{programId}/indicators/{id}/realizations": {
       "get": {
         "operationId": "ProgramIndicatorController_getRealizations",
         "parameters": [
@@ -932,7 +1083,114 @@
         ]
       }
     },
-    "/units": {
+    "/api/v1/programs/{programId}/indicators/{id}/users": {
+      "get": {
+        "operationId": "ProgramIndicatorController_getIndicatorUnitUsers",
+        "parameters": [
+          {
+            "name": "programId",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Indicator UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AuthUserDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get users for an indicator based on its unitId",
+        "tags": [
+          "Program Indicators"
+        ]
+      }
+    },
+    "/api/v1/units": {
       "get": {
         "operationId": "UnitController_getUnits",
         "parameters": [
@@ -1025,7 +1283,7 @@
         ]
       }
     },
-    "/units/my-units": {
+    "/api/v1/units/my-units": {
       "get": {
         "operationId": "UnitController_getMyUnits",
         "parameters": [],
@@ -1055,7 +1313,7 @@
         ]
       }
     },
-    "/units/{id}": {
+    "/api/v1/units/{id}": {
       "get": {
         "operationId": "UnitController_getUnitById",
         "parameters": [
@@ -1151,7 +1409,7 @@
         ]
       }
     },
-    "/units/{id}/details": {
+    "/api/v1/units/{id}/details": {
       "get": {
         "operationId": "UnitController_getUnitDetails",
         "parameters": [
@@ -1188,7 +1446,7 @@
         ]
       }
     },
-    "/units/{id}/assign": {
+    "/api/v1/units/{id}/assign": {
       "post": {
         "operationId": "UnitController_assignUsers",
         "parameters": [
@@ -1228,7 +1486,87 @@
         ]
       }
     },
-    "/units/{id}/users": {
+    "/api/v1/units/{id}/ikus/assign": {
+      "post": {
+        "operationId": "UnitController_assignIkusToUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignIkusToUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign IKUs to a unit (Proxy to IKU Service)",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/api/v1/units/{id}/ikus/unassign": {
+      "delete": {
+        "operationId": "UnitController_unassignIkusFromUnit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Unit UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnassignIkusFromUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unassign IKUs from a unit (Proxy to IKU Service)",
+        "tags": [
+          "Unit Management"
+        ]
+      }
+    },
+    "/api/v1/units/{id}/users": {
       "get": {
         "operationId": "UnitController_getUnitUsers",
         "parameters": [
@@ -1285,8 +1623,9 @@
         ]
       }
     },
-    "/units/{id}/programs": {
+    "/api/v1/units/{id}/programs": {
       "get": {
+        "description": "Returns a nested list of all programs assigned to the given unit in the specified year. Each program includes its indicators (filtered by this unit), along with target per quarter, budget, category, PICs, and monthly realizations.",
         "operationId": "UnitController_getUnitPrograms",
         "parameters": [
           {
@@ -1295,22 +1634,78 @@
             "in": "path",
             "description": "Unit UUID",
             "schema": {
+              "example": "uuid-unit-123",
               "type": "string"
             }
           },
           {
             "name": "year",
-            "required": false,
+            "required": true,
             "in": "query",
-            "description": "Filter by year (default to current year)",
+            "description": "Tahun program kerja yang ingin ditampilkan (e.g., 2026)",
             "schema": {
+              "example": 2026,
               "type": "number"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of programs and indicators assigned to the unit",
+            "description": "Daftar program beserta indikator yang di-assign ke unit pada tahun yang dipilih.",
+            "schema": {
+              "example": [
+                {
+                  "program": {
+                    "id": "uuid-program-1",
+                    "code": "PRG-2026-001",
+                    "title": "Peningkatan Kualitas Laporan",
+                    "description": "Deskripsi program",
+                    "objective": "Objektif program",
+                    "year": 2026,
+                    "createdBy": "uuid-user-admin",
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "updatedAt": "2026-01-01T00:00:00.000Z"
+                  },
+                  "indikator": [
+                    {
+                      "id": "uuid-indicator-1",
+                      "name": "Jumlah laporan yang diterbitkan",
+                      "category": "TUSI",
+                      "masterUnitType": {
+                        "id": "uuid-master-unit-type",
+                        "name": "Dokumen",
+                        "type": "NUMBER"
+                      },
+                      "targetQ1": 2,
+                      "targetQ2": 3,
+                      "targetQ3": 4,
+                      "targetQ4": 5,
+                      "budget": 5000000,
+                      "status": "SUBMITTED",
+                      "order": 1,
+                      "picIds": [
+                        "uuid-user-pic-1",
+                        "uuid-user-pic-2"
+                      ],
+                      "realizations": [
+                        {
+                          "id": "uuid-real-1",
+                          "month": 1,
+                          "realization": 1,
+                          "remark": "Selesai tepat waktu"
+                        },
+                        {
+                          "id": "uuid-real-2",
+                          "month": 2,
+                          "realization": 2,
+                          "remark": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1328,13 +1723,322 @@
             "bearer": []
           }
         ],
-        "summary": "Get programs assigned to a unit",
+        "summary": "Get programs & indicators assigned to a unit for a specific year",
         "tags": [
           "Unit Management"
         ]
       }
     },
-    "/programs/{id}/activities": {
+    "/api/v1/auth/users": {
+      "get": {
+        "operationId": "AuthIntegrationController_getUsers",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (asc/desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search keyword",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AuthUserDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all users from Auth Service",
+        "tags": [
+          "Auth Integration"
+        ]
+      }
+    },
+    "/api/v1/auth/units": {
+      "get": {
+        "operationId": "AuthIntegrationController_getUnits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthUnitDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all units from Auth Service",
+        "tags": [
+          "Auth Integration"
+        ]
+      }
+    },
+    "/api/v1/ikus": {
+      "get": {
+        "operationId": "IkuController_getAllIkus",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (asc/desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search keyword",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/IkuResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all IKUs",
+        "tags": [
+          "IKU"
+        ]
+      }
+    },
+    "/api/v1/ikus/{id}/units": {
+      "get": {
+        "operationId": "IkuController_getIkuUnits",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitDetailDataDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all units assigned to a specific IKU",
+        "tags": [
+          "IKU"
+        ]
+      }
+    },
+    "/api/v1/programs/{id}/activities": {
       "get": {
         "description": "Returns a paginated list of activities for a given program",
         "operationId": "ActivityController_findByProgram",
@@ -1467,7 +2171,7 @@
         ]
       }
     },
-    "/activities/{id}": {
+    "/api/v1/activities/{id}": {
       "patch": {
         "operationId": "ActivityController_update",
         "parameters": [
@@ -1549,7 +2253,7 @@
         ]
       }
     },
-    "/activities/{id}/outputs": {
+    "/api/v1/activities/{id}/outputs": {
       "get": {
         "operationId": "OutputController_findByActivity",
         "parameters": [
@@ -1680,7 +2384,7 @@
         ]
       }
     },
-    "/outputs/{id}": {
+    "/api/v1/outputs/{id}": {
       "patch": {
         "operationId": "OutputController_update",
         "parameters": [
@@ -1764,7 +2468,7 @@
         ]
       }
     },
-    "/activities/{id}/progress": {
+    "/api/v1/activities/{id}/progress": {
       "get": {
         "description": "Returns progress history in descending order.",
         "operationId": "ProgressController_findByActivity",
@@ -1897,9 +2601,9 @@
         ]
       }
     },
-    "/activities/{id}/evidences": {
+    "/api/v1/activities/{id}/documents": {
       "get": {
-        "operationId": "EvidenceController_findByActivity",
+        "operationId": "DocumentController_findByActivity",
         "parameters": [
           {
             "name": "id",
@@ -1933,7 +2637,7 @@
                             "items": {
                               "type": "array",
                               "items": {
-                                "$ref": "#/components/schemas/EvidenceResponseDto"
+                                "$ref": "#/components/schemas/DocumentResponseDto"
                               }
                             },
                             "pagination": {
@@ -1971,13 +2675,13 @@
             "bearer": []
           }
         ],
-        "summary": "List evidences for an activity",
+        "summary": "List documents for an activity",
         "tags": [
-          "Evidences"
+          "Documents"
         ]
       },
       "post": {
-        "operationId": "EvidenceController_upload",
+        "operationId": "DocumentController_upload",
         "parameters": [
           {
             "name": "id",
@@ -2000,10 +2704,21 @@
                     "type": "string",
                     "format": "binary",
                     "description": "The file to upload (max 10MB)"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "EVIDENCE",
+                      "RAB",
+                      "PROPOSAL",
+                      "OTHER"
+                    ],
+                    "description": "Type of document"
                   }
                 },
                 "required": [
-                  "file"
+                  "file",
+                  "type"
                 ]
               }
             }
@@ -2011,11 +2726,11 @@
         },
         "responses": {
           "201": {
-            "description": "Evidence uploaded",
+            "description": "Document uploaded",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EvidenceResponseDto"
+                  "$ref": "#/components/schemas/DocumentResponseDto"
                 }
               }
             }
@@ -2032,21 +2747,21 @@
             "bearer": []
           }
         ],
-        "summary": "Upload evidence file for an activity",
+        "summary": "Upload document file for an activity",
         "tags": [
-          "Evidences"
+          "Documents"
         ]
       }
     },
-    "/evidences/{id}": {
+    "/api/v1/documents/{id}": {
       "delete": {
-        "operationId": "EvidenceController_remove",
+        "operationId": "DocumentController_remove",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Evidence UUID",
+            "description": "Document UUID",
             "schema": {
               "type": "string"
             }
@@ -2054,10 +2769,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Evidence deleted successfully"
+            "description": "Document deleted successfully"
           },
           "404": {
-            "description": "Evidence not found"
+            "description": "Document not found"
           }
         },
         "security": [
@@ -2065,43 +2780,91 @@
             "bearer": []
           }
         ],
-        "summary": "Delete evidence",
+        "summary": "Delete document",
         "tags": [
-          "Evidences"
+          "Documents"
         ]
       }
     },
-    "/programs/{id}/submit": {
-      "post": {
-        "description": "Submits a program from DRAFT/REVISION status to the approval workflow.",
-        "operationId": "ApprovalController_submit",
+    "/api/v1/indicators/submitted": {
+      "get": {
+        "description": "Returns a paginated list of program indicators with SUBMITTED or REVISION status, waiting for indicator verification (Level 1).",
+        "operationId": "ApprovalController_getSubmittedIndicators",
         "parameters": [
           {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Program UUID",
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
             "schema": {
-              "type": "string"
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
             }
           }
         ],
         "responses": {
-          "201": {
-            "description": "Program submitted successfully",
+          "200": {
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApprovalResponseDto"
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/SubmittedProgramIndicatorResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
-          },
-          "400": {
-            "description": "Validation or state error"
-          },
-          "404": {
-            "description": "Program not found"
           }
         },
         "security": [
@@ -2109,23 +2872,116 @@
             "bearer": []
           }
         ],
-        "summary": "Submit program for approval",
+        "summary": "List indicators pending indicator verification (Level 1)",
         "tags": [
           "Approvals"
         ]
       }
     },
-    "/approvals/{id}/approve": {
+    "/api/v1/indicators/indicator-approved": {
+      "get": {
+        "description": "Returns a paginated list of program indicators with INDICATOR_APPROVED status, waiting for budget verification (Level 2).",
+        "operationId": "ApprovalController_getIndicatorApprovedIndicators",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/SubmittedProgramIndicatorResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List indicators pending budget verification (Level 2)",
+        "tags": [
+          "Approvals"
+        ]
+      }
+    },
+    "/api/v1/indicators/{id}/approve": {
       "post": {
-        "description": "Approves a pending request in the workflow",
+        "description": "Approves a program indicator. The verification level is determined automatically based on the current status:\n\n- **SUBMITTED / REVISION** → Level 1 (Verifikasi Indikator) → status becomes `INDICATOR_APPROVED`\n- **INDICATOR_APPROVED** → Level 2 (Verifikasi Anggaran) → status becomes `APPROVED`\n\nOnly users registered as reviewers for the corresponding level (and IKU for Level 1) can approve.",
         "operationId": "ApprovalController_approve",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Approval UUID",
+            "description": "Program Indicator UUID",
             "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
               "type": "string"
             }
           }
@@ -2136,6 +2992,18 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ApprovalActionDto"
+              },
+              "examples": {
+                "with_note": {
+                  "summary": "Approve with note",
+                  "value": {
+                    "note": "Indikator sudah sesuai, silakan lanjut ke verifikasi anggaran"
+                  }
+                },
+                "without_note": {
+                  "summary": "Approve without note",
+                  "value": {}
+                }
               }
             }
           }
@@ -2146,16 +3014,122 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApprovalResponseDto"
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440099"
+                        },
+                        "indicatorId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440000"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "APPROVED"
+                          ],
+                          "example": "APPROVED"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "INDICATOR_VERIFICATION",
+                            "BUDGET_VERIFICATION"
+                          ],
+                          "example": "INDICATOR_VERIFICATION"
+                        },
+                        "approverId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440002"
+                        },
+                        "note": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "Indikator sudah sesuai"
+                        },
+                        "approvedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-08-18T04:00:00.000Z"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-08-18T04:00:00.000Z"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Validation or state error"
+            "description": "Validation or state error (e.g., indicator not in correct status)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator can only be approved from SUBMITTED, REVISION, or INDICATOR_APPROVED status. Current: DRAFT"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User is not authorized as a reviewer for this level/IKU",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User user-001 is not authorized as a INDICATOR_VERIFICATION reviewer for IKU iku-001"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "Approval request not found"
+            "description": "Program Indicator not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2163,23 +3137,24 @@
             "bearer": []
           }
         ],
-        "summary": "Approve an approval request",
+        "summary": "Approve a program indicator",
         "tags": [
           "Approvals"
         ]
       }
     },
-    "/approvals/{id}/reject": {
+    "/api/v1/indicators/{id}/reject": {
       "post": {
-        "description": "Rejects a pending request in the workflow",
+        "description": "Rejects a program indicator. The verification level is determined automatically based on current status.\n\nRejection from any level sets the indicator status to `REJECTED`.\n\nOnly users registered as reviewers for the corresponding level can reject.",
         "operationId": "ApprovalController_reject",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Approval UUID",
+            "description": "Program Indicator UUID",
             "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
               "type": "string"
             }
           }
@@ -2190,6 +3165,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ApprovalActionDto"
+              },
+              "examples": {
+                "with_note": {
+                  "summary": "Reject with reason",
+                  "value": {
+                    "note": "Indikator tidak sesuai dengan target IKU"
+                  }
+                }
               }
             }
           }
@@ -2200,16 +3183,122 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApprovalResponseDto"
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440099"
+                        },
+                        "indicatorId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440000"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REJECTED"
+                          ],
+                          "example": "REJECTED"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "INDICATOR_VERIFICATION",
+                            "BUDGET_VERIFICATION"
+                          ],
+                          "example": "INDICATOR_VERIFICATION"
+                        },
+                        "approverId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440002"
+                        },
+                        "note": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "Indikator tidak sesuai dengan target IKU"
+                        },
+                        "approvedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-08-18T04:00:00.000Z"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-08-18T04:00:00.000Z"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Validation or state error"
+            "description": "Validation or state error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator can only be rejected from SUBMITTED, REVISION, or INDICATOR_APPROVED status. Current: DRAFT"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User is not authorized as a reviewer for this level/IKU",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User user-001 is not authorized as a INDICATOR_VERIFICATION reviewer for IKU iku-001"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "Approval request not found"
+            "description": "Program Indicator not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2217,23 +3306,24 @@
             "bearer": []
           }
         ],
-        "summary": "Reject an approval request",
+        "summary": "Reject a program indicator",
         "tags": [
           "Approvals"
         ]
       }
     },
-    "/approvals/{id}/revision": {
+    "/api/v1/indicators/{id}/revision": {
       "post": {
-        "description": "Requests a revision for a pending request in the workflow",
+        "description": "Requests a revision for a program indicator. The verification level is determined automatically.\n\nRevision request from any level sets the indicator status back to `REVISION`. The indicator must be re-submitted and go through Level 1 again.\n\nOnly users registered as reviewers for the corresponding level can request revision.",
         "operationId": "ApprovalController_revision",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Approval UUID",
+            "description": "Program Indicator UUID",
             "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
               "type": "string"
             }
           }
@@ -2244,26 +3334,141 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ApprovalActionDto"
+              },
+              "examples": {
+                "with_note": {
+                  "summary": "Request revision with feedback",
+                  "value": {
+                    "note": "Silakan perbaiki anggaran pada bagian operasional"
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Revision requested",
+            "description": "Revision requested successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApprovalResponseDto"
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440099"
+                        },
+                        "indicatorId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440000"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REVISION"
+                          ],
+                          "example": "REVISION"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "INDICATOR_VERIFICATION",
+                            "BUDGET_VERIFICATION"
+                          ],
+                          "example": "BUDGET_VERIFICATION"
+                        },
+                        "approverId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440002"
+                        },
+                        "note": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "Silakan perbaiki anggaran pada bagian operasional"
+                        },
+                        "approvedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true,
+                          "example": null
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-08-18T04:00:00.000Z"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Validation or state error"
+            "description": "Validation or state error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Revision can only be requested from SUBMITTED or INDICATOR_APPROVED status. Current: DRAFT"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User is not authorized as a reviewer for this level/IKU",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User user-001 is not authorized as a BUDGET_VERIFICATION reviewer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "Approval request not found"
+            "description": "Program Indicator not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2271,13 +3476,481 @@
             "bearer": []
           }
         ],
-        "summary": "Request revision for an approval",
+        "summary": "Request revision for a program indicator",
         "tags": [
           "Approvals"
         ]
       }
     },
-    "/dashboard": {
+    "/api/v1/indicators/change-to-in-progress/{year}": {
+      "patch": {
+        "description": "Mengubah status semua `ProgramIndicator` yang berstatus `APPROVED` pada tahun yang diberikan menjadi `IN_PROGRESS`.\n\nEndpoint ini hanya dapat diakses oleh **Admin**.",
+        "operationId": "ApprovalController_changeApprovedToInProgress",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun periode (e.g. 2025)",
+            "schema": {
+              "example": 2025,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perubahan status berhasil dilakukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "updatedCount": {
+                          "type": "number",
+                          "example": 42
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ubah semua indikator APPROVED menjadi IN_PROGRESS pada tahun tertentu",
+        "tags": [
+          "Approvals"
+        ]
+      }
+    },
+    "/api/v1/approval-reviewers": {
+      "post": {
+        "description": "Assign a user as a reviewer for a specific verification level.\n\n- **INDICATOR_VERIFICATION**: Provide `ikuIds` array to assign the user as indicator reviewer for one or more IKUs.\n- **BUDGET_VERIFICATION**: No `ikuIds` needed. The user becomes a global budget reviewer.",
+        "operationId": "ApprovalReviewerController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApprovalReviewerDto"
+              },
+              "examples": {
+                "indicator_reviewer": {
+                  "summary": "Assign indicator reviewer for multiple IKUs",
+                  "value": {
+                    "userId": "550e8400-e29b-41d4-a716-446655440001",
+                    "level": "INDICATOR_VERIFICATION",
+                    "ikuIds": [
+                      "iku-uuid-001",
+                      "iku-uuid-002",
+                      "iku-uuid-003"
+                    ]
+                  }
+                },
+                "budget_reviewer": {
+                  "summary": "Assign budget reviewer (global)",
+                  "value": {
+                    "userId": "550e8400-e29b-41d4-a716-446655440002",
+                    "level": "BUDGET_VERIFICATION"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reviewer(s) assigned successfully. Returns an array of created reviewer assignments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "example": "550e8400-e29b-41d4-a716-446655440001"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "INDICATOR_VERIFICATION",
+                              "BUDGET_VERIFICATION"
+                            ],
+                            "example": "INDICATOR_VERIFICATION"
+                          },
+                          "ikuId": {
+                            "type": "string",
+                            "nullable": true,
+                            "example": "iku-uuid-001"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-01T00:00:00.000Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-01T00:00:00.000Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (e.g., ikuIds missing for INDICATOR_VERIFICATION)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Validation failed"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string",
+                            "example": "ikuIds"
+                          },
+                          "message": {
+                            "type": "string",
+                            "example": "ikuIds is required for INDICATOR_VERIFICATION level"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign a reviewer",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      },
+      "get": {
+        "description": "Returns all reviewer assignments, optionally filtered by verification level and/or IKU ID.",
+        "operationId": "ApprovalReviewerController_findAll",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "Filter by verification level",
+            "schema": {
+              "enum": [
+                "INDICATOR_VERIFICATION",
+                "BUDGET_VERIFICATION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "ikuId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reviewer assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "example": "550e8400-e29b-41d4-a716-446655440001"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "INDICATOR_VERIFICATION",
+                              "BUDGET_VERIFICATION"
+                            ],
+                            "example": "INDICATOR_VERIFICATION"
+                          },
+                          "ikuId": {
+                            "type": "string",
+                            "nullable": true,
+                            "example": "iku-uuid-001"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-01T00:00:00.000Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-01T00:00:00.000Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all reviewers",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      }
+    },
+    "/api/v1/approval-reviewers/{id}": {
+      "get": {
+        "description": "Returns a single reviewer assignment by its UUID.",
+        "operationId": "ApprovalReviewerController_findById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reviewer assignment UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviewer assignment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440000"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "example": "550e8400-e29b-41d4-a716-446655440001"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "INDICATOR_VERIFICATION",
+                            "BUDGET_VERIFICATION"
+                          ],
+                          "example": "INDICATOR_VERIFICATION"
+                        },
+                        "ikuId": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "iku-uuid-001"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-01-01T00:00:00.000Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-01-01T00:00:00.000Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Reviewer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ApprovalReviewer with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get reviewer by ID",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a reviewer assignment by its UUID. The user will no longer be able to review at the assigned level.",
+        "operationId": "ApprovalReviewerController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Reviewer assignment UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviewer assignment deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Reviewer assignment deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Reviewer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ApprovalReviewer with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a reviewer assignment",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      }
+    },
+    "/api/v1/dashboard": {
       "get": {
         "description": "Returns aggregated statistics including total programs, indicators, activities, and breakdowns by unit/status.",
         "operationId": "DashboardController_getDashboard",
@@ -2305,7 +3978,7 @@
         ]
       }
     },
-    "/dashboard/unit": {
+    "/api/v1/dashboard/unit": {
       "get": {
         "description": "Returns aggregated statistics specific to the authenticated user's unit.",
         "operationId": "DashboardController_getUnitDashboard",
@@ -2333,7 +4006,7 @@
         ]
       }
     },
-    "/default-programs": {
+    "/api/v1/default-programs": {
       "get": {
         "operationId": "DefaultProgramController_findAll",
         "parameters": [
@@ -2491,7 +4164,7 @@
         ]
       }
     },
-    "/default-programs/export": {
+    "/api/v1/default-programs/export": {
       "get": {
         "operationId": "DefaultProgramController_exportExcel",
         "parameters": [],
@@ -2519,7 +4192,7 @@
         ]
       }
     },
-    "/default-programs/import": {
+    "/api/v1/default-programs/import": {
       "post": {
         "operationId": "DefaultProgramController_importExcel",
         "parameters": [],
@@ -2555,7 +4228,7 @@
         ]
       }
     },
-    "/default-programs/indicators/export": {
+    "/api/v1/default-programs/indicators/export": {
       "get": {
         "operationId": "DefaultProgramController_exportIndicatorsExcel",
         "parameters": [],
@@ -2583,7 +4256,7 @@
         ]
       }
     },
-    "/default-programs/indicators/import": {
+    "/api/v1/default-programs/indicators/import": {
       "post": {
         "operationId": "DefaultProgramController_importIndicatorsExcel",
         "parameters": [],
@@ -2619,7 +4292,7 @@
         ]
       }
     },
-    "/default-programs/assignment-structure": {
+    "/api/v1/default-programs/assignment-structure": {
       "get": {
         "operationId": "DefaultProgramController_getAssignmentStructure",
         "parameters": [
@@ -2686,7 +4359,7 @@
         ]
       }
     },
-    "/default-programs/by-iku/{ikuId}": {
+    "/api/v1/default-programs/by-iku/{ikuId}": {
       "get": {
         "operationId": "DefaultProgramController_findByIkuId",
         "parameters": [
@@ -2726,7 +4399,7 @@
         ]
       }
     },
-    "/default-programs/{id}": {
+    "/api/v1/default-programs/{id}": {
       "get": {
         "operationId": "DefaultProgramController_findById",
         "parameters": [
@@ -2848,7 +4521,7 @@
         ]
       }
     },
-    "/default-programs/{id}/indicators": {
+    "/api/v1/default-programs/{id}/indicators": {
       "post": {
         "operationId": "DefaultProgramController_addIndicator",
         "parameters": [
@@ -2901,7 +4574,7 @@
         ]
       }
     },
-    "/default-programs/assign-to-unit": {
+    "/api/v1/default-programs/assign-to-unit": {
       "post": {
         "operationId": "DefaultProgramController_assignToUnit",
         "parameters": [],
@@ -2934,7 +4607,7 @@
         ]
       }
     },
-    "/default-programs/indicators/assign": {
+    "/api/v1/default-programs/indicators/assign": {
       "post": {
         "operationId": "DefaultProgramController_assignIndicatorToUnit",
         "parameters": [],
@@ -2967,166 +4640,7 @@
         ]
       }
     },
-    "/ikus": {
-      "get": {
-        "operationId": "IkuController_getAllIkus",
-        "parameters": [
-          {
-            "name": "sortOrder",
-            "required": false,
-            "in": "query",
-            "description": "Sort order (asc/desc)",
-            "schema": {
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "Field to sort by",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Search keyword",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page (default: 10)",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (default: 1)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "properties": {
-                        "isSuccess": {
-                          "type": "boolean",
-                          "example": true
-                        },
-                        "message": {
-                          "type": "string",
-                          "example": "Success"
-                        },
-                        "data": {
-                          "properties": {
-                            "items": {
-                              "type": "array",
-                              "items": {
-                                "$ref": "#/components/schemas/IkuResponseDto"
-                              }
-                            },
-                            "pagination": {
-                              "properties": {
-                                "page": {
-                                  "type": "number",
-                                  "example": 1
-                                },
-                                "limit": {
-                                  "type": "number",
-                                  "example": 10
-                                },
-                                "totalItems": {
-                                  "type": "number",
-                                  "example": 100
-                                },
-                                "totalPages": {
-                                  "type": "number",
-                                  "example": 10
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all IKUs",
-        "tags": [
-          "IKU"
-        ]
-      }
-    },
-    "/ikus/{id}/units": {
-      "get": {
-        "operationId": "IkuController_getIkuUnits",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitDetailDataDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all units assigned to a specific IKU",
-        "tags": [
-          "IKU"
-        ]
-      }
-    },
-    "/integration/programs": {
+    "/api/v1/integration/programs": {
       "get": {
         "description": "Returns all programs for SIM IKU consumption.",
         "operationId": "IntegrationController_getPrograms",
@@ -3152,7 +4666,7 @@
         ]
       }
     },
-    "/integration/programs/{id}": {
+    "/api/v1/integration/programs/{id}": {
       "get": {
         "operationId": "IntegrationController_getProgramById",
         "parameters": [
@@ -3184,7 +4698,7 @@
         ]
       }
     },
-    "/integration/programs/{id}/outputs": {
+    "/api/v1/integration/programs/{id}/outputs": {
       "get": {
         "operationId": "IntegrationController_getProgramOutputs",
         "parameters": [
@@ -3219,7 +4733,7 @@
         ]
       }
     },
-    "/integration/programs/{id}/progress": {
+    "/api/v1/integration/programs/{id}/progress": {
       "get": {
         "operationId": "IntegrationController_getProgramProgress",
         "parameters": [
@@ -3254,7 +4768,7 @@
         ]
       }
     },
-    "/integration/outputs/query": {
+    "/api/v1/integration/outputs/query": {
       "post": {
         "description": "Returns outputs grouped by programId for SIM IKU.",
         "operationId": "IntegrationController_queryOutputs",
@@ -3280,157 +4794,7 @@
         ]
       }
     },
-    "/auth/users": {
-      "get": {
-        "operationId": "AuthIntegrationController_getUsers",
-        "parameters": [
-          {
-            "name": "sortOrder",
-            "required": false,
-            "in": "query",
-            "description": "Sort order (asc/desc)",
-            "schema": {
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "Field to sort by",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Search keyword",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page (default: 10)",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (default: 1)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "properties": {
-                        "isSuccess": {
-                          "type": "boolean",
-                          "example": true
-                        },
-                        "message": {
-                          "type": "string",
-                          "example": "Success"
-                        },
-                        "data": {
-                          "properties": {
-                            "items": {
-                              "type": "array",
-                              "items": {
-                                "$ref": "#/components/schemas/AuthUserDto"
-                              }
-                            },
-                            "pagination": {
-                              "properties": {
-                                "page": {
-                                  "type": "number",
-                                  "example": 1
-                                },
-                                "limit": {
-                                  "type": "number",
-                                  "example": 10
-                                },
-                                "totalItems": {
-                                  "type": "number",
-                                  "example": 100
-                                },
-                                "totalPages": {
-                                  "type": "number",
-                                  "example": 10
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all users from Auth Service",
-        "tags": [
-          "Auth Integration"
-        ]
-      }
-    },
-    "/auth/units": {
-      "get": {
-        "operationId": "AuthIntegrationController_getUnits",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuthUnitDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all units from Auth Service",
-        "tags": [
-          "Auth Integration"
-        ]
-      }
-    },
-    "/master-unit-types": {
+    "/api/v1/master-unit-types": {
       "get": {
         "operationId": "MasterUnitTypeController_findAll",
         "parameters": [
@@ -3585,7 +4949,71 @@
         ]
       }
     },
-    "/master-unit-types/{id}": {
+    "/api/v1/master-unit-types/export": {
+      "get": {
+        "operationId": "MasterUnitTypeController_exportExcel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Excel file downloaded",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export master unit types to Excel",
+        "tags": [
+          "Master Unit Type"
+        ]
+      }
+    },
+    "/api/v1/master-unit-types/import": {
+      "post": {
+        "operationId": "MasterUnitTypeController_importExcel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Excel file imported successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import master unit types from Excel (XLSX)",
+        "tags": [
+          "Master Unit Type"
+        ]
+      }
+    },
+    "/api/v1/master-unit-types/{id}": {
       "get": {
         "operationId": "MasterUnitTypeController_findById",
         "parameters": [
@@ -3717,12 +5145,16 @@
       "description": "Progress logging (append-only)"
     },
     {
-      "name": "Evidences",
+      "name": "Documents",
       "description": "Supporting document management"
     },
     {
       "name": "Approvals",
-      "description": "Approval workflow"
+      "description": "Approval workflow (2-level verification: Indicator & Budget)"
+    },
+    {
+      "name": "Approval Reviewers",
+      "description": "Dynamic reviewer assignment management"
     },
     {
       "name": "Dashboard",
@@ -3857,10 +5289,24 @@
             "type": "object",
             "description": "Unit detail object assigned to this indicator"
           },
-          "unit_measurement": {
+          "masterUnitType": {
+            "type": "object",
+            "description": "Master Unit Type object for unit of measurement"
+          },
+          "category": {
             "type": "string",
-            "example": "Dokumen",
-            "description": "Unit of measurement (satuan)"
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
+          },
+          "isDefaultProgramIndicator": {
+            "type": "boolean",
+            "example": false,
+            "description": "Flag indicating if this was created from a default program"
           },
           "targetQ1": {
             "type": "number",
@@ -3882,6 +5328,18 @@
             "nullable": true,
             "example": 40
           },
+          "budget": {
+            "type": "number",
+            "nullable": true,
+            "example": 15000000
+          },
+          "picIds": {
+            "description": "Array of PIC User UUIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -3889,6 +5347,7 @@
               "DRAFT",
               "SUBMITTED",
               "REVISION",
+              "INDICATOR_APPROVED",
               "APPROVED",
               "REJECTED",
               "IN_PROGRESS",
@@ -3918,10 +5377,13 @@
           "unitId",
           "name",
           "unit",
+          "category",
+          "isDefaultProgramIndicator",
           "targetQ1",
           "targetQ2",
           "targetQ3",
           "targetQ4",
+          "budget",
           "status",
           "order",
           "createdAt",
@@ -4088,10 +5550,25 @@
             "example": "Jumlah Dokumen Laporan",
             "description": "Name of the indicator"
           },
-          "unit": {
+          "masterUnitTypeId": {
             "type": "string",
-            "example": "Dokumen",
-            "description": "Unit of measurement (satuan)"
+            "example": "550e8400-e29b-41d4-a716-44665544000x",
+            "description": "Master Unit Type UUID"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
+          },
+          "isDefaultProgramIndicator": {
+            "type": "boolean",
+            "example": false,
+            "description": "Flag indicating if this was created from a default program"
           },
           "targetQ1": {
             "type": "object",
@@ -4113,21 +5590,20 @@
             "example": 40,
             "description": "Target for Q4"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ASSIGNED_TO_UNIT",
-              "DRAFT",
-              "SUBMITTED",
-              "REVISION",
-              "APPROVED",
-              "REJECTED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "CANCELLED"
+          "budget": {
+            "type": "object",
+            "example": 15000000,
+            "description": "Budget allocated for this indicator"
+          },
+          "picIds": {
+            "description": "Array of PIC User UUIDs",
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440003"
             ],
-            "example": "DRAFT",
-            "description": "Status of the indicator"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "order": {
             "type": "number",
@@ -4138,7 +5614,7 @@
         "required": [
           "unitId",
           "name",
-          "unit"
+          "masterUnitTypeId"
         ]
       },
       "UpdateProgramIndicatorDto": {
@@ -4154,10 +5630,25 @@
             "example": "Jumlah Dokumen Laporan",
             "description": "Name of the indicator"
           },
-          "unit": {
+          "masterUnitTypeId": {
             "type": "string",
-            "example": "Dokumen",
-            "description": "Unit of measurement (satuan)"
+            "example": "550e8400-e29b-41d4-a716-44665544000x",
+            "description": "Master Unit Type UUID"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
+          },
+          "isDefaultProgramIndicator": {
+            "type": "boolean",
+            "example": false,
+            "description": "Flag indicating if this was created from a default program"
           },
           "targetQ1": {
             "type": "object",
@@ -4179,21 +5670,20 @@
             "example": 40,
             "description": "Target for Q4"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ASSIGNED_TO_UNIT",
-              "DRAFT",
-              "SUBMITTED",
-              "REVISION",
-              "APPROVED",
-              "REJECTED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "CANCELLED"
+          "budget": {
+            "type": "object",
+            "example": 15000000,
+            "description": "Budget allocated for this indicator"
+          },
+          "picIds": {
+            "description": "Array of PIC User UUIDs",
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440003"
             ],
-            "example": "DRAFT",
-            "description": "Status of the indicator"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "order": {
             "type": "number",
@@ -4227,6 +5717,74 @@
           }
         }
       },
+      "DocumentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Document UUID"
+          },
+          "activityId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Activity UUID this document belongs to"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "EVIDENCE",
+              "RAB",
+              "PROPOSAL",
+              "OTHER"
+            ],
+            "example": "EVIDENCE",
+            "description": "Type of the document"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "report.pdf",
+            "description": "Original file name"
+          },
+          "filePath": {
+            "type": "string",
+            "example": "documents/abc123.pdf",
+            "description": "Storage path or URL"
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "application/pdf",
+            "description": "File MIME type"
+          },
+          "fileSize": {
+            "type": "number",
+            "example": 1024000,
+            "description": "File size in bytes"
+          },
+          "uploadedBy": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "UUID of the user who uploaded"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Upload timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "activityId",
+          "type",
+          "fileName",
+          "filePath",
+          "mimeType",
+          "fileSize",
+          "uploadedBy",
+          "createdAt"
+        ]
+      },
       "ProgramIndicatorRealizationResponseDto": {
         "type": "object",
         "properties": {
@@ -4252,6 +5810,12 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentResponseDto"
+            }
           }
         },
         "required": [
@@ -4280,11 +5844,65 @@
             "type": "string",
             "description": "Optional remark/note",
             "example": "Target exceeded due to..."
+          },
+          "documentIds": {
+            "description": "Array of document UUIDs to attach",
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440000"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "month",
           "realization"
+        ]
+      },
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "User UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Budi Santoso",
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "example": "budi@example.com",
+            "description": "Email address"
+          },
+          "unitId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Unit UUID the user belongs to"
+          },
+          "roles": {
+            "example": [
+              "ADMIN",
+              "PIC"
+            ],
+            "description": "List of roles",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "unitId",
+          "roles"
         ]
       },
       "UnitDetailDataDto": {
@@ -4397,6 +6015,23 @@
           "isDirectInput"
         ]
       },
+      "MasterUnitTypeSimpleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-44665544000x"
+          },
+          "name": {
+            "type": "string",
+            "example": "Biro/Unit"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "DefaultProgramIndicatorDto": {
         "type": "object",
         "properties": {
@@ -4414,9 +6049,33 @@
             "type": "string",
             "example": "Jumlah Laporan"
           },
-          "unit": {
+          "masterUnitTypeId": {
             "type": "string",
-            "example": "Dokumen"
+            "example": "550e8400-e29b-41d4-a716-44665544000x"
+          },
+          "masterUnitType": {
+            "description": "Master Unit Type details",
+            "nullable": true,
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-44665544000x",
+              "name": "Biro/Unit"
+            },
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterUnitTypeSimpleDto"
+              }
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
           },
           "order": {
             "type": "number",
@@ -4439,7 +6098,9 @@
           "id",
           "defaultProgramId",
           "name",
-          "unit",
+          "masterUnitTypeId",
+          "masterUnitType",
+          "category",
           "order",
           "createdAt",
           "updatedAt"
@@ -4622,6 +6283,42 @@
           "users"
         ]
       },
+      "AssignIkusToUnitDto": {
+        "type": "object",
+        "properties": {
+          "ikuIds": {
+            "example": [
+              "iku-uuid-1",
+              "iku-uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ikuIds"
+        ]
+      },
+      "UnassignIkusFromUnitDto": {
+        "type": "object",
+        "properties": {
+          "ikuIds": {
+            "example": [
+              "iku-uuid-1",
+              "iku-uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ikuIds"
+        ]
+      },
       "UnitProgramDto": {
         "type": "object",
         "properties": {
@@ -4674,24 +6371,71 @@
           "updatedAt"
         ]
       },
+      "MasterUnitTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Master Unit Type UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dokumen",
+            "description": "Name of the unit type"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NUMBER",
+              "FILE",
+              "TEXT"
+            ],
+            "example": "FILE",
+            "description": "Type of the unit (NUMBER, FILE, TEXT)"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "UnitProgramIndicatorRealizationDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "example": "id"
+            "example": "uuid-realization"
           },
           "month": {
             "type": "number",
-            "example": 1
+            "example": 1,
+            "description": "Month number (1–12)"
           },
           "realization": {
             "type": "number",
-            "example": 10
+            "example": 10.5,
+            "description": "Realized value"
           },
           "remark": {
             "type": "object",
-            "example": "remark"
+            "example": "On track",
+            "description": "Optional remark"
           }
         },
         "required": [
@@ -4705,31 +6449,55 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "id"
+            "example": "uuid-indicator"
           },
           "name": {
             "type": "string",
-            "example": "name"
+            "example": "Jumlah laporan yang diterbitkan",
+            "description": "Indicator name"
           },
-          "unit": {
+          "category": {
             "type": "string",
-            "example": "unit"
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Indicator category"
+          },
+          "masterUnitType": {
+            "description": "Satuan/tipe pengukuran indikator",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterUnitTypeDto"
+              }
+            ]
           },
           "targetQ1": {
             "type": "object",
-            "example": 10
+            "example": 5,
+            "description": "Target Q1 (nullable if not set)"
           },
           "targetQ2": {
             "type": "object",
-            "example": 20
+            "example": 10,
+            "description": "Target Q2 (nullable if not set)"
           },
           "targetQ3": {
             "type": "object",
-            "example": 30
+            "example": 15,
+            "description": "Target Q3 (nullable if not set)"
           },
           "targetQ4": {
             "type": "object",
-            "example": 40
+            "example": 20,
+            "description": "Target Q4 (nullable if not set)"
+          },
+          "budget": {
+            "type": "object",
+            "example": 5000000,
+            "description": "Allocated budget for this indicator (nullable)"
           },
           "status": {
             "type": "string",
@@ -4738,17 +6506,31 @@
               "DRAFT",
               "SUBMITTED",
               "REVISION",
+              "INDICATOR_APPROVED",
               "APPROVED",
               "REJECTED",
               "IN_PROGRESS",
               "COMPLETED",
               "CANCELLED"
             ],
-            "example": "DRAFT"
+            "example": "SUBMITTED",
+            "description": "Current indicator status"
           },
           "order": {
             "type": "number",
-            "example": 1
+            "example": 1,
+            "description": "Display order within the program"
+          },
+          "picIds": {
+            "example": [
+              "uuid-user-1",
+              "uuid-user-2"
+            ],
+            "description": "List of user IDs assigned as PIC for this indicator",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "realizations": {
             "type": "array",
@@ -4760,9 +6542,11 @@
         "required": [
           "id",
           "name",
-          "unit",
+          "category",
+          "masterUnitType",
           "status",
           "order",
+          "picIds",
           "realizations"
         ]
       },
@@ -4773,6 +6557,7 @@
             "$ref": "#/components/schemas/UnitProgramDto"
           },
           "indikator": {
+            "description": "Indicators assigned to this unit for the program",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/UnitProgramIndicatorDto"
@@ -4782,6 +6567,100 @@
         "required": [
           "program",
           "indikator"
+        ]
+      },
+      "AuthUnitDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Unit UUID"
+          },
+          "code": {
+            "type": "string",
+            "example": "UNT-01",
+            "description": "Unit code"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fakultas Teknik",
+            "description": "Unit name"
+          },
+          "parentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Parent unit UUID if any"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "parentId"
+        ]
+      },
+      "IkuResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "IKU UUID"
+          },
+          "code": {
+            "type": "string",
+            "example": "IKU-01",
+            "description": "IKU Code"
+          },
+          "name": {
+            "type": "string",
+            "example": "Indikator Kinerja Utama 1",
+            "description": "IKU Name"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true,
+            "example": "Deskripsi indikator",
+            "description": "Detailed description of the IKU"
+          },
+          "type": {
+            "type": "string",
+            "example": "STRATEGIS",
+            "description": "Type of IKU"
+          },
+          "isDirectInput": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the IKU requires direct input"
+          },
+          "unit": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Unit UUID related to this IKU"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "type",
+          "isDirectInput",
+          "unit",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "ActivityResponseDto": {
@@ -5137,61 +7016,15 @@
           "progress"
         ]
       },
-      "EvidenceResponseDto": {
+      "ApprovalActionDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "note": {
             "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "Evidence UUID"
-          },
-          "activityId": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Activity UUID this evidence belongs to"
-          },
-          "fileName": {
-            "type": "string",
-            "example": "report.pdf",
-            "description": "Original file name"
-          },
-          "filePath": {
-            "type": "string",
-            "example": "evidences/abc123.pdf",
-            "description": "Storage path or URL"
-          },
-          "mimeType": {
-            "type": "string",
-            "example": "application/pdf",
-            "description": "File MIME type"
-          },
-          "fileSize": {
-            "type": "number",
-            "example": 1024000,
-            "description": "File size in bytes"
-          },
-          "uploadedBy": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440002",
-            "description": "UUID of the user who uploaded"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Upload timestamp"
+            "example": "Silakan direvisi pada bagian anggaran",
+            "description": "Optional note/comment for the action"
           }
-        },
-        "required": [
-          "id",
-          "activityId",
-          "fileName",
-          "filePath",
-          "mimeType",
-          "fileSize",
-          "uploadedBy",
-          "createdAt"
-        ]
+        }
       },
       "ApprovalResponseDto": {
         "type": "object",
@@ -5201,10 +7034,10 @@
             "example": "550e8400-e29b-41d4-a716-446655440000",
             "description": "Approval UUID"
           },
-          "programId": {
+          "indicatorId": {
             "type": "string",
             "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Program UUID being approved"
+            "description": "Program Indicator UUID being approved"
           },
           "status": {
             "type": "string",
@@ -5220,9 +7053,13 @@
             "description": "Current approval status"
           },
           "level": {
-            "type": "number",
-            "example": 1,
-            "description": "Approval level in the workflow hierarchy"
+            "type": "string",
+            "enum": [
+              "INDICATOR_VERIFICATION",
+              "BUDGET_VERIFICATION"
+            ],
+            "example": "INDICATOR_VERIFICATION",
+            "description": "Approval level: INDICATOR_VERIFICATION or BUDGET_VERIFICATION"
           },
           "approverId": {
             "type": "object",
@@ -5251,7 +7088,7 @@
         },
         "required": [
           "id",
-          "programId",
+          "indicatorId",
           "status",
           "level",
           "approverId",
@@ -5260,15 +7097,153 @@
           "createdAt"
         ]
       },
-      "ApprovalActionDto": {
+      "SubmittedProgramIndicatorResponseDto": {
         "type": "object",
         "properties": {
-          "note": {
+          "id": {
             "type": "string",
-            "example": "Silakan direvisi pada bagian anggaran",
-            "description": "Optional note/comment for the action"
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Indicator UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jumlah Dokumen Laporan",
+            "description": "Name of the indicator"
+          },
+          "status": {
+            "type": "string",
+            "example": "SUBMITTED",
+            "description": "Status of the indicator"
+          },
+          "program": {
+            "type": "object",
+            "description": "Program detail object assigned to this indicator",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440010",
+              "name": "Program Peningkatan Kualitas Mahasiswa",
+              "createdAt": "2026-01-01T00:00:00.000Z",
+              "updatedAt": "2026-01-01T00:00:00.000Z"
+            }
+          },
+          "unit": {
+            "type": "object",
+            "description": "Unit detail object assigned to this indicator",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440020",
+              "name": "Fakultas Ilmu Komputer",
+              "code": "FILKOM"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "program",
+          "unit",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateApprovalReviewerDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "user-uuid-001",
+            "description": "User ID of the reviewer"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "INDICATOR_VERIFICATION",
+              "BUDGET_VERIFICATION"
+            ],
+            "example": "INDICATOR_VERIFICATION",
+            "description": "Verification level"
+          },
+          "ikuIds": {
+            "description": "Array of IKU IDs (required for INDICATOR_VERIFICATION level, ignored for BUDGET_VERIFICATION)",
+            "example": [
+              "iku-uuid-001",
+              "iku-uuid-002"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "level"
+        ]
+      },
+      "ApprovalReviewerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Reviewer assignment UUID"
+          },
+          "userId": {
+            "type": "string",
+            "example": "user-uuid-001",
+            "description": "User ID of the reviewer"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "INDICATOR_VERIFICATION",
+              "BUDGET_VERIFICATION"
+            ],
+            "example": "INDICATOR_VERIFICATION",
+            "description": "Verification level"
+          },
+          "ikuId": {
+            "type": "object",
+            "example": "iku-uuid-001",
+            "description": "IKU ID (only for INDICATOR_VERIFICATION)"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Record creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Record update timestamp"
+          },
+          "user": {
+            "type": "object",
+            "description": "User details",
+            "example": {
+              "id": "user-uuid-001",
+              "name": "John Doe"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "level",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "AdminDashboardResponseDto": {
         "type": "object",
@@ -5420,10 +7395,34 @@
             "example": "Jumlah Publikasi",
             "description": "Nama indikator"
           },
-          "unit": {
+          "masterUnitTypeId": {
             "type": "string",
-            "example": "Dokumen",
-            "description": "Satuan indikator"
+            "example": "550e8400-e29b-41d4-a716-44665544000x",
+            "description": "Master Unit Type UUID"
+          },
+          "masterUnitType": {
+            "description": "Master Unit Type details",
+            "nullable": true,
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-44665544000x",
+              "name": "Biro/Unit"
+            },
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterUnitTypeSimpleDto"
+              }
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
           },
           "order": {
             "type": "number",
@@ -5446,7 +7445,9 @@
         "required": [
           "id",
           "name",
-          "unit",
+          "masterUnitTypeId",
+          "masterUnitType",
+          "category",
           "order",
           "assignedUnits",
           "isAssigned"
@@ -5551,10 +7552,20 @@
             "example": "Jumlah Laporan",
             "description": "Indicator name"
           },
-          "unit": {
+          "masterUnitTypeId": {
             "type": "string",
-            "example": "Dokumen",
-            "description": "Indicator unit"
+            "example": "550e8400-e29b-41d4-a716-44665544000x",
+            "description": "Master Unit Type UUID"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "TUSI",
+            "description": "Category of the indicator"
           },
           "order": {
             "type": "number",
@@ -5564,7 +7575,7 @@
         },
         "required": [
           "name",
-          "unit"
+          "masterUnitTypeId"
         ]
       },
       "CreateDefaultProgramDto": {
@@ -5675,68 +7686,6 @@
           }
         }
       },
-      "IkuResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "IKU UUID"
-          },
-          "code": {
-            "type": "string",
-            "example": "IKU-01",
-            "description": "IKU Code"
-          },
-          "name": {
-            "type": "string",
-            "example": "Indikator Kinerja Utama 1",
-            "description": "IKU Name"
-          },
-          "description": {
-            "type": "object",
-            "nullable": true,
-            "example": "Deskripsi indikator",
-            "description": "Detailed description of the IKU"
-          },
-          "type": {
-            "type": "string",
-            "example": "STRATEGIS",
-            "description": "Type of IKU"
-          },
-          "isDirectInput": {
-            "type": "boolean",
-            "example": true,
-            "description": "Whether the IKU requires direct input"
-          },
-          "unit": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Unit UUID related to this IKU"
-          },
-          "createdAt": {
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Last update timestamp"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "description",
-          "type",
-          "isDirectInput",
-          "unit",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
       "IntegrationProgramDto": {
         "type": "object",
         "properties": {
@@ -5846,126 +7795,6 @@
         "required": [
           "programId",
           "outputs"
-        ]
-      },
-      "AuthUserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "User UUID"
-          },
-          "name": {
-            "type": "string",
-            "example": "Budi Santoso",
-            "description": "Full name"
-          },
-          "email": {
-            "type": "string",
-            "example": "budi@example.com",
-            "description": "Email address"
-          },
-          "unitId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Unit UUID the user belongs to"
-          },
-          "roles": {
-            "example": [
-              "ADMIN",
-              "PIC"
-            ],
-            "description": "List of roles",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "unitId",
-          "roles"
-        ]
-      },
-      "AuthUnitDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Unit UUID"
-          },
-          "code": {
-            "type": "string",
-            "example": "UNT-01",
-            "description": "Unit code"
-          },
-          "name": {
-            "type": "string",
-            "example": "Fakultas Teknik",
-            "description": "Unit name"
-          },
-          "parentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440002",
-            "description": "Parent unit UUID if any"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "parentId"
-        ]
-      },
-      "MasterUnitTypeDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "Master Unit Type UUID"
-          },
-          "name": {
-            "type": "string",
-            "example": "Dokumen",
-            "description": "Name of the unit type"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "NUMBER",
-              "FILE",
-              "TEXT"
-            ],
-            "example": "FILE",
-            "description": "Type of the unit (NUMBER, FILE, TEXT)"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Update timestamp"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "type",
-          "createdAt",
-          "updatedAt"
         ]
       },
       "CreateMasterUnitTypeDto": {
