@@ -17,7 +17,7 @@ export class ProgramIndicatorService {
     private readonly unitService: UnitService,
     private readonly auditLogService: AuditLogService,
     private readonly authIntegrationService: AuthIntegrationService,
-  ) {}
+  ) { }
 
   private async getPicNames(picIds: string[], token?: string): Promise<{ id: string; name: string }[]> {
     if (!picIds || picIds.length === 0) return [];
@@ -48,7 +48,7 @@ export class ProgramIndicatorService {
     // Fetch unit info for all unique unitIds
     const uniqueUnitIds = [...new Set(indicators.map(i => i.unitId).filter(Boolean))];
     const unitMap = new Map();
-    
+
     for (const unitId of uniqueUnitIds) {
       try {
         const unitInfo = await this.unitService.getUnitById(unitId, token);
@@ -57,7 +57,7 @@ export class ProgramIndicatorService {
         this.logger.error(`Failed to fetch unit ${unitId}`);
       }
     }
-    
+
     return indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
@@ -116,7 +116,7 @@ export class ProgramIndicatorService {
     if (!indicator) {
       throw new EntityNotFoundException('ProgramIndicator', id);
     }
-    
+
     const oldPicsWithName = await this.getPicNames(indicator.pics.map(p => p.userId), token);
 
     const updated = await this.prisma.programIndicator.update({
@@ -195,7 +195,7 @@ export class ProgramIndicatorService {
       if (indicator.category === 'TUSI' || indicator.category === 'PENGEMBANGAN') {
         newStatus = 'SUBMITTED';
       } else {
-        newStatus = 'IN_PROGRESS';
+        newStatus = 'APPROVED';
       }
     }
 
