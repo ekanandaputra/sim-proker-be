@@ -12,7 +12,10 @@ import {
   HttpStatus,
   Res,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
 import {
   ApiTags,
@@ -22,9 +25,11 @@ import {
   ApiParam,
   ApiQuery,
   ApiResponse,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { ProgramService } from '../services/program.service';
 import { ProgramExportService } from '../services/program-export.service';
+import { ProgramIndicatorImportService } from '../services/program-indicator-import.service';
 import {
   createProgramSchema,
   CreateProgramDto,
@@ -53,6 +58,7 @@ export class ProgramController {
   constructor(
     private readonly programService: ProgramService,
     private readonly programExportService: ProgramExportService,
+    private readonly indicatorImportService: ProgramIndicatorImportService,
   ) {}
 
   @Get('export/proker')
@@ -70,6 +76,110 @@ export class ProgramController {
   ) {
     const token = req.headers.authorization as string;
     return this.programExportService.exportProker(unitId, Number(year), token, res);
+  }
+
+  // ─── Bulk Assign: Export Template ─────────────────────────────────────────
+
+  @Get('indicators/export-assign')
+  @Roles(Role.ADMIN, Role.UNIT_ADMIN)
+  @ApiOperation({
+    summary: 'Export template Excel assign indikator ke unit',
+    description:
+      'Download file Excel berisi daftar semua indikator beserta kolom Unit Pelaksana yang sudah terisi. ' +
+      'File ini bisa diisi/diubah kemudian di-upload kembali via endpoint import. ' +
+      'Format kolom: Nama Program | Indikator Unit | Unit Pelaksana.',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    type: Number,
+    description: 'Tahun program kerja yang akan diekspor',
+    example: 2026,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'File Excel (.xlsx) siap diunduh',
+    headers: {
+      'Content-Disposition': {
+        description: 'attachment; filename="assign_indikator_<year>.xlsx"',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  async exportIndicatorAssignTemplate(
+    @Query('year') year: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.indicatorImportService.exportTemplate(Number(year) || new Date().getFullYear(), token, res);
+  }
+
+  // ─── Bulk Assign: Import ───────────────────────────────────────────────────
+
+  @Post('indicators/import-assign')
+  @Roles(Role.ADMIN, Role.UNIT_ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Import bulk assign indikator ke unit via Excel',
+    description:
+      'Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. ' +
+      'Format kolom wajib: **Nama Program** | **Indikator Unit** | **Unit Pelaksana**. ' +
+      'Pencarian program menggunakan nama program (exact match, case-insensitive). ' +
+      'Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive). ' +
+      'Baris yang tidak ditemukan salah satu datanya akan di-skip (tidak error). ' +
+      'Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.',
+  })
+  @ApiBody({
+    description: 'File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana',
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File Excel (.xlsx) berisi mapping indikator ke unit',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Hasil proses import',
+    schema: {
+      example: {
+        totalRows: 5,
+        success: 4,
+        skipped: 1,
+        details: [
+          {
+            row: 2,
+            program: 'Peningkatan Kualitas Laporan',
+            indicator: 'Jumlah laporan diterbitkan',
+            unit: 'BAK',
+            status: 'success',
+          },
+          {
+            row: 3,
+            program: 'Program Tidak Dikenal',
+            indicator: 'Indikator X',
+            unit: 'BAK',
+            status: 'skipped',
+            reason: 'Program "Program Tidak Dikenal" tidak ditemukan',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'File tidak valid atau format tidak sesuai' })
+  async importIndicatorAssign(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.indicatorImportService.importFromExcel(file, token);
   }
 
   @Get()
