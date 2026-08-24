@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery, ApiExtraModels } from '@nestjs/swagger';
 import { ApprovalService } from '../services/approval.service';
@@ -291,5 +291,33 @@ export class ApprovalController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.approvalService.requestRevision(id, dto, user.userId);
+  }
+
+  @Patch('indicators/change-to-in-progress/:year')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Ubah semua indikator APPROVED menjadi IN_PROGRESS pada tahun tertentu',
+    description:
+      'Mengubah status semua `ProgramIndicator` yang berstatus `APPROVED` pada tahun yang diberikan menjadi `IN_PROGRESS`.\n\n' +
+      'Endpoint ini hanya dapat diakses oleh **Admin**.',
+  })
+  @ApiParam({ name: 'year', description: 'Tahun periode (e.g. 2025)', type: 'number', example: 2025 })
+  @ApiResponse({
+    status: 200,
+    description: 'Perubahan status berhasil dilakukan',
+    schema: {
+      properties: {
+        isSuccess: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          properties: {
+            updatedCount: { type: 'number', example: 42 },
+          },
+        },
+      },
+    },
+  })
+  async changeApprovedToInProgress(@Param('year') year: string) {
+    return this.approvalService.changeApprovedToInProgress(Number(year));
   }
 }

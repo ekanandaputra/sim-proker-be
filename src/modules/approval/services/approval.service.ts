@@ -255,6 +255,29 @@ export class ApprovalService {
   }
 
   /**
+   * Reset all APPROVED indicators in a given year to IN_PROGRESS.
+   */
+  async changeApprovedToInProgress(year: number): Promise<{ updatedCount: number }> {
+    const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
+    const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+
+    const result = await this.prisma.programIndicator.updateMany({
+      where: {
+        status: ProgramStatus.APPROVED,
+        program: {
+          year,
+        },
+      },
+      data: {
+        status: ProgramStatus.IN_PROGRESS,
+      },
+    });
+
+    this.logger.log(`Changed ${result.count} APPROVED indicators to IN_PROGRESS for year ${year}`);
+    return { updatedCount: result.count };
+  }
+
+  /**
    * Get indicators pending budget verification (INDICATOR_APPROVED status — waiting for Level 2).
    */
   async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
