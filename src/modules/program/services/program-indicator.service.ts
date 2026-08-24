@@ -7,6 +7,8 @@ import { UnitService } from '../../unit/services/unit.service';
 import { AuditLogService } from '../../audit-log/services/audit-log.service';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 import { AuditAction } from '@prisma/client';
+import { JwtPayload } from '@common/guards/jwt-auth.guard';
+import { Role } from '@common/constants';
 
 @Injectable()
 export class ProgramIndicatorService {
@@ -35,9 +37,18 @@ export class ProgramIndicatorService {
     }
   }
 
-  async findAllByProgramId(programId: string, token: string) {
+  async findAllByProgramId(programId: string, token: string, currentUser: JwtPayload) {
+    const isAdmin = currentUser.roles.includes(Role.ADMIN);
+
+    const where: { programId: string; unitId?: string } = { programId };
+
+    // Non-ADMIN hanya boleh melihat indicator milik unitnya sendiri
+    if (!isAdmin && currentUser.unitId) {
+      where.unitId = currentUser.unitId;
+    }
+
     const indicators = await this.prisma.programIndicator.findMany({
-      where: { programId },
+      where,
       orderBy: { order: 'asc' },
       include: {
         pics: true,

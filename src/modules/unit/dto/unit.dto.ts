@@ -154,48 +154,72 @@ export class UnitProgramDto {
   updatedAt!: Date;
 }
 
-export class UnitProgramIndicatorRealizationDto {
-  @ApiProperty({ example: "id" })
+export class MasterUnitTypeDto {
+  @ApiProperty({ example: 'uuid-master-unit-type' })
   id!: string;
-  
-  @ApiProperty({ example: 1 })
+
+  @ApiProperty({ example: 'Dokumen Laporan' })
+  name!: string;
+
+  @ApiProperty({ enum: ['NUMBER', 'FILE', 'TEXT'], example: 'NUMBER' })
+  type!: string;
+}
+
+export class UnitProgramIndicatorRealizationDto {
+  @ApiProperty({ example: 'uuid-realization' })
+  id!: string;
+
+  @ApiProperty({ example: 1, description: 'Month number (1–12)' })
   month!: number;
-  
-  @ApiProperty({ example: 10 })
+
+  @ApiProperty({ example: 10.5, description: 'Realized value' })
   realization!: number;
-  
-  @ApiProperty({ example: "remark", required: false })
+
+  @ApiPropertyOptional({ example: 'On track', description: 'Optional remark' })
   remark?: string | null;
 }
 
 export class UnitProgramIndicatorDto {
-  @ApiProperty({ example: "id" })
+  @ApiProperty({ example: 'uuid-indicator' })
   id!: string;
-  
-  @ApiProperty({ example: "name" })
+
+  @ApiProperty({ example: 'Jumlah laporan yang diterbitkan', description: 'Indicator name' })
   name!: string;
-  
-  @ApiProperty({ example: "unit" })
-  unit!: string;
-  
-  @ApiProperty({ example: 10, required: false })
+
+  @ApiProperty({ enum: ['TUSI', 'RUTIN', 'PENGEMBANGAN'], example: 'TUSI', description: 'Indicator category' })
+  category!: string;
+
+  @ApiProperty({ type: MasterUnitTypeDto, description: 'Satuan/tipe pengukuran indikator' })
+  masterUnitType!: MasterUnitTypeDto;
+
+  @ApiPropertyOptional({ example: 5, description: 'Target Q1 (nullable if not set)' })
   targetQ1?: number | null;
-  
-  @ApiProperty({ example: 20, required: false })
+
+  @ApiPropertyOptional({ example: 10, description: 'Target Q2 (nullable if not set)' })
   targetQ2?: number | null;
-  
-  @ApiProperty({ example: 30, required: false })
+
+  @ApiPropertyOptional({ example: 15, description: 'Target Q3 (nullable if not set)' })
   targetQ3?: number | null;
-  
-  @ApiProperty({ example: 40, required: false })
+
+  @ApiPropertyOptional({ example: 20, description: 'Target Q4 (nullable if not set)' })
   targetQ4?: number | null;
-  
-  @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT })
+
+  @ApiPropertyOptional({ example: 5000000, description: 'Allocated budget for this indicator (nullable)' })
+  budget?: number | null;
+
+  @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.SUBMITTED, description: 'Current indicator status' })
   status!: ProgramStatus;
-  
-  @ApiProperty({ example: 1 })
+
+  @ApiProperty({ example: 1, description: 'Display order within the program' })
   order!: number;
-  
+
+  @ApiProperty({
+    type: [String],
+    example: ['uuid-user-1', 'uuid-user-2'],
+    description: 'List of user IDs assigned as PIC for this indicator',
+  })
+  picIds!: string[];
+
   @ApiProperty({ type: [UnitProgramIndicatorRealizationDto] })
   realizations!: UnitProgramIndicatorRealizationDto[];
 }
@@ -203,8 +227,8 @@ export class UnitProgramIndicatorDto {
 export class UnitProgramResponseDto {
   @ApiProperty({ type: UnitProgramDto })
   program!: UnitProgramDto;
-  
-  @ApiProperty({ type: [UnitProgramIndicatorDto] })
+
+  @ApiProperty({ type: [UnitProgramIndicatorDto], description: 'Indicators assigned to this unit for the program' })
   indikator!: UnitProgramIndicatorDto[];
 }
 

@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { JwtAuthGuard, JwtPayload } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationResponseDto, programIndicatorRealizationSchema } from '../dto/program-indicator-realization.dto';
@@ -21,9 +22,13 @@ export class ProgramIndicatorController {
   @ApiOperation({ summary: 'Get all indicators for a program' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiResponse({ status: 200, type: () => [ProgramIndicatorResponseDto] })
-  async findAll(@Param('programId') programId: string, @Req() req: Request) {
+  async findAll(
+    @Param('programId') programId: string,
+    @Req() req: Request,
+    @CurrentUser() user: JwtPayload,
+  ) {
     const token = req.headers.authorization as string;
-    return this.indicatorService.findAllByProgramId(programId, token);
+    return this.indicatorService.findAllByProgramId(programId, token, user);
   }
 
   @Post()

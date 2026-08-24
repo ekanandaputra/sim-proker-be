@@ -18,6 +18,8 @@ import {
 } from '@common/exceptions';
 import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 import { PrismaService } from '@database/prisma/prisma.service';
+import { JwtPayload } from '@common/guards/jwt-auth.guard';
+import { Role } from '@common/constants';
 
 @Injectable()
 export class ProgramService {
@@ -30,7 +32,7 @@ export class ProgramService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async findAll(query: ProgramQueryDto): Promise<PaginatedResponse<ProgramResponseDto>> {
+  async findAll(query: ProgramQueryDto, currentUser: JwtPayload): Promise<PaginatedResponse<ProgramResponseDto>> {
     const { skip, take, orderBy } = buildPaginationArgs(query);
 
     const where: Prisma.ProgramWhereInput = {};
@@ -38,11 +40,23 @@ export class ProgramService {
     if (query.year) {
       where.year = query.year;
     }
-    if (query.unitId) {
+
+    // Jika bukan ADMIN, filter program hanya yang indikatornya di-assign ke unit milik user
+    const isAdmin = currentUser.roles.includes(Role.ADMIN);
+    if (!isAdmin) {
+      const unitFilter = query.unitId ?? currentUser.unitId;
+      if (unitFilter) {
+        where.indicators = {
+          some: { unitId: unitFilter },
+        };
+      }
+    } else if (query.unitId) {
+      // ADMIN bisa filter manual via query param
       where.indicators = {
         some: { unitId: query.unitId },
       };
     }
+
     if (query.search) {
       where.OR = [
         { title: { contains: query.search } },

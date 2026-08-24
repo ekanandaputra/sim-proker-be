@@ -89,8 +89,9 @@ export class ProgramController {
   @ApiPaginatedResponse(ProgramResponseDto)
   async findAll(
     @Query(new ZodValidationPipe(programQuerySchema)) query: PaginatedResponse<ProgramResponseDto>,
+    @CurrentUser() user: JwtPayload,
   ) {
-    return this.programService.findAll(query as unknown as import('../dto/program-query.dto').ProgramQueryDto);
+    return this.programService.findAll(query as unknown as import('../dto/program-query.dto').ProgramQueryDto, user);
   }
 
   @Get(':id')
