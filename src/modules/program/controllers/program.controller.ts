@@ -28,7 +28,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { ProgramService } from '../services/program.service';
-import { ProgramExportService } from '../services/program-export.service';
+import { ProgramExportService, ExportProkerType } from '../services/program-export.service';
 import { ProgramIndicatorImportService } from '../services/program-indicator-import.service';
 import {
   createProgramSchema,
@@ -68,14 +68,21 @@ export class ProgramController {
   })
   @ApiQuery({ name: 'unitId', required: false, type: String })
   @ApiQuery({ name: 'year', required: true, type: Number })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['USULAN', 'FINAL', 'BERITA_ACARA'],
+    description: 'Jenis export: USULAN (default) = semua indikator, FINAL = hanya indikator APPROVED dengan target per triwulan, BERITA_ACARA = belum diimplementasikan.',
+  })
   async exportProker(
     @Query('unitId') unitId: string,
     @Query('year') year: number,
+    @Query('type') type: ExportProkerType = 'USULAN',
     @Req() req: Request,
     @Res() res: Response,
   ) {
     const token = req.headers.authorization as string;
-    return this.programExportService.exportProker(unitId, Number(year), token, res);
+    return this.programExportService.exportProker(unitId, Number(year), type, token, res);
   }
 
   // ─── Bulk Assign: Export Template ─────────────────────────────────────────
