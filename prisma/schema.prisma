@@ -414,3 +414,18 @@ model MasterUnitType {
 
   @@map("master_unit_types")
 }
+
+// ============================================================================
+// MASTER BUDGET
+// ============================================================================
+
+/// Master Budget per tahun — menyimpan anggaran dan realisasi tahunan
+model MasterBudget {
+  year         Int      @id
+  budget       Decimal  @db.Decimal(20, 2)
+  realization  Decimal  @default(0) @db.Decimal(20, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("master_budgets")
+}

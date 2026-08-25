@@ -17,6 +17,7 @@ import { AuditLogModule } from '@modules/audit-log/audit-log.module';
 import { DefaultProgramModule } from '@modules/default-program/default-program.module';
 import { IkuModule } from '@modules/iku/iku.module';
 import { MasterUnitTypeModule } from './modules/master-unit-type/master-unit-type.module';
+import { MasterBudgetModule } from './modules/master-budget/master-budget.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { MasterUnitTypeModule } from './modules/master-unit-type/master-unit-typ
     IkuIntegrationModule,
     UnitModule,
     MasterUnitTypeModule,
+    MasterBudgetModule,
   ],
 })
 export class AppModule implements NestModule {

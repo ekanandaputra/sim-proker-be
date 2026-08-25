@@ -9,7 +9,9 @@ export class DashboardService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAdminDashboard(): Promise<AdminDashboardResponseDto> {
+  async getAdminDashboard(year?: number): Promise<AdminDashboardResponseDto> {
+    const masterBudget = await this.getMasterBudget(year);
+
     const [
       totalPrograms,
       totalIndicators,
@@ -55,10 +57,13 @@ export class DashboardService {
       totalActivities,
       indicatorsByStatus,
       programsByUnit,
+      masterBudget,
     };
   }
 
-  async getUnitDashboard(unitId: string): Promise<UnitDashboardResponseDto> {
+  async getUnitDashboard(unitId: string, year?: number): Promise<UnitDashboardResponseDto> {
+    const masterBudget = await this.getMasterBudget(year);
+
     const [
       indicatorsGrouped,
       indicators,
@@ -89,6 +94,18 @@ export class DashboardService {
       totalPrograms,
       totalIndicators,
       indicatorsByStatus,
+      masterBudget,
+    };
+  }
+
+  private async getMasterBudget(year?: number) {
+    if (!year) return undefined;
+    const budget = await this.prisma.masterBudget.findUnique({ where: { year } });
+    if (!budget) return null;
+    return {
+      ...budget,
+      budget: Number(budget.budget),
+      realization: Number(budget.realization),
     };
   }
 }
