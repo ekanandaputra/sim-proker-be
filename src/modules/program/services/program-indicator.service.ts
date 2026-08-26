@@ -40,11 +40,27 @@ export class ProgramIndicatorService {
   async findAllByProgramId(programId: string, token: string, currentUser: JwtPayload) {
     const isAdmin = currentUser.roles.includes(Role.ADMIN);
 
-    const where: { programId: string; unitId?: string } = { programId };
+    const where: { programId: string; unitId?: any } = { programId };
 
     // Non-ADMIN hanya boleh melihat indicator milik unitnya sendiri
-    if (!isAdmin && currentUser.unitId) {
-      where.unitId = currentUser.unitId;
+    if (!isAdmin) {
+      let allowedUnitIds = [currentUser.unitId].filter(Boolean);
+      if (token) {
+        try {
+          const userUnits = await this.unitService.getUserUnits(currentUser.userId, token);
+          if (userUnits && userUnits.length > 0) {
+            allowedUnitIds = userUnits.map((u: any) => u.unitId || u.id).filter(Boolean);
+          }
+        } catch (err) {
+          this.logger.warn(`Failed to fetch user units: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+      }
+
+      if (allowedUnitIds.length > 0) {
+        where.unitId = { in: allowedUnitIds };
+      } else {
+        where.unitId = { in: [] };
+      }
     }
 
     const indicators = await this.prisma.programIndicator.findMany({

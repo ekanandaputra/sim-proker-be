@@ -96,7 +96,11 @@ describe('ProgramService', () => {
       expect(repository.findAll).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            indicators: { some: { unitId: 'unit-uuid-123' } },
+            indicators: {
+              some: {
+                unitId: { in: [mockRegularUser.unitId] },
+              },
+            },
           }),
         }),
       );
