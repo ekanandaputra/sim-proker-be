@@ -151,7 +151,8 @@ model ProgramIndicatorRealization {
   id          String   @id @default(uuid())
   indicatorId String   @map("indicator_id")
   month       Int      @db.SmallInt
-  realization Decimal  @db.Decimal(10, 2)
+  realization Decimal? @db.Decimal(10, 2)
+  valueText   String?  @map("value_text") @db.Text
   remark      String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

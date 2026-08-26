@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
-import { EntityNotFoundException } from '@common/exceptions';
+import { EntityNotFoundException, BusinessException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-realization.dto';
 import { UnitService } from '../../unit/services/unit.service';
@@ -274,10 +274,34 @@ export class ProgramIndicatorService {
   async upsertRealization(programId: string, indicatorId: string, dto: CreateProgramIndicatorRealizationDto, user: { id: string, name: string }) {
     const indicator = await this.prisma.programIndicator.findFirst({
       where: { id: indicatorId, programId },
+      include: { masterUnitType: true },
     });
     if (!indicator) {
       throw new EntityNotFoundException('ProgramIndicator', indicatorId);
     }
+
+    const valueType = indicator.masterUnitType.type;
+
+    switch (valueType) {
+      case 'NUMBER':
+        if (dto.realization === undefined || dto.realization === null) {
+          throw new BusinessException(`Realization value (number) is required for this indicator`);
+        }
+        break;
+      case 'TEXT':
+        if (!dto.valueText) {
+          throw new BusinessException(`Realization text value is required for this indicator`);
+        }
+        break;
+      case 'FILE':
+        if (!dto.documentIds || dto.documentIds.length === 0) {
+          throw new BusinessException(`At least one document is required for this indicator`);
+        }
+        break;
+    }
+
+    const realizationValue = valueType === 'NUMBER' ? dto.realization : null;
+    const valueTextValue = valueType === 'TEXT' ? dto.valueText : null;
 
     const oldRealization = await this.prisma.programIndicatorRealization.findUnique({
       where: {
@@ -297,7 +321,8 @@ export class ProgramIndicatorService {
         }
       },
       update: {
-        realization: dto.realization,
+        realization: realizationValue,
+        valueText: valueTextValue,
         remark: dto.remark,
         documents: dto.documentIds ? {
           deleteMany: {},
@@ -307,7 +332,8 @@ export class ProgramIndicatorService {
       create: {
         indicatorId,
         month: dto.month,
-        realization: dto.realization,
+        realization: realizationValue,
+        valueText: valueTextValue,
         remark: dto.remark,
         documents: dto.documentIds ? {
           create: dto.documentIds.map(id => ({ documentId: id })),
