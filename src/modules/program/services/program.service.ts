@@ -20,6 +20,7 @@ import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
+import { UnitService } from '../../unit/services/unit.service';
 
 @Injectable()
 export class ProgramService {
@@ -30,9 +31,10 @@ export class ProgramService {
     private readonly programRepository: IProgramRepository,
     private readonly auditLogService: AuditLogService,
     private readonly prisma: PrismaService,
+    private readonly unitService: UnitService,
   ) {}
 
-  async findAll(query: ProgramQueryDto, currentUser: JwtPayload): Promise<PaginatedResponse<ProgramResponseDto>> {
+  async findAll(query: ProgramQueryDto, currentUser: JwtPayload, token?: string): Promise<PaginatedResponse<ProgramResponseDto>> {
     const { skip, take, orderBy } = buildPaginationArgs(query);
 
     const where: Prisma.ProgramWhereInput = {};
@@ -44,11 +46,29 @@ export class ProgramService {
     // Jika bukan ADMIN, filter program hanya yang indikatornya di-assign ke unit milik user
     const isAdmin = currentUser.roles.includes(Role.ADMIN);
     if (!isAdmin) {
-      const unitFilter = query.unitId ?? currentUser.unitId;
-      if (unitFilter) {
-        where.indicators = {
-          some: { unitId: unitFilter },
-        };
+      let allowedUnitIds = [currentUser.unitId].filter(Boolean);
+      if (token) {
+        try {
+          const userUnits = await this.unitService.getUserUnits(currentUser.userId, token);
+          if (userUnits && userUnits.length > 0) {
+            allowedUnitIds = userUnits.map((u: any) => u.unitId || u.id).filter(Boolean);
+          }
+        } catch (e) {
+          this.logger.warn(`Failed to fetch user units: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+      }
+
+      if (query.unitId) {
+        if (!allowedUnitIds.includes(query.unitId)) {
+          // If the user tries to query a unit they are not assigned to, return empty result
+          where.indicators = { some: { unitId: { in: [] } } };
+        } else {
+          where.indicators = { some: { unitId: query.unitId } };
+        }
+      } else if (allowedUnitIds.length > 0) {
+        where.indicators = { some: { unitId: { in: allowedUnitIds } } };
+      } else {
+         where.indicators = { some: { unitId: { in: [] } } };
       }
     } else if (query.unitId) {
       // ADMIN bisa filter manual via query param

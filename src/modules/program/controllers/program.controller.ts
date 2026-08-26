@@ -207,8 +207,10 @@ export class ProgramController {
   async findAll(
     @Query(new ZodValidationPipe(programQuerySchema)) query: PaginatedResponse<ProgramResponseDto>,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.programService.findAll(query as unknown as import('../dto/program-query.dto').ProgramQueryDto, user);
+    const token = req.headers.authorization as string;
+    return this.programService.findAll(query as unknown as import('../dto/program-query.dto').ProgramQueryDto, user, token);
   }
 
   @Get(':id')
