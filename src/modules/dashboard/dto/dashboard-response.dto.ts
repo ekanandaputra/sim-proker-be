@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { MasterBudgetDto } from '../../master-budget/dto/master-budget.dto';
 
 export class AdminDashboardResponseDto {
   @ApiProperty({ example: 50, description: 'Total number of programs' })
@@ -21,6 +22,9 @@ export class AdminDashboardResponseDto {
     description: 'Distinct program count grouped by unit'
   })
   programsByUnit!: Array<{ unitId: string; count: number }>;
+
+  @ApiProperty({ type: MasterBudgetDto, required: false, description: 'Master budget for the specified year' })
+  masterBudget?: MasterBudgetDto | null;
 }
 
 export class UnitDashboardResponseDto {
@@ -35,4 +39,7 @@ export class UnitDashboardResponseDto {
     description: 'Indicator count for this unit grouped by status'
   })
   indicatorsByStatus!: Array<{ status: string; count: number }>;
+
+  @ApiProperty({ type: MasterBudgetDto, required: false, description: 'Master budget for the specified year' })
+  masterBudget?: MasterBudgetDto | null;
 }
