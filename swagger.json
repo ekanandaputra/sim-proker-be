@@ -242,6 +242,20 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Jenis export: USULAN (default) = semua indikator, FINAL = hanya indikator APPROVED dengan target per triwulan, BERITA_ACARA = belum diimplementasikan.",
+            "schema": {
+              "enum": [
+                "USULAN",
+                "FINAL",
+                "BERITA_ACARA"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2753,6 +2767,67 @@
         ]
       }
     },
+    "/api/v1/documents/upload": {
+      "post": {
+        "operationId": "DocumentController_uploadUniversal",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to upload (max 10MB)"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "EVIDENCE",
+                      "RAB",
+                      "PROPOSAL",
+                      "OTHER"
+                    ],
+                    "description": "Type of document"
+                  }
+                },
+                "required": [
+                  "file",
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or file too large"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a document file without attaching it to an activity (universal upload)",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
     "/api/v1/documents/{id}": {
       "delete": {
         "operationId": "DocumentController_remove",
@@ -3954,7 +4029,17 @@
       "get": {
         "description": "Returns aggregated statistics including total programs, indicators, activities, and breakdowns by unit/status.",
         "operationId": "DashboardController_getDashboard",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Optional: Filter by year to retrieve specific master budget. Defaults to the current year.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3982,7 +4067,17 @@
       "get": {
         "description": "Returns aggregated statistics specific to the authenticated user's unit.",
         "operationId": "DashboardController_getUnitDashboard",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Optional: Filter by year to retrieve specific master budget. Defaults to the current year.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -5119,6 +5214,320 @@
           "Master Unit Type"
         ]
       }
+    },
+    "/api/v1/master-budgets": {
+      "get": {
+        "operationId": "MasterBudgetController_findAll",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (asc/desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search keyword (year)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/MasterBudgetDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all master budgets",
+        "tags": [
+          "Master Budget"
+        ]
+      },
+      "post": {
+        "operationId": "MasterBudgetController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMasterBudgetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterBudgetDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new master budget",
+        "tags": [
+          "Master Budget"
+        ]
+      }
+    },
+    "/api/v1/master-budgets/{year}": {
+      "get": {
+        "operationId": "MasterBudgetController_findByYear",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun budget (e.g. 2024)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterBudgetDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get master budget by year",
+        "tags": [
+          "Master Budget"
+        ]
+      },
+      "delete": {
+        "operationId": "MasterBudgetController_remove",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun budget yang akan dihapus (e.g. 2024)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Master budget successfully deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete master budget",
+        "tags": [
+          "Master Budget"
+        ]
+      }
+    },
+    "/api/v1/master-budgets/{year}/budget": {
+      "patch": {
+        "operationId": "MasterBudgetController_updateBudget",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun budget yang akan diupdate (e.g. 2024)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMasterBudgetBudgetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterBudgetDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update master budget total amount",
+        "tags": [
+          "Master Budget"
+        ]
+      }
+    },
+    "/api/v1/master-budgets/{year}/realization": {
+      "patch": {
+        "operationId": "MasterBudgetController_updateRealization",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun budget yang akan diupdate realisasinya (e.g. 2024)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMasterBudgetRealizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterBudgetDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update master budget realization amount",
+        "tags": [
+          "Master Budget"
+        ]
+      }
     }
   },
   "info": {
@@ -5726,9 +6135,10 @@
             "description": "Document UUID"
           },
           "activityId": {
-            "type": "string",
+            "type": "object",
             "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Activity UUID this document belongs to"
+            "description": "Activity UUID this document belongs to, if any",
+            "nullable": true
           },
           "type": {
             "type": "string",
@@ -5798,7 +6208,12 @@
             "type": "number"
           },
           "realization": {
-            "type": "number"
+            "type": "object",
+            "nullable": true
+          },
+          "valueText": {
+            "type": "object",
+            "nullable": true
           },
           "remark": {
             "type": "object"
@@ -5822,7 +6237,6 @@
           "id",
           "indicatorId",
           "month",
-          "realization",
           "createdAt",
           "updatedAt"
         ]
@@ -5837,8 +6251,13 @@
           },
           "realization": {
             "type": "number",
-            "description": "Realization value for this month",
+            "description": "Realization value for this month. Required when the indicator valueType is NUMBER.",
             "example": 15.5
+          },
+          "valueText": {
+            "type": "string",
+            "description": "Realization text value. Required when the indicator valueType is TEXT.",
+            "example": "Dokumen telah disusun dan direview"
           },
           "remark": {
             "type": "string",
@@ -5846,7 +6265,7 @@
             "example": "Target exceeded due to..."
           },
           "documentIds": {
-            "description": "Array of document UUIDs to attach",
+            "description": "Array of document UUIDs to attach. Required (at least one) when the indicator valueType is FILE.",
             "example": [
               "550e8400-e29b-41d4-a716-446655440000"
             ],
@@ -5857,8 +6276,7 @@
           }
         },
         "required": [
-          "month",
-          "realization"
+          "month"
         ]
       },
       "AuthUserDto": {
@@ -7245,6 +7663,45 @@
           "updatedAt"
         ]
       },
+      "MasterBudgetDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2024,
+            "description": "Budget year"
+          },
+          "budget": {
+            "type": "number",
+            "example": 1000000000,
+            "description": "Total budget for the year"
+          },
+          "realization": {
+            "type": "number",
+            "example": 500000000,
+            "description": "Total realization for the year"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "year",
+          "budget",
+          "realization",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "AdminDashboardResponseDto": {
         "type": "object",
         "properties": {
@@ -7288,6 +7745,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "masterBudget": {
+            "description": "Master budget for the specified year",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterBudgetDto"
+              }
+            ]
           }
         },
         "required": [
@@ -7323,6 +7788,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "masterBudget": {
+            "description": "Master budget for the specified year",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterBudgetDto"
+              }
+            ]
           }
         },
         "required": [
@@ -7840,6 +8313,56 @@
             "description": "Type of the unit (NUMBER, FILE, TEXT)"
           }
         }
+      },
+      "CreateMasterBudgetDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2024,
+            "description": "Budget year"
+          },
+          "budget": {
+            "type": "number",
+            "example": 1000000000,
+            "description": "Total budget for the year"
+          },
+          "realization": {
+            "type": "number",
+            "example": 500000000,
+            "description": "Total realization for the year"
+          }
+        },
+        "required": [
+          "year",
+          "budget"
+        ]
+      },
+      "UpdateMasterBudgetBudgetDto": {
+        "type": "object",
+        "properties": {
+          "budget": {
+            "type": "number",
+            "example": 1500000000,
+            "description": "Total budget for the year"
+          }
+        },
+        "required": [
+          "budget"
+        ]
+      },
+      "UpdateMasterBudgetRealizationDto": {
+        "type": "object",
+        "properties": {
+          "realization": {
+            "type": "number",
+            "example": 750000000,
+            "description": "Total realization for the year"
+          }
+        },
+        "required": [
+          "realization"
+        ]
       }
     }
   }

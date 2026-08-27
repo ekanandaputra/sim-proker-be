@@ -63,6 +63,35 @@ export class DocumentController {
     return this.documentService.upload(activityId, file, type, user.userId);
   }
 
+  @Post('documents/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload a document file without attaching it to an activity (universal upload)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary', description: 'The file to upload (max 10MB)' },
+        type: { type: 'string', enum: ['EVIDENCE', 'RAB', 'PROPOSAL', 'OTHER'], description: 'Type of document' },
+      },
+      required: ['file', 'type'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Document uploaded', type: DocumentResponseDto })
+  @ApiResponse({ status: 400, description: 'Validation failed or file too large' })
+  async uploadUniversal(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: getAppConfig().MAX_FILE_SIZE })],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body('type', new ParseEnumPipe(DocumentType)) type: DocumentType,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.documentService.uploadUniversal(file, type, user.userId);
+  }
+
   @Delete('documents/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete document' })

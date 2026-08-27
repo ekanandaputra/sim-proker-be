@@ -261,7 +261,7 @@ model ProgressLog {
 /// Document / supporting document
 model Document {
   id         String       @id @default(uuid())
-  activityId String       @map("activity_id")
+  activityId String?      @map("activity_id")
   type       DocumentType
   fileName   String       @map("file_name") @db.VarChar(255)
   filePath   String       @map("file_path") @db.VarChar(500)
@@ -271,7 +271,7 @@ model Document {
   createdAt  DateTime     @default(now()) @map("created_at")
 
   // Relations
-  activity     Activity              @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activity     Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
   realizations RealizationDocument[]
 
   @@index([activityId])
