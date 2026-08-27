@@ -241,18 +241,26 @@ export class ProgramIndicatorService {
     // Namun untuk kategori TUSI dan PENGEMBANGAN, ubah ke SUBMITTED
     let newStatus = indicator.status;
     if (indicator.status === 'ASSIGNED_TO_UNIT') {
-      if (indicator.category === 'TUSI' || indicator.category === 'PENGEMBANGAN') {
+      if (indicator.category === 'RUTIN' || indicator.category === 'PENGEMBANGAN') {
         newStatus = 'SUBMITTED';
       } else {
         newStatus = 'APPROVED';
       }
     }
 
+    const { propsal, rab, ...targets } = dto;
+
     const updated = await this.prisma.programIndicator.update({
       where: { id },
       data: {
-        ...dto,
+        ...targets,
+        proposalDocumentId: propsal,
+        rabDocumentId: rab,
         status: newStatus,
+      },
+      include: {
+        proposalDocument: true,
+        rabDocument: true,
       },
     });
 
@@ -266,7 +274,11 @@ export class ProgramIndicatorService {
       newValue: updated as unknown as Record<string, unknown>,
     });
 
-    return updated;
+    return {
+      ...updated,
+      proposalURL: this.getDocumentUrl(updated.proposalDocument),
+      rabURL: this.getDocumentUrl(updated.rabDocument),
+    };
   }
 
   async getRealizations(programId: string, indicatorId: string) {
