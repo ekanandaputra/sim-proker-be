@@ -13,9 +13,10 @@ import { UnitModule } from '../unit/unit.module';
 import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
 import { IkuModule } from '../iku/iku.module';
 import { ProgramExportService } from './services/program-export.service';
+import { StorageModule } from '@common/storage';
 
 @Module({
-  imports: [UnitModule, AuthIntegrationModule, IkuModule],
+  imports: [UnitModule, AuthIntegrationModule, IkuModule, StorageModule],
   controllers: [ProgramController, ProgramIndicatorController],
   providers: [
     ProgramService,

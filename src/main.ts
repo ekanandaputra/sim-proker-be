@@ -1,4 +1,6 @@
+import { join } from 'path';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -10,12 +12,17 @@ import { getAppConfig } from '@common/config';
 async function bootstrap() {
   const config = getAppConfig();
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
 
   // Use Pino as the application logger
   app.useLogger(app.get(Logger));
+
+  // Serve uploaded files (documents, evidence, etc.) statically
+  app.useStaticAssets(join(process.cwd(), config.UPLOAD_DIR), {
+    prefix: '/uploads/',
+  });
 
   // Global prefix
   app.setGlobalPrefix('api/v1');

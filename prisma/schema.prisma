@@ -102,32 +102,38 @@ model Program {
 
 /// Program Indicator (Assigned to Unit)
 model ProgramIndicator {
-  id        String        @id @default(uuid())
-  programId String        @map("program_id")
-  unitId    String        @map("unit_id")
-  name      String        @db.VarChar(255)
-  masterUnitTypeId String         @map("master_unit_type_id")
-  category  IndicatorCategory @default(TUSI)
-  isDefaultProgramIndicator Boolean @default(false) @map("is_default_program_indicator")
-  targetQ1  Decimal?      @map("target_q1") @db.Decimal(10, 2)
-  targetQ2  Decimal?      @map("target_q2") @db.Decimal(10, 2)
-  targetQ3  Decimal?      @map("target_q3") @db.Decimal(10, 2)
-  targetQ4  Decimal?      @map("target_q4") @db.Decimal(10, 2)
-  budget    Decimal?      @db.Decimal(15, 2)
-  status    ProgramStatus @default(SUBMITTED)
-  order     Int           @default(0)
-  createdAt DateTime      @default(now()) @map("created_at")
-  updatedAt DateTime      @updatedAt @map("updated_at")
+  id                        String            @id @default(uuid())
+  programId                 String            @map("program_id")
+  unitId                    String            @map("unit_id")
+  name                      String            @db.VarChar(255)
+  masterUnitTypeId          String            @map("master_unit_type_id")
+  category                  IndicatorCategory @default(TUSI)
+  isDefaultProgramIndicator Boolean           @default(false) @map("is_default_program_indicator")
+  targetQ1                  Decimal?          @map("target_q1") @db.Decimal(10, 2)
+  targetQ2                  Decimal?          @map("target_q2") @db.Decimal(10, 2)
+  targetQ3                  Decimal?          @map("target_q3") @db.Decimal(10, 2)
+  targetQ4                  Decimal?          @map("target_q4") @db.Decimal(10, 2)
+  budget                    Decimal?          @db.Decimal(15, 2)
+  status                    ProgramStatus     @default(SUBMITTED)
+  order                     Int               @default(0)
+  proposalDocumentId        String?           @map("proposal_document_id")
+  rabDocumentId             String?           @map("rab_document_id")
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  program      Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
-  masterUnitType MasterUnitType              @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
-  realizations ProgramIndicatorRealization[]
-  pics         ProgramIndicatorPic[]
-  approvals    Approval[]
+  program          Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  masterUnitType   MasterUnitType                @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
+  realizations     ProgramIndicatorRealization[]
+  pics             ProgramIndicatorPic[]
+  approvals        Approval[]
+  proposalDocument Document?                     @relation("IndicatorProposalDocument", fields: [proposalDocumentId], references: [id], onDelete: SetNull)
+  rabDocument      Document?                     @relation("IndicatorRabDocument", fields: [rabDocumentId], references: [id], onDelete: SetNull)
 
   @@index([programId])
   @@index([unitId])
+  @@index([proposalDocumentId])
+  @@index([rabDocumentId])
   @@map("program_indicators")
 }
 
@@ -271,8 +277,10 @@ model Document {
   createdAt  DateTime     @default(now()) @map("created_at")
 
   // Relations
-  activity     Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  realizations RealizationDocument[]
+  activity              Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  realizations          RealizationDocument[]
+  proposalForIndicators ProgramIndicator[]    @relation("IndicatorProposalDocument")
+  rabForIndicators      ProgramIndicator[]    @relation("IndicatorRabDocument")
 
   @@index([activityId])
   @@map("documents")
@@ -370,14 +378,14 @@ model DefaultProgram {
 
 /// Default program indicator template
 model DefaultProgramIndicator {
-  id               String   @id @default(uuid())
-  defaultProgramId String   @map("default_program_id")
-  name             String   @db.VarChar(255)
+  id               String            @id @default(uuid())
+  defaultProgramId String            @map("default_program_id")
+  name             String            @db.VarChar(255)
   category         IndicatorCategory @default(TUSI)
-  masterUnitTypeId String   @map("master_unit_type_id")
-  order            Int      @default(0)
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  masterUnitTypeId String            @map("master_unit_type_id")
+  order            Int               @default(0)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
 
   defaultProgram DefaultProgram @relation(fields: [defaultProgramId], references: [id], onDelete: Cascade)
   masterUnitType MasterUnitType @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
@@ -422,11 +430,11 @@ model MasterUnitType {
 
 /// Master Budget per tahun — menyimpan anggaran dan realisasi tahunan
 model MasterBudget {
-  year         Int      @id
-  budget       Decimal  @db.Decimal(20, 2)
-  realization  Decimal  @default(0) @db.Decimal(20, 2)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  year        Int      @id
+  budget      Decimal  @db.Decimal(20, 2)
+  realization Decimal  @default(0) @db.Decimal(20, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("master_budgets")
 }
