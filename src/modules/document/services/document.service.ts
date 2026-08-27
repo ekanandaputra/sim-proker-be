@@ -42,6 +42,26 @@ export class DocumentService {
     return DocumentMapper.toResponse(document);
   }
 
+  async uploadUniversal(
+    file: Express.Multer.File,
+    type: DocumentType,
+    userId: string,
+  ): Promise<DocumentResponseDto> {
+    const filePath = await this.storageService.upload(file, 'documents');
+
+    const document = await this.documentRepository.create({
+      fileName: file.originalname,
+      filePath,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      type,
+      uploadedBy: userId,
+    });
+
+    this.logger.log(`Document uploaded (universal): ${document.id}`);
+    return DocumentMapper.toResponse(document);
+  }
+
   async remove(id: string): Promise<void> {
     const document = await this.documentRepository.findById(id);
     if (!document) {
