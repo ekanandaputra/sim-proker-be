@@ -46,7 +46,8 @@ export class LocalStorageService implements IStorageService {
   }
 
   getUrl(filePath: string): string {
-    return `/${this.uploadDir}/${filePath}`;
+    const normalizedPath = filePath.split(path.sep).join('/');
+    return `${getAppConfig().APP_URL}/uploads/${normalizedPath}`;
   }
 
   private ensureDirectoryExists(dir: string): void {

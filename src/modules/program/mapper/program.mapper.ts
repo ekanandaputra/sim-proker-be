@@ -31,6 +31,8 @@ export class ProgramMapper {
         targetQ4: ind.targetQ4 ? Number(ind.targetQ4) : null,
         status: ind.status,
         order: ind.order,
+        proposalURL: ind.proposalURL ?? null,
+        rabURL: ind.rabURL ?? null,
         createdAt: ind.createdAt,
         updatedAt: ind.updatedAt,
       })) : [],

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException, BusinessException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
@@ -6,9 +6,10 @@ import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-r
 import { UnitService } from '../../unit/services/unit.service';
 import { AuditLogService } from '../../audit-log/services/audit-log.service';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, Document } from '@prisma/client';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
+import { STORAGE_SERVICE, IStorageService } from '@common/storage';
 
 @Injectable()
 export class ProgramIndicatorService {
@@ -19,7 +20,16 @@ export class ProgramIndicatorService {
     private readonly unitService: UnitService,
     private readonly auditLogService: AuditLogService,
     private readonly authIntegrationService: AuthIntegrationService,
+    @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) { }
+
+  private getDocumentUrl(document?: Document | null): string | null {
+    return document ? this.storageService.getUrl(document.filePath) : null;
+  }
+
+  private withFullFilePath<T extends Document>(document: T): T {
+    return { ...document, filePath: this.storageService.getUrl(document.filePath) };
+  }
 
   private async getPicNames(picIds: string[], token?: string): Promise<{ id: string; name: string }[]> {
     if (!picIds || picIds.length === 0) return [];
@@ -69,6 +79,8 @@ export class ProgramIndicatorService {
       include: {
         pics: true,
         masterUnitType: true,
+        proposalDocument: true,
+        rabDocument: true,
       }
     });
 
@@ -90,6 +102,8 @@ export class ProgramIndicatorService {
       unit: unitMap.get(indicator.unitId) || null,
       masterUnitType: indicator.masterUnitType,
       picIds: indicator.pics.map(p => p.userId),
+      proposalURL: this.getDocumentUrl(indicator.proposalDocument),
+      rabURL: this.getDocumentUrl(indicator.rabDocument),
     }));
   }
 
@@ -111,6 +125,8 @@ export class ProgramIndicatorService {
       },
       include: {
         pics: true,
+        proposalDocument: true,
+        rabDocument: true,
       }
     });
 
@@ -131,6 +147,8 @@ export class ProgramIndicatorService {
     return {
       ...indicator,
       picIds: indicator.pics.map(p => p.userId),
+      proposalURL: this.getDocumentUrl(indicator.proposalDocument),
+      rabURL: this.getDocumentUrl(indicator.rabDocument),
     };
   }
 
@@ -157,6 +175,8 @@ export class ProgramIndicatorService {
       },
       include: {
         pics: true,
+        proposalDocument: true,
+        rabDocument: true,
       }
     });
 
@@ -181,6 +201,8 @@ export class ProgramIndicatorService {
     return {
       ...updated,
       picIds: updated.pics.map(p => p.userId),
+      proposalURL: this.getDocumentUrl(updated.proposalDocument),
+      rabURL: this.getDocumentUrl(updated.rabDocument),
     };
   }
 
@@ -267,7 +289,7 @@ export class ProgramIndicatorService {
 
     return realizations.map(r => ({
       ...r,
-      documents: r.documents.map(rd => rd.document)
+      documents: r.documents.map(rd => this.withFullFilePath(rd.document))
     }));
   }
 
@@ -358,7 +380,7 @@ export class ProgramIndicatorService {
 
     return {
       ...realization,
-      documents: realization.documents.map(d => d.document)
+      documents: realization.documents.map(d => this.withFullFilePath(d.document))
     };
   }
 

@@ -16,6 +16,8 @@ export const createProgramIndicatorSchema = z.object({
   budget: z.number().nullable().optional(),
   picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
   order: z.number().int().default(0),
+  proposalDocumentId: z.string().uuid('Proposal document ID must be a valid UUID').nullable().optional(),
+  rabDocumentId: z.string().uuid('RAB document ID must be a valid UUID').nullable().optional(),
 });
 
 export class CreateProgramIndicatorDto {
@@ -54,6 +56,12 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440004', description: 'Document UUID (from POST /documents/upload) to set as the proposal document', nullable: true })
+  proposalDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440005', description: 'Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document', nullable: true })
+  rabDocumentId?: string | null;
 }
 
 // --- Update ---
@@ -95,6 +103,12 @@ export class UpdateProgramIndicatorDto {
 
   @ApiPropertyOptional({ example: 1, description: 'Sorting order' })
   order?: number;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440004', description: 'Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.', nullable: true })
+  proposalDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440005', description: 'Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.', nullable: true })
+  rabDocumentId?: string | null;
 }
 
 // --- Response ---
@@ -131,6 +145,12 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ description: 'Array of PIC User UUIDs', type: [String], required: false }) picIds?: string[];
   @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT }) status!: ProgramStatus;
   @ApiProperty({ example: 1 }) order!: number;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/abc123.pdf', description: 'Full URL of the proposal document, ready to be opened/displayed by the frontend' })
+  proposalURL!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/def456.pdf', description: 'Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend' })
+  rabURL!: string | null;
 
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' })
   createdAt!: Date;
