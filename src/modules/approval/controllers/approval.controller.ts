@@ -2,7 +2,7 @@ import { Controller, Post, Get, Patch, Param, Body, UseGuards, Req, Query } from
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery, ApiExtraModels } from '@nestjs/swagger';
 import { ApprovalService } from '../services/approval.service';
-import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto } from '../dto/approval.dto';
+import { approvalActionSchema, ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto, RevisionIndicatorResponseDto, RejectedIndicatorResponseDto } from '../dto/approval.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -11,11 +11,12 @@ import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtPayload } from '@common/guards';
 import { Role } from '@common/constants';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
+import { SetIndicatorTargetDto, setIndicatorTargetSchema, ProgramIndicatorResponseDto } from '../../program/dto/program-indicator.dto';
 
 @ApiTags('Approvals')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiExtraModels(ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto)
+@ApiExtraModels(ApprovalActionDto, ApprovalResponseDto, SubmittedProgramIndicatorResponseDto, RevisionIndicatorResponseDto, RejectedIndicatorResponseDto)
 @Controller()
 export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
@@ -291,6 +292,93 @@ export class ApprovalController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.approvalService.requestRevision(id, dto, user.userId);
+  }
+
+  @Get('indicators/revision')
+  @ApiOperation({
+    summary: 'Get the revision bucket for the current user',
+    description:
+      'Returns a paginated list of program indicators with `REVISION` status that are assigned to the current ' +
+      "user's own unit(s). ADMIN users see indicators across all units.\n\n" +
+      'Each item includes the note and level (`INDICATOR_VERIFICATION` or `BUDGET_VERIFICATION`) from the ' +
+      'reviewer who requested the revision, so the unit knows what to fix.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
+  @ApiPaginatedResponse(RevisionIndicatorResponseDto)
+  async getRevisionIndicators(@Req() req: Request, @Query() query: any, @CurrentUser() user: JwtPayload) {
+    const token = req.headers.authorization as string;
+    return this.approvalService.getRevisionIndicators(token, query, user);
+  }
+
+  @Post('indicators/:id/revise')
+  @ApiOperation({
+    summary: 'Revise an indicator and resubmit it',
+    description:
+      'Updates the indicator targets/documents (same payload as `set-target`) and reverts its status back to ' +
+      'whatever it was before the revision was requested: `SUBMITTED` if the revision came from Level 1 ' +
+      '(Verifikasi Indikator), or `INDICATOR_APPROVED` if it came from Level 2 (Verifikasi Anggaran).\n\n' +
+      'The indicator must currently be in `REVISION` status, and must be assigned to a unit the current user ' +
+      'belongs to (unless the user is ADMIN).',
+  })
+  @ApiParam({ name: 'id', description: 'Program Indicator UUID', type: 'string', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiBody({ type: SetIndicatorTargetDto })
+  @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Indicator is not in REVISION status',
+    schema: {
+      properties: {
+        isSuccess: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Indicator can only be revised from REVISION status. Current: SUBMITTED' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Indicator is not assigned to the current user's unit",
+    schema: {
+      properties: {
+        isSuccess: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'You are not allowed to revise an indicator outside your unit' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Program Indicator not found',
+    schema: {
+      properties: {
+        isSuccess: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'ProgramIndicator with id 550e8400-... not found' },
+      },
+    },
+  })
+  async reviseIndicator(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(setIndicatorTargetSchema)) dto: SetIndicatorTargetDto,
+    @Req() req: Request,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const token = req.headers.authorization as string;
+    return this.approvalService.revise(id, dto, user, token);
+  }
+
+  @Get('indicators/rejected')
+  @ApiOperation({
+    summary: 'Get the rejected indicators list for the current user',
+    description:
+      'Returns a paginated, read-only list of program indicators with `REJECTED` status that are assigned to ' +
+      "the current user's own unit(s). ADMIN users see indicators across all units.\n\n" +
+      'Each item includes the note and level (`INDICATOR_VERIFICATION` or `BUDGET_VERIFICATION`) from the ' +
+      'reviewer who rejected it. This list is informational only — no action can be taken on a rejected indicator here.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
+  @ApiPaginatedResponse(RejectedIndicatorResponseDto)
+  async getRejectedIndicators(@Req() req: Request, @Query() query: any, @CurrentUser() user: JwtPayload) {
+    const token = req.headers.authorization as string;
+    return this.approvalService.getRejectedIndicators(token, query, user);
   }
 
   @Patch('indicators/change-to-in-progress/:year')
