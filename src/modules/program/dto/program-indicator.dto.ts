@@ -2,6 +2,11 @@ import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProgramStatus, IndicatorCategory } from '@prisma/client';
 
+const budgetSchema = z
+  .union([z.number(), z.string().refine((val) => val.trim() !== '' && !isNaN(Number(val)), 'Budget must be a valid number')])
+  .nullable()
+  .optional();
+
 // --- Create ---
 export const createProgramIndicatorSchema = z.object({
   unitId: z.string().uuid('Unit ID must be a valid UUID'),
@@ -13,7 +18,7 @@ export const createProgramIndicatorSchema = z.object({
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
-  budget: z.number().nullable().optional(),
+  budget: budgetSchema,
   picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
   order: z.number().int().default(0),
   proposalDocumentId: z.string().uuid('Proposal document ID must be a valid UUID').nullable().optional(),
@@ -48,8 +53,8 @@ export class CreateProgramIndicatorDto {
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
 
-  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
-  budget?: number | null;
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator', type: 'number', oneOf: [{ type: 'number' }, { type: 'string' }] })
+  budget?: number | string | null;
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
@@ -95,8 +100,8 @@ export class UpdateProgramIndicatorDto {
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
 
-  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
-  budget?: number | null;
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator', type: 'number', oneOf: [{ type: 'number' }, { type: 'string' }] })
+  budget?: number | string | null;
 
   @ApiPropertyOptional({ description: 'Array of PIC User UUIDs', example: ['550e8400-e29b-41d4-a716-446655440003'] })
   picIds?: string[];
@@ -164,7 +169,7 @@ export const setIndicatorTargetSchema = z.object({
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
-  budget: z.number().nullable().optional(),
+  budget: budgetSchema,
   propsal: z.string().uuid('propsal must be a valid document UUID').nullable().optional(),
   rab: z.string().uuid('rab must be a valid document UUID').nullable().optional(),
 });
@@ -182,8 +187,8 @@ export class SetIndicatorTargetDto {
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
 
-  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
-  budget?: number | null;
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator', type: 'number', oneOf: [{ type: 'number' }, { type: 'string' }] })
+  budget?: number | string | null;
 
   @ApiPropertyOptional({ example: '3f5b85cb-a0db-4c5a-a465-f69b57e91a98', description: 'Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.', nullable: true })
   propsal?: string | null;
