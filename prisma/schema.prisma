@@ -81,6 +81,7 @@ model ProgramCategory {
 model Program {
   id          String  @id @default(uuid())
   code        String  @unique @db.VarChar(50)
+  ikuId       String? @map("iku_id") @db.VarChar(50)
   title       String  @db.VarChar(255)
   description String? @db.Text
   objective   String? @db.Text
@@ -97,6 +98,7 @@ model Program {
   indicators ProgramIndicator[]
 
   @@index([year])
+  @@index([ikuId])
   @@map("programs")
 }
 

@@ -13,6 +13,7 @@ export class ProgramMapper {
     return {
       id: program.id,
       code: program.code,
+      ikuId: program.ikuId,
       title: program.title,
       description: program.description,
       objective: program.objective,
