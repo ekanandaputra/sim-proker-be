@@ -123,6 +123,7 @@ export class ProgramService {
 
     const program = await this.programRepository.create({
       code: dto.code,
+      ikuId: dto.ikuId,
       title: dto.title,
       description: dto.description,
       objective: dto.objective,

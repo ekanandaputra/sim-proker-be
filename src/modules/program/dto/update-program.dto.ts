@@ -4,6 +4,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export const updateProgramSchema = z.object({
   title: z.string().min(1).max(255).optional(),
+  ikuId: z.string().max(50).nullable().optional(),
   description: z.string().optional(),
   objective: z.string().optional(),
   year: z.number().int().min(2000).max(2100).optional(),
@@ -12,6 +13,9 @@ export const updateProgramSchema = z.object({
 export class UpdateProgramDto {
   @ApiPropertyOptional({ example: 'Program Penelitian Terapan Baru', description: 'Program title' })
   title?: string;
+
+  @ApiPropertyOptional({ example: 'IKU1.1', description: 'IKU (Indikator Kinerja Utama) code this program contributes to', nullable: true })
+  ikuId?: string | null;
 
   @ApiPropertyOptional({ example: 'Updated research program for applied sciences', description: 'Optional detailed description' })
   description?: string;

@@ -7,6 +7,11 @@ export const createProgramSchema = z.object({
     .string()
     .min(1, 'Code is required')
     .max(50, 'Code must be at most 50 characters'),
+  ikuId: z
+    .string()
+    .max(50, 'IKU ID must be at most 50 characters')
+    .nullable()
+    .optional(),
   title: z
     .string()
     .min(1, 'Title is required')
@@ -23,6 +28,9 @@ export const createProgramSchema = z.object({
 export class CreateProgramDto {
   @ApiProperty({ example: 'PRG-2025-001', description: 'Program code' })
   code!: string;
+
+  @ApiPropertyOptional({ example: 'IKU1.1', description: 'IKU (Indikator Kinerja Utama) code this program contributes to', nullable: true })
+  ikuId?: string | null;
 
   @ApiProperty({ example: 'Program Penelitian Terapan' })
   title!: string;

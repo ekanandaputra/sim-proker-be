@@ -95,7 +95,7 @@ export class ProgramController {
     description:
       'Download file Excel berisi daftar semua indikator beserta kolom Unit Pelaksana yang sudah terisi. ' +
       'File ini bisa diisi/diubah kemudian di-upload kembali via endpoint import. ' +
-      'Format kolom: Nama Program | Indikator Unit | Unit Pelaksana.',
+      'Format kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan.',
   })
   @ApiQuery({
     name: 'year',
@@ -133,15 +133,19 @@ export class ProgramController {
     summary: 'Import bulk assign indikator ke unit via Excel',
     description:
       'Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. ' +
-      'Format kolom wajib: **Nama Program** | **Indikator Unit** | **Unit Pelaksana**. ' +
-      'Pencarian program menggunakan nama program (exact match, case-insensitive). Jika program belum ada, ' +
-      'program baru akan otomatis dibuat menggunakan nama tersebut dan tahun (`year`) dari payload. ' +
-      'Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive). ' +
-      'Baris yang tidak ditemukan salah satu datanya (indikator/unit) akan di-skip (tidak error). ' +
+      'Format kolom wajib: **IKU Code** | **Nama Program** | **Indikator Unit** | **Unit Pelaksana** | **Satuan**. ' +
+      'Endpoint ini murni melakukan import berdasarkan isi file — tidak ada pengecekan terhadap program/indikator default. ' +
+      'Program dicocokkan berdasarkan pasangan IKU Code + Nama Program (satu IKU Code bisa menaungi banyak program berbeda). ' +
+      'Jika program belum ada, program baru otomatis dibuat memakai IKU Code, nama, dan tahun (`year`) dari payload. ' +
+      'Indikator dicocokkan berdasarkan nama di dalam program tersebut (exact match, case-insensitive). Jika indikator belum ada, ' +
+      'indikator baru otomatis dibuat dan langsung di-assign ke unit, dengan Satuan (master unit type) diambil dari kolom Satuan — ' +
+      'jika Satuan tersebut belum ada di Master Unit Type, akan dibuat otomatis (default tipe NUMBER). ' +
+      'Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive) — jika unit tidak ditemukan, ' +
+      'baris tersebut di-skip sepenuhnya (indikator tidak dibuat/diubah). ' +
       'Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.',
   })
   @ApiBody({
-    description: 'File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana, beserta tahun program',
+    description: 'File Excel (.xlsx) dengan kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan, beserta tahun program',
     schema: {
       type: 'object',
       required: ['file', 'year'],
@@ -170,19 +174,34 @@ export class ProgramController {
         details: [
           {
             row: 2,
-            program: 'Peningkatan Kualitas Laporan',
-            indicator: 'Jumlah laporan diterbitkan',
+            ikuId: 'IKU1.1',
+            program: 'Seleksi Penerimaan Maba',
+            indicator: 'Jumlah pendaftar D3 dan D4 di PPNS',
             unit: 'BAK',
+            satuan: 'Mahasiswa',
             status: 'success',
           },
           {
             row: 3,
+            ikuId: 'IKU1.1',
             program: 'Program Baru',
-            indicator: 'Indikator X',
+            indicator: 'Indikator Baru',
             unit: 'BAK',
-            status: 'skipped',
-            reason: 'Program "Program Baru" baru dibuat, namun indikator "Indikator X" belum ada di dalamnya',
+            satuan: 'Dokumen',
+            status: 'success',
             programCreated: true,
+            indicatorCreated: true,
+            satuanCreated: true,
+          },
+          {
+            row: 4,
+            ikuId: 'IKU1.1',
+            program: 'Seleksi Penerimaan Maba',
+            indicator: 'Jumlah pendaftar D3 dan D4 di PPNS',
+            unit: 'Unit Tidak Dikenal',
+            satuan: 'Mahasiswa',
+            status: 'skipped',
+            reason: 'Unit "Unit Tidak Dikenal" tidak ditemukan',
           },
         ],
       },
