@@ -14,6 +14,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
@@ -133,21 +134,27 @@ export class ProgramController {
     description:
       'Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. ' +
       'Format kolom wajib: **Nama Program** | **Indikator Unit** | **Unit Pelaksana**. ' +
-      'Pencarian program menggunakan nama program (exact match, case-insensitive). ' +
+      'Pencarian program menggunakan nama program (exact match, case-insensitive). Jika program belum ada, ' +
+      'program baru akan otomatis dibuat menggunakan nama tersebut dan tahun (`year`) dari payload. ' +
       'Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive). ' +
-      'Baris yang tidak ditemukan salah satu datanya akan di-skip (tidak error). ' +
+      'Baris yang tidak ditemukan salah satu datanya (indikator/unit) akan di-skip (tidak error). ' +
       'Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.',
   })
   @ApiBody({
-    description: 'File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana',
+    description: 'File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana, beserta tahun program',
     schema: {
       type: 'object',
-      required: ['file'],
+      required: ['file', 'year'],
       properties: {
         file: {
           type: 'string',
           format: 'binary',
           description: 'File Excel (.xlsx) berisi mapping indikator ke unit',
+        },
+        year: {
+          type: 'number',
+          example: 2026,
+          description: 'Tahun program kerja — dipakai saat membuat program baru untuk baris yang programnya belum ada',
         },
       },
     },
@@ -170,11 +177,12 @@ export class ProgramController {
           },
           {
             row: 3,
-            program: 'Program Tidak Dikenal',
+            program: 'Program Baru',
             indicator: 'Indikator X',
             unit: 'BAK',
             status: 'skipped',
-            reason: 'Program "Program Tidak Dikenal" tidak ditemukan',
+            reason: 'Program "Program Baru" baru dibuat, namun indikator "Indikator X" belum ada di dalamnya',
+            programCreated: true,
           },
         ],
       },
@@ -183,10 +191,17 @@ export class ProgramController {
   @ApiResponse({ status: 400, description: 'File tidak valid atau format tidak sesuai' })
   async importIndicatorAssign(
     @UploadedFile() file: Express.Multer.File,
+    @Body('year') yearInput: string,
     @Req() req: Request,
+    @CurrentUser() user: JwtPayload,
   ) {
+    const year = Number(yearInput);
+    if (!yearInput || !Number.isInteger(year)) {
+      throw new BadRequestException('year wajib diisi dengan angka tahun yang valid');
+    }
+
     const token = req.headers.authorization as string;
-    return this.indicatorImportService.importFromExcel(file, token);
+    return this.indicatorImportService.importFromExcel(file, token, user.userId, year);
   }
 
   @Get()

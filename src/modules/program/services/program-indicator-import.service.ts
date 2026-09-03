@@ -11,6 +11,7 @@ export interface ImportRowDetail {
   unit: string;
   status: 'success' | 'skipped';
   reason?: string;
+  programCreated?: boolean;
 }
 
 export interface ImportResult {
@@ -121,6 +122,8 @@ export class ProgramIndicatorImportService {
   async importFromExcel(
     file: Express.Multer.File,
     token: string,
+    userId: string,
+    year: number,
   ): Promise<ImportResult> {
     this.logger.log(`Importing assign-indicator from file: ${file.originalname}`);
 
@@ -171,19 +174,36 @@ export class ProgramIndicatorImportService {
     result.totalRows = dataRows.length;
 
     for (const { rowNum, programName, indicatorName, unitName } of dataRows) {
-      // 1. Lookup program by name
-      const programId = programNameToId.get(programName.toLowerCase());
+      // 1. Lookup program by name — auto-create it if it doesn't exist yet
+      let programId = programNameToId.get(programName.toLowerCase());
+      let programCreated = false;
+
       if (!programId) {
-        result.skipped++;
-        result.details.push({
-          row: rowNum,
-          program: programName,
-          indicator: indicatorName,
-          unit: unitName,
-          status: 'skipped',
-          reason: `Program "${programName}" tidak ditemukan`,
+        if (!programName) {
+          result.skipped++;
+          result.details.push({
+            row: rowNum,
+            program: programName,
+            indicator: indicatorName,
+            unit: unitName,
+            status: 'skipped',
+            reason: 'Nama Program kosong',
+          });
+          continue;
+        }
+
+        const newProgram = await this.prisma.program.create({
+          data: {
+            code: this.generateProgramCode(programName),
+            title: programName,
+            year,
+            createdBy: userId,
+          },
         });
-        continue;
+        programId = newProgram.id;
+        programCreated = true;
+        programNameToId.set(programName.toLowerCase(), programId);
+        this.logger.log(`Program "${programName}" tidak ditemukan, dibuat baru dengan id ${programId}`);
       }
 
       // 2. Lookup indicator by name + programId
@@ -198,7 +218,10 @@ export class ProgramIndicatorImportService {
           indicator: indicatorName,
           unit: unitName,
           status: 'skipped',
-          reason: `Indikator "${indicatorName}" tidak ditemukan pada program "${programName}"`,
+          reason: programCreated
+            ? `Program "${programName}" baru dibuat, namun indikator "${indicatorName}" belum ada di dalamnya`
+            : `Indikator "${indicatorName}" tidak ditemukan pada program "${programName}"`,
+          programCreated,
         });
         continue;
       }
@@ -214,6 +237,7 @@ export class ProgramIndicatorImportService {
           unit: unitName,
           status: 'skipped',
           reason: `Unit "${unitName}" tidak ditemukan`,
+          programCreated,
         });
         continue;
       }
@@ -231,6 +255,7 @@ export class ProgramIndicatorImportService {
         indicator: indicatorName,
         unit: unitName,
         status: 'success',
+        programCreated,
       });
     }
 
@@ -238,5 +263,15 @@ export class ProgramIndicatorImportService {
       `Import done — total: ${result.totalRows}, success: ${result.success}, skipped: ${result.skipped}`,
     );
     return result;
+  }
+
+  private generateProgramCode(title: string): string {
+    const slug = title
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30) || 'PROG';
+    return `${slug}-${Date.now()}${Math.floor(Math.random() * 1000)}`;
   }
 }
