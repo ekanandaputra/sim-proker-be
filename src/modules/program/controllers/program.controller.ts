@@ -137,12 +137,13 @@ export class ProgramController {
       'Endpoint ini murni melakukan import berdasarkan isi file — tidak ada pengecekan terhadap program/indikator default. ' +
       'Program dicocokkan berdasarkan pasangan IKU Code + Nama Program (satu IKU Code bisa menaungi banyak program berbeda). ' +
       'Jika program belum ada, program baru otomatis dibuat memakai IKU Code, nama, dan tahun (`year`) dari payload. ' +
-      'Indikator dicocokkan berdasarkan nama di dalam program tersebut (exact match, case-insensitive). Jika indikator belum ada, ' +
-      'indikator baru otomatis dibuat dan langsung di-assign ke unit, dengan Satuan (master unit type) diambil dari kolom Satuan — ' +
+      'Satu nama indikator BISA di-assign ke beberapa unit berbeda (satu ProgramIndicator per kombinasi program + nama indikator + unit) — ' +
+      'baris tidak pernah meng-update record yang sudah ada. Jika kombinasi (program, nama indikator, unit) itu sudah ada, baris di-skip apa adanya. ' +
+      'Jika belum ada, ProgramIndicator baru dibuat untuk unit tersebut, dengan Satuan (master unit type) diambil dari kolom Satuan — ' +
       'jika Satuan tersebut belum ada di Master Unit Type, akan dibuat otomatis (default tipe NUMBER). Kolom Kategori diisi salah satu ' +
       'dari `TUSI` | `RUTIN` | `PENGEMBANGAN` (case-insensitive); kosong atau tidak dikenali akan default ke `TUSI`. ' +
       'Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive) — jika unit tidak ditemukan, ' +
-      'baris tersebut di-skip sepenuhnya (indikator tidak dibuat/diubah). ' +
+      'baris tersebut di-skip sepenuhnya (indikator tidak dibuat). ' +
       'Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.',
   })
   @ApiBody({
@@ -170,8 +171,8 @@ export class ProgramController {
     schema: {
       example: {
         totalRows: 5,
-        success: 4,
-        skipped: 1,
+        success: 3,
+        skipped: 2,
         details: [
           {
             row: 2,
@@ -206,6 +207,17 @@ export class ProgramController {
             kategori: 'RUTIN',
             status: 'skipped',
             reason: 'Unit "Unit Tidak Dikenal" tidak ditemukan',
+          },
+          {
+            row: 5,
+            ikuId: 'IKU1.1',
+            program: 'Seleksi Penerimaan Maba',
+            indicator: 'Jumlah pendaftar D3 dan D4 di PPNS',
+            unit: 'BAK',
+            satuan: 'Mahasiswa',
+            kategori: 'RUTIN',
+            status: 'skipped',
+            reason: 'Indikator "Jumlah pendaftar D3 dan D4 di PPNS" sudah pernah di-assign ke unit "BAK" pada program "Seleksi Penerimaan Maba"',
           },
         ],
       },

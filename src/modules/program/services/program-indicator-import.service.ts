@@ -247,53 +247,55 @@ export class ProgramIndicatorImportService {
         continue;
       }
 
-      // 3. Lookup indicator by name + programId — auto-create it if it doesn't exist yet
-      const indicator = await this.prisma.programIndicator.findFirst({
-        where: { programId, name: { equals: indicatorName } },
-      });
-      let indicatorCreated = false;
-      let satuanCreated = false;
-
-      if (!indicator) {
-        if (!indicatorName) {
-          result.skipped++;
-          result.details.push({
-            row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
-            status: 'skipped',
-            reason: 'Nama Indikator kosong',
-            programCreated,
-          });
-          continue;
-        }
-
-        const { unitType, created } = await this.getOrCreateMasterUnitType(satuan);
-        satuanCreated = created;
-
-        await this.prisma.programIndicator.create({
-          data: {
-            programId,
-            unitId,
-            name: indicatorName,
-            masterUnitTypeId: unitType.id,
-            category: this.parseCategory(kategori),
-          },
+      if (!indicatorName) {
+        result.skipped++;
+        result.details.push({
+          row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
+          status: 'skipped',
+          reason: 'Nama Indikator kosong',
+          programCreated,
         });
-        indicatorCreated = true;
-        this.logger.log(`Indikator "${indicatorName}" tidak ditemukan pada program "${programName}", dibuat baru`);
-      } else {
-        // Assign existing indicator to unit
-        await this.prisma.programIndicator.update({
-          where: { id: indicator.id },
-          data: { unitId },
-        });
+        continue;
       }
+
+      // 3. The same indicator name can be assigned to several different units — each
+      // (program, indicator name, unit) combination is its own ProgramIndicator record.
+      // If that exact combination already exists, skip it (never update/duplicate it);
+      // otherwise create a new record for this unit.
+      const existing = await this.prisma.programIndicator.findFirst({
+        where: { programId, name: { equals: indicatorName }, unitId },
+      });
+
+      if (existing) {
+        result.skipped++;
+        result.details.push({
+          row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
+          status: 'skipped',
+          reason: `Indikator "${indicatorName}" sudah pernah di-assign ke unit "${unitName}" pada program "${programName}"`,
+          programCreated,
+        });
+        continue;
+      }
+
+      const { unitType, created: satuanCreated } = await this.getOrCreateMasterUnitType(satuan);
+
+      await this.prisma.programIndicator.create({
+        data: {
+          programId,
+          unitId,
+          name: indicatorName,
+          masterUnitTypeId: unitType.id,
+          category: this.parseCategory(kategori),
+        },
+      });
+      this.logger.log(`Indikator "${indicatorName}" untuk unit "${unitName}" pada program "${programName}" dibuat baru`);
 
       result.success++;
       result.details.push({
         row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
         status: 'success',
         programCreated,
-        indicatorCreated,
+        indicatorCreated: true,
         satuanCreated,
       });
     }
