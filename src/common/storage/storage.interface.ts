@@ -23,6 +23,12 @@ export interface IStorageService {
    * @param filePath The relative path of the file.
    */
   getUrl(filePath: string): string;
+
+  /**
+   * Read a stored file's contents.
+   * @param filePath The relative path of the file.
+   */
+  read(filePath: string): Promise<Buffer>;
 }
 
 export const STORAGE_SERVICE = Symbol('STORAGE_SERVICE');

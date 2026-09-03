@@ -50,6 +50,11 @@ export class LocalStorageService implements IStorageService {
     return `${getAppConfig().APP_URL}/uploads/${normalizedPath}`;
   }
 
+  async read(filePath: string): Promise<Buffer> {
+    const fullPath = path.join(this.uploadDir, filePath);
+    return fs.promises.readFile(fullPath);
+  }
+
   private ensureDirectoryExists(dir: string): void {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
