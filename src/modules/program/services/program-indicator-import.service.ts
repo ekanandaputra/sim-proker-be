@@ -3,7 +3,7 @@ import { PrismaService } from '@database/prisma/prisma.service';
 import { UnitService } from '../../unit/services/unit.service';
 import * as exceljs from 'exceljs';
 import { Response } from 'express';
-import { MasterUnitType } from '@prisma/client';
+import { MasterUnitType, IndicatorCategory } from '@prisma/client';
 
 export interface ImportRowDetail {
   row: number;
@@ -12,6 +12,7 @@ export interface ImportRowDetail {
   indicator: string;
   unit: string;
   satuan: string;
+  kategori: string;
   status: 'success' | 'skipped';
   reason?: string;
   programCreated?: boolean;
@@ -35,6 +36,7 @@ export class ProgramIndicatorImportService {
   private readonly COL_INDICATOR = 3;
   private readonly COL_UNIT = 4;
   private readonly COL_SATUAN = 5;
+  private readonly COL_KATEGORI = 6;
 
   private unitTypeCache = new Map<string, MasterUnitType>();
 
@@ -94,6 +96,7 @@ export class ProgramIndicatorImportService {
     sheet.getColumn(this.COL_INDICATOR).width = 55;
     sheet.getColumn(this.COL_UNIT).width = 30;
     sheet.getColumn(this.COL_SATUAN).width = 20;
+    sheet.getColumn(this.COL_KATEGORI).width = 18;
 
     const header = sheet.getRow(1);
     header.height = 28;
@@ -102,6 +105,7 @@ export class ProgramIndicatorImportService {
     header.getCell(this.COL_INDICATOR).value = 'Indikator Unit';
     header.getCell(this.COL_UNIT).value = 'Unit Pelaksana';
     header.getCell(this.COL_SATUAN).value = 'Satuan';
+    header.getCell(this.COL_KATEGORI).value = 'Kategori';
     header.eachCell((cell) => {
       cell.fill = headerFill;
       cell.font = { bold: true, size: 11 };
@@ -116,6 +120,7 @@ export class ProgramIndicatorImportService {
       row.getCell(this.COL_INDICATOR).value = ind.name;
       row.getCell(this.COL_UNIT).value = unitNameMap.get(ind.unitId) ?? '';
       row.getCell(this.COL_SATUAN).value = ind.masterUnitType?.name ?? '';
+      row.getCell(this.COL_KATEGORI).value = ind.category;
       row.eachCell((cell) => {
         cell.border = border;
         cell.alignment = { vertical: 'middle', wrapText: true };
@@ -136,7 +141,7 @@ export class ProgramIndicatorImportService {
 
   // ─────────────────────────────────────────────────────────────────────────
   // IMPORT — baca Excel, assign tiap indikator ke unit
-  // Format kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan
+  // Format kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan | Kategori
   // ─────────────────────────────────────────────────────────────────────────
   async importFromExcel(
     file: Express.Multer.File,
@@ -181,7 +186,7 @@ export class ProgramIndicatorImportService {
 
     // Parse rows (skip header row 1)
     const result: ImportResult = { totalRows: 0, success: 0, skipped: 0, details: [] };
-    const dataRows: { rowNum: number; ikuId: string; programName: string; indicatorName: string; unitName: string; satuan: string }[] = [];
+    const dataRows: { rowNum: number; ikuId: string; programName: string; indicatorName: string; unitName: string; satuan: string; kategori: string }[] = [];
 
     sheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
@@ -190,13 +195,14 @@ export class ProgramIndicatorImportService {
       const indicatorName = String(row.getCell(this.COL_INDICATOR).value ?? '').trim();
       const unitName = String(row.getCell(this.COL_UNIT).value ?? '').trim();
       const satuan = String(row.getCell(this.COL_SATUAN).value ?? '').trim();
-      if (!ikuId && !programName && !indicatorName && !unitName && !satuan) return;
-      dataRows.push({ rowNum: rowNumber, ikuId, programName, indicatorName, unitName, satuan });
+      const kategori = String(row.getCell(this.COL_KATEGORI).value ?? '').trim();
+      if (!ikuId && !programName && !indicatorName && !unitName && !satuan && !kategori) return;
+      dataRows.push({ rowNum: rowNumber, ikuId, programName, indicatorName, unitName, satuan, kategori });
     });
 
     result.totalRows = dataRows.length;
 
-    for (const { rowNum, ikuId, programName, indicatorName, unitName, satuan } of dataRows) {
+    for (const { rowNum, ikuId, programName, indicatorName, unitName, satuan, kategori } of dataRows) {
       // 1. Lookup program by (IKU Code + Nama Program) — auto-create it if it doesn't exist yet
       const programKey = this.programKey(ikuId, programName);
       let programId = programKeyToId.get(programKey);
@@ -206,7 +212,7 @@ export class ProgramIndicatorImportService {
         if (!programName) {
           result.skipped++;
           result.details.push({
-            row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan,
+            row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
             status: 'skipped',
             reason: 'Nama Program kosong',
           });
@@ -233,7 +239,7 @@ export class ProgramIndicatorImportService {
       if (!unitId) {
         result.skipped++;
         result.details.push({
-          row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan,
+          row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
           status: 'skipped',
           reason: `Unit "${unitName}" tidak ditemukan`,
           programCreated,
@@ -252,7 +258,7 @@ export class ProgramIndicatorImportService {
         if (!indicatorName) {
           result.skipped++;
           result.details.push({
-            row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan,
+            row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
             status: 'skipped',
             reason: 'Nama Indikator kosong',
             programCreated,
@@ -269,6 +275,7 @@ export class ProgramIndicatorImportService {
             unitId,
             name: indicatorName,
             masterUnitTypeId: unitType.id,
+            category: this.parseCategory(kategori),
           },
         });
         indicatorCreated = true;
@@ -283,7 +290,7 @@ export class ProgramIndicatorImportService {
 
       result.success++;
       result.details.push({
-        row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan,
+        row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
         status: 'success',
         programCreated,
         indicatorCreated,
@@ -295,6 +302,18 @@ export class ProgramIndicatorImportService {
       `Import done — total: ${result.totalRows}, success: ${result.success}, skipped: ${result.skipped}`,
     );
     return result;
+  }
+
+  /**
+   * Parse the "Kategori" column into IndicatorCategory (TUSI/RUTIN/PENGEMBANGAN).
+   * Falls back to the schema default (TUSI) when blank or unrecognized.
+   */
+  private parseCategory(kategori: string): IndicatorCategory {
+    const normalized = kategori.trim().toUpperCase();
+    if (normalized in IndicatorCategory) {
+      return normalized as IndicatorCategory;
+    }
+    return IndicatorCategory.TUSI;
   }
 
   private programKey(ikuId: string | null | undefined, programName: string): string {
