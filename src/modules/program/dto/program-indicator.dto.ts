@@ -164,6 +164,7 @@ export const setIndicatorTargetSchema = z.object({
   targetQ2: z.number().nullable().optional(),
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
+  budget: z.number().nullable().optional(),
   propsal: z.string().uuid('propsal must be a valid document UUID').nullable().optional(),
   rab: z.string().uuid('rab must be a valid document UUID').nullable().optional(),
 });
@@ -180,6 +181,9 @@ export class SetIndicatorTargetDto {
 
   @ApiPropertyOptional({ example: 40, description: 'Target for Q4' })
   targetQ4?: number | null;
+
+  @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator' })
+  budget?: number | null;
 
   @ApiPropertyOptional({ example: '3f5b85cb-a0db-4c5a-a465-f69b57e91a98', description: 'Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.', nullable: true })
   propsal?: string | null;
