@@ -286,6 +286,27 @@ model Document {
   @@map("documents")
 }
 
+/// Downloadable document template (e.g. TOR, RAB). One current file per type;
+/// re-uploading a type replaces its record so the name/file can be changed via the database.
+model Template {
+  id         String       @id @default(uuid())
+  type       TemplateType @unique
+  fileName   String       @map("file_name") @db.VarChar(255)
+  filePath   String       @map("file_path") @db.VarChar(500)
+  mimeType   String       @map("mime_type") @db.VarChar(100)
+  fileSize   Int          @map("file_size")
+  uploadedBy String       @map("uploaded_by")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  @@map("templates")
+}
+
+enum TemplateType {
+  TOR
+  RAB
+}
+
 /// Approval workflow entry
 model Approval {
   id          String         @id @default(uuid())

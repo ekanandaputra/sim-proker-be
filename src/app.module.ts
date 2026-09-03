@@ -7,6 +7,7 @@ import { ActivityModule } from '@modules/activity/activity.module';
 import { OutputModule } from '@modules/output/output.module';
 import { ProgressModule } from '@modules/progress/progress.module';
 import { DocumentModule } from '@modules/document/document.module';
+import { TemplateModule } from '@modules/template/template.module';
 import { ApprovalModule } from '@modules/approval/approval.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { IntegrationModule } from './integrations/integration.module';
@@ -32,6 +33,7 @@ import { MasterBudgetModule } from './modules/master-budget/master-budget.module
     OutputModule,
     ProgressModule,
     DocumentModule,
+    TemplateModule,
     ApprovalModule,
     DashboardModule,
     DefaultProgramModule,
