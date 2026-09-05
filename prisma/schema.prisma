@@ -309,6 +309,23 @@ enum TemplateType {
   RAB
 }
 
+/// User guide / manual entry: uploaded material and/or a video link (Google Drive, YouTube, etc.)
+model Guide {
+  id          String   @id @default(uuid())
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  fileName    String?  @map("file_name") @db.VarChar(255)
+  filePath    String?  @map("file_path") @db.VarChar(500)
+  mimeType    String?  @map("mime_type") @db.VarChar(100)
+  fileSize    Int?     @map("file_size")
+  videoUrl    String?  @map("video_url") @db.VarChar(500)
+  uploadedBy  String   @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("guides")
+}
+
 /// Approval workflow entry
 model Approval {
   id          String         @id @default(uuid())
