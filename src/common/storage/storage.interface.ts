@@ -8,9 +8,11 @@ import 'multer';
 export interface IStorageService {
   /**
    * Upload a file to storage.
+   * @param fileNameOverride Base file name (without extension) to store the file as,
+   *   instead of an auto-generated one. The original file's extension is always appended.
    * @returns The relative path of the uploaded file.
    */
-  upload(file: Express.Multer.File, directory: string): Promise<string>;
+  upload(file: Express.Multer.File, directory: string, fileNameOverride?: string): Promise<string>;
 
   /**
    * Delete a file from storage.

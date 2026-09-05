@@ -28,6 +28,18 @@ export class GuideService {
     return GuideMapper.toResponse(g, url);
   }
 
+  private sanitizeTitle(title: string): string {
+    return title
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '_')
+      .replace(/\s+/g, '_');
+  }
+
+  private buildStorageFileName(title: string): string {
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+    return `${this.sanitizeTitle(title)}_${timestamp}`;
+  }
+
   async findAll(query: PaginationQuery): Promise<PaginatedResponse<GuideResponseDto>> {
     const { skip, take, orderBy } = buildPaginationArgs(query);
 
@@ -70,7 +82,11 @@ export class GuideService {
 
     let filePath: string | undefined;
     if (file) {
-      filePath = await this.storageService.upload(file, 'guides');
+      filePath = await this.storageService.upload(
+        file,
+        'guides',
+        this.buildStorageFileName(dto.title),
+      );
     }
 
     const guide = await this.guideRepository.create({
@@ -100,7 +116,12 @@ export class GuideService {
 
     let filePath: string | undefined;
     if (file) {
-      filePath = await this.storageService.upload(file, 'guides');
+      const titleForFileName = dto.title ?? existing.title;
+      filePath = await this.storageService.upload(
+        file,
+        'guides',
+        this.buildStorageFileName(titleForFileName),
+      );
     }
 
     const hasFileAfterUpdate = Boolean(filePath ?? existing.filePath);
@@ -155,8 +176,7 @@ export class GuideService {
     }
 
     const buffer = await this.storageService.read(guide.filePath);
-    const ext = extname(guide.fileName);
-    const fileName = `${guide.title.replace(/[\\/:*?"<>|]/g, '_')}${ext}`;
+    const fileName = `${this.sanitizeTitle(guide.title)}${extname(guide.fileName)}`;
     return { buffer, fileName, mimeType: guide.mimeType };
   }
 }
