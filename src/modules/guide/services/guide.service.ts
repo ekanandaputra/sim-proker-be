@@ -1,5 +1,6 @@
 import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import 'multer';
+import { extname } from 'path';
 import { Prisma } from '@prisma/client';
 import { GUIDE_REPOSITORY, IGuideRepository } from '../repositories/guide.repository.interface';
 import { STORAGE_SERVICE, IStorageService } from '@common/storage/storage.interface';
@@ -154,6 +155,8 @@ export class GuideService {
     }
 
     const buffer = await this.storageService.read(guide.filePath);
-    return { buffer, fileName: guide.fileName, mimeType: guide.mimeType };
+    const ext = extname(guide.fileName);
+    const fileName = `${guide.title.replace(/[\\/:*?"<>|]/g, '_')}${ext}`;
+    return { buffer, fileName, mimeType: guide.mimeType };
   }
 }
