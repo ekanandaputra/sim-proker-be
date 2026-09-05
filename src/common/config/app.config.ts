@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const appConfigSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
-  APP_URL: z.string().url().default('http://localhost:3000'),
+  APP_URL: z.string().url().default('https://sim-proker-api.ppns.ac.id'),
   DATABASE_URL: z.string().url(),
   AUTH_SERVICE_URL: z.string().url(),
   IKU_SERVICE_URL: z.string().url(),
