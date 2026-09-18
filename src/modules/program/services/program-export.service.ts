@@ -60,7 +60,7 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    const ikuMap = new Map(ikuList.map(i => [i.id, i.name]));
+    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
 
     // Fetch Indicators matching the filter
     const indicators = await this.prisma.programIndicator.findMany({
@@ -186,11 +186,13 @@ export class ProgramExportService {
       const targetTahunan = q1 + q2 + q3 + q4;
 
       const ikuId = titleToIkuId.get(ind.program.title);
-      const ikuName = ikuId ? ikuMap.get(ikuId) || '-' : '-';
+      const iku = ikuId ? ikuMap.get(ikuId) : undefined;
+      const ikuName = iku?.name || '-';
+      const ikuSasaran = iku?.target || '-';
 
       const row = sheet.getRow(currentRow);
       row.values = {
-        sasaran: ind.category,
+        sasaran: ikuSasaran,
         iku: ikuName,
         strategi: ind.program.title,
         indikator: ind.name,
@@ -254,7 +256,7 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    const ikuMap = new Map(ikuList.map(i => [i.id, i.name]));
+    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
 
     // Fetch only APPROVED indicators
     const indicators = await this.prisma.programIndicator.findMany({
@@ -381,11 +383,13 @@ export class ProgramExportService {
       const targetTahunan = q1 + q2 + q3 + q4;
 
       const ikuId = titleToIkuId.get(ind.program.title);
-      const ikuName = ikuId ? ikuMap.get(ikuId) || '-' : '-';
+      const iku = ikuId ? ikuMap.get(ikuId) : undefined;
+      const ikuName = iku?.name || '-';
+      const ikuSasaran = iku?.target || '-';
 
       const row = sheet.getRow(currentRow);
       row.values = {
-        sasaran: ind.category,
+        sasaran: ikuSasaran,
         iku: ikuName,
         strategi: ind.program.title,
         indikator: ind.name,
