@@ -3,7 +3,7 @@ import { PrismaService } from '@database/prisma/prisma.service';
 import { UnitService } from '../../unit/services/unit.service';
 import * as exceljs from 'exceljs';
 import { Response } from 'express';
-import { MasterUnitType, IndicatorCategory } from '@prisma/client';
+import { MasterUnitType, IndicatorCategory, ProgramStatus } from '@prisma/client';
 
 export interface ImportRowDetail {
   row: number;
@@ -286,6 +286,7 @@ export class ProgramIndicatorImportService {
           name: indicatorName,
           masterUnitTypeId: unitType.id,
           category: this.parseCategory(kategori),
+          status: ProgramStatus.ASSIGNED_TO_UNIT,
         },
       });
       this.logger.log(`Indikator "${indicatorName}" untuk unit "${unitName}" pada program "${programName}" dibuat baru`);
