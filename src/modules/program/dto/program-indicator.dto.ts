@@ -23,6 +23,11 @@ export const createProgramIndicatorSchema = z.object({
   order: z.number().int().default(0),
   proposalDocumentId: z.string().uuid('Proposal document ID must be a valid UUID').nullable().optional(),
   rabDocumentId: z.string().uuid('RAB document ID must be a valid UUID').nullable().optional(),
+  usulanPerbaikanDocumentId: z.string().uuid('Usulan Perbaikan document ID must be a valid UUID').nullable().optional(),
+  usulanBahanHabisDocumentId: z.string().uuid('Usulan Bahan Habis document ID must be a valid UUID').nullable().optional(),
+  usulanPeralatanDocumentId: z.string().uuid('Usulan Peralatan document ID must be a valid UUID').nullable().optional(),
+  usulanPelatihanDocumentId: z.string().uuid('Usulan Pelatihan document ID must be a valid UUID').nullable().optional(),
+  usulanMeubelairDocumentId: z.string().uuid('Usulan Meubelair document ID must be a valid UUID').nullable().optional(),
 });
 
 export class CreateProgramIndicatorDto {
@@ -67,6 +72,21 @@ export class CreateProgramIndicatorDto {
 
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440005', description: 'Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document', nullable: true })
   rabDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440006', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document', nullable: true })
+  usulanPerbaikanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440007', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document', nullable: true })
+  usulanBahanHabisDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440008', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document', nullable: true })
+  usulanPeralatanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440009', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document', nullable: true })
+  usulanPelatihanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-44665544000a', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document', nullable: true })
+  usulanMeubelairDocumentId?: string | null;
 }
 
 // --- Update ---
@@ -114,6 +134,21 @@ export class UpdateProgramIndicatorDto {
 
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440005', description: 'Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.', nullable: true })
   rabDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440006', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.', nullable: true })
+  usulanPerbaikanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440007', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.', nullable: true })
+  usulanBahanHabisDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440008', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.', nullable: true })
+  usulanPeralatanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440009', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.', nullable: true })
+  usulanPelatihanDocumentId?: string | null;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-44665544000a', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.', nullable: true })
+  usulanMeubelairDocumentId?: string | null;
 }
 
 // --- Response ---
@@ -157,6 +192,21 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/def456.pdf', description: 'Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend' })
   rabURL!: string | null;
 
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/ghi789.pdf', description: 'Full URL of the Format Usulan Perbaikan document, ready to be opened/displayed by the frontend' })
+  usulanPerbaikanURL!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/jkl012.pdf', description: 'Full URL of the Format Usulan Bahan Habis document, ready to be opened/displayed by the frontend' })
+  usulanBahanHabisURL!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/mno345.pdf', description: 'Full URL of the Format Usulan Peralatan document, ready to be opened/displayed by the frontend' })
+  usulanPeralatanURL!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/pqr678.pdf', description: 'Full URL of the Format Usulan Pelatihan document, ready to be opened/displayed by the frontend' })
+  usulanPelatihanURL!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/stu901.pdf', description: 'Full URL of the Format Usulan Meubelair document, ready to be opened/displayed by the frontend' })
+  usulanMeubelairURL!: string | null;
+
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' })
   createdAt!: Date;
 
@@ -172,6 +222,11 @@ export const setIndicatorTargetSchema = z.object({
   budget: budgetSchema,
   propsal: z.string().uuid('propsal must be a valid document UUID').nullable().optional(),
   rab: z.string().uuid('rab must be a valid document UUID').nullable().optional(),
+  usulanPerbaikan: z.string().uuid('usulanPerbaikan must be a valid document UUID').nullable().optional(),
+  usulanBahanHabis: z.string().uuid('usulanBahanHabis must be a valid document UUID').nullable().optional(),
+  usulanPeralatan: z.string().uuid('usulanPeralatan must be a valid document UUID').nullable().optional(),
+  usulanPelatihan: z.string().uuid('usulanPelatihan must be a valid document UUID').nullable().optional(),
+  usulanMeubelair: z.string().uuid('usulanMeubelair must be a valid document UUID').nullable().optional(),
 });
 
 export class SetIndicatorTargetDto {
@@ -195,4 +250,19 @@ export class SetIndicatorTargetDto {
 
   @ApiPropertyOptional({ example: '1d5a827c-18b5-4dcc-af1b-a071adb0e048', description: 'Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.', nullable: true })
   rab?: string | null;
+
+  @ApiPropertyOptional({ example: '2a3b4c5d-6e7f-4890-a1b2-c3d4e5f60718', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.', nullable: true })
+  usulanPerbaikan?: string | null;
+
+  @ApiPropertyOptional({ example: '3b4c5d6e-7f80-4901-a2b3-d4e5f6071829', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.', nullable: true })
+  usulanBahanHabis?: string | null;
+
+  @ApiPropertyOptional({ example: '4c5d6e7f-8091-4a12-b3c4-e5f607182930', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.', nullable: true })
+  usulanPeralatan?: string | null;
+
+  @ApiPropertyOptional({ example: '5d6e7f80-91a2-4b23-c4d5-f60718293041', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.', nullable: true })
+  usulanPelatihan?: string | null;
+
+  @ApiPropertyOptional({ example: '6e7f8091-a2b3-4c34-d5e6-071829304152', description: 'Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.', nullable: true })
+  usulanMeubelair?: string | null;
 }

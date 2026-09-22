@@ -104,38 +104,53 @@ model Program {
 
 /// Program Indicator (Assigned to Unit)
 model ProgramIndicator {
-  id                        String            @id @default(uuid())
-  programId                 String            @map("program_id")
-  unitId                    String            @map("unit_id")
-  name                      String            @db.VarChar(255)
-  masterUnitTypeId          String            @map("master_unit_type_id")
-  category                  IndicatorCategory @default(TUSI)
-  isDefaultProgramIndicator Boolean           @default(false) @map("is_default_program_indicator")
-  targetQ1                  Decimal?          @map("target_q1") @db.Decimal(10, 2)
-  targetQ2                  Decimal?          @map("target_q2") @db.Decimal(10, 2)
-  targetQ3                  Decimal?          @map("target_q3") @db.Decimal(10, 2)
-  targetQ4                  Decimal?          @map("target_q4") @db.Decimal(10, 2)
-  budget                    Decimal?          @db.Decimal(15, 2)
-  status                    ProgramStatus     @default(SUBMITTED)
-  order                     Int               @default(0)
-  proposalDocumentId        String?           @map("proposal_document_id")
-  rabDocumentId             String?           @map("rab_document_id")
-  createdAt                 DateTime          @default(now()) @map("created_at")
-  updatedAt                 DateTime          @updatedAt @map("updated_at")
+  id                         String            @id @default(uuid())
+  programId                  String            @map("program_id")
+  unitId                     String            @map("unit_id")
+  name                       String            @db.VarChar(255)
+  masterUnitTypeId           String            @map("master_unit_type_id")
+  category                   IndicatorCategory @default(TUSI)
+  isDefaultProgramIndicator  Boolean           @default(false) @map("is_default_program_indicator")
+  targetQ1                   Decimal?          @map("target_q1") @db.Decimal(10, 2)
+  targetQ2                   Decimal?          @map("target_q2") @db.Decimal(10, 2)
+  targetQ3                   Decimal?          @map("target_q3") @db.Decimal(10, 2)
+  targetQ4                   Decimal?          @map("target_q4") @db.Decimal(10, 2)
+  budget                     Decimal?          @db.Decimal(15, 2)
+  status                     ProgramStatus     @default(SUBMITTED)
+  order                      Int               @default(0)
+  proposalDocumentId         String?           @map("proposal_document_id")
+  rabDocumentId              String?           @map("rab_document_id")
+  usulanPerbaikanDocumentId  String?           @map("usulan_perbaikan_document_id")
+  usulanBahanHabisDocumentId String?           @map("usulan_bahan_habis_document_id")
+  usulanPeralatanDocumentId  String?           @map("usulan_peralatan_document_id")
+  usulanPelatihanDocumentId  String?           @map("usulan_pelatihan_document_id")
+  usulanMeubelairDocumentId  String?           @map("usulan_meubelair_document_id")
+  createdAt                  DateTime          @default(now()) @map("created_at")
+  updatedAt                  DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  program          Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
-  masterUnitType   MasterUnitType                @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
-  realizations     ProgramIndicatorRealization[]
-  pics             ProgramIndicatorPic[]
-  approvals        Approval[]
-  proposalDocument Document?                     @relation("IndicatorProposalDocument", fields: [proposalDocumentId], references: [id], onDelete: SetNull)
-  rabDocument      Document?                     @relation("IndicatorRabDocument", fields: [rabDocumentId], references: [id], onDelete: SetNull)
+  program                  Program                       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  masterUnitType           MasterUnitType                @relation(fields: [masterUnitTypeId], references: [id], onDelete: Restrict)
+  realizations             ProgramIndicatorRealization[]
+  pics                     ProgramIndicatorPic[]
+  approvals                Approval[]
+  proposalDocument         Document?                     @relation("IndicatorProposalDocument", fields: [proposalDocumentId], references: [id], onDelete: SetNull)
+  rabDocument              Document?                     @relation("IndicatorRabDocument", fields: [rabDocumentId], references: [id], onDelete: SetNull)
+  usulanPerbaikanDocument  Document?                     @relation("IndicatorUsulanPerbaikanDocument", fields: [usulanPerbaikanDocumentId], references: [id], onDelete: SetNull)
+  usulanBahanHabisDocument Document?                     @relation("IndicatorUsulanBahanHabisDocument", fields: [usulanBahanHabisDocumentId], references: [id], onDelete: SetNull)
+  usulanPeralatanDocument  Document?                     @relation("IndicatorUsulanPeralatanDocument", fields: [usulanPeralatanDocumentId], references: [id], onDelete: SetNull)
+  usulanPelatihanDocument  Document?                     @relation("IndicatorUsulanPelatihanDocument", fields: [usulanPelatihanDocumentId], references: [id], onDelete: SetNull)
+  usulanMeubelairDocument  Document?                     @relation("IndicatorUsulanMeubelairDocument", fields: [usulanMeubelairDocumentId], references: [id], onDelete: SetNull)
 
   @@index([programId])
   @@index([unitId])
   @@index([proposalDocumentId])
   @@index([rabDocumentId])
+  @@index([usulanPerbaikanDocumentId])
+  @@index([usulanBahanHabisDocumentId])
+  @@index([usulanPeralatanDocumentId])
+  @@index([usulanPelatihanDocumentId])
+  @@index([usulanMeubelairDocumentId])
   @@map("program_indicators")
 }
 
@@ -279,10 +294,15 @@ model Document {
   createdAt  DateTime     @default(now()) @map("created_at")
 
   // Relations
-  activity              Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  realizations          RealizationDocument[]
-  proposalForIndicators ProgramIndicator[]    @relation("IndicatorProposalDocument")
-  rabForIndicators      ProgramIndicator[]    @relation("IndicatorRabDocument")
+  activity                      Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  realizations                  RealizationDocument[]
+  proposalForIndicators         ProgramIndicator[]    @relation("IndicatorProposalDocument")
+  rabForIndicators              ProgramIndicator[]    @relation("IndicatorRabDocument")
+  usulanPerbaikanForIndicators  ProgramIndicator[]    @relation("IndicatorUsulanPerbaikanDocument")
+  usulanBahanHabisForIndicators ProgramIndicator[]    @relation("IndicatorUsulanBahanHabisDocument")
+  usulanPeralatanForIndicators  ProgramIndicator[]    @relation("IndicatorUsulanPeralatanDocument")
+  usulanPelatihanForIndicators  ProgramIndicator[]    @relation("IndicatorUsulanPelatihanDocument")
+  usulanMeubelairForIndicators  ProgramIndicator[]    @relation("IndicatorUsulanMeubelairDocument")
 
   @@index([activityId])
   @@map("documents")
@@ -307,6 +327,11 @@ model Template {
 enum TemplateType {
   TOR
   RAB
+  FORMAT_USULAN_PERBAIKAN
+  FORMAT_USULAN_BAHAN_HABIS
+  FORMAT_USULAN_PERALATAN
+  FORMAT_USULAN_PELATIHAN
+  FORMAT_USULAN_MEUBELAIR
 }
 
 /// User guide / manual entry: uploaded material and/or a video link (Google Drive, YouTube, etc.)
