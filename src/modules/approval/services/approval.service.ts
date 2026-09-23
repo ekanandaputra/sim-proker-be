@@ -249,7 +249,14 @@ export class ApprovalService {
       this.prisma.programIndicator.count({ where }),
       this.prisma.programIndicator.findMany({
         where,
-        include: { program: true },
+        include: {
+          program: true,
+          usulanPerbaikanDocument: true,
+          usulanBahanHabisDocument: true,
+          usulanPeralatanDocument: true,
+          usulanPelatihanDocument: true,
+          usulanMeubelairDocument: true,
+        },
         skip,
         take: limit,
       }),
@@ -270,6 +277,11 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
+      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
+      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
+      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
+      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
+      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     }));
 
     return {
@@ -333,7 +345,14 @@ export class ApprovalService {
       this.prisma.programIndicator.count({ where }),
       this.prisma.programIndicator.findMany({
         where,
-        include: { program: true },
+        include: {
+          program: true,
+          usulanPerbaikanDocument: true,
+          usulanBahanHabisDocument: true,
+          usulanPeralatanDocument: true,
+          usulanPelatihanDocument: true,
+          usulanMeubelairDocument: true,
+        },
         skip,
         take: limit,
       }),
@@ -354,6 +373,11 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
+      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
+      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
+      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
+      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
+      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     }));
 
     return {

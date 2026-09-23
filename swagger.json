@@ -276,7 +276,7 @@
     },
     "/api/v1/programs/indicators/export-assign": {
       "get": {
-        "description": "Download file Excel berisi daftar semua indikator beserta kolom Unit Pelaksana yang sudah terisi. File ini bisa diisi/diubah kemudian di-upload kembali via endpoint import. Format kolom: Nama Program | Indikator Unit | Unit Pelaksana.",
+        "description": "Download file Excel berisi daftar semua indikator beserta kolom Unit Pelaksana yang sudah terisi. File ini bisa diisi/diubah kemudian di-upload kembali via endpoint import. Format kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan | Kategori.",
         "operationId": "ProgramController_exportIndicatorAssignTemplate",
         "parameters": [
           {
@@ -316,24 +316,30 @@
     },
     "/api/v1/programs/indicators/import-assign": {
       "post": {
-        "description": "Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. Format kolom wajib: **Nama Program** | **Indikator Unit** | **Unit Pelaksana**. Pencarian program menggunakan nama program (exact match, case-insensitive). Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive). Baris yang tidak ditemukan salah satu datanya akan di-skip (tidak error). Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.",
+        "description": "Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. Format kolom wajib: **IKU Code** | **Nama Program** | **Indikator Unit** | **Unit Pelaksana** | **Satuan** | **Kategori**. Endpoint ini murni melakukan import berdasarkan isi file — tidak ada pengecekan terhadap program/indikator default. Program dicocokkan berdasarkan pasangan IKU Code + Nama Program (satu IKU Code bisa menaungi banyak program berbeda). Jika program belum ada, program baru otomatis dibuat memakai IKU Code, nama, dan tahun (`year`) dari payload. Satu nama indikator BISA di-assign ke beberapa unit berbeda (satu ProgramIndicator per kombinasi program + nama indikator + unit) — baris tidak pernah meng-update record yang sudah ada. Jika kombinasi (program, nama indikator, unit) itu sudah ada, baris di-skip apa adanya. Jika belum ada, ProgramIndicator baru dibuat untuk unit tersebut, dengan Satuan (master unit type) diambil dari kolom Satuan — jika Satuan tersebut belum ada di Master Unit Type, akan dibuat otomatis (default tipe NUMBER). Kolom Kategori diisi salah satu dari `TUSI` | `RUTIN` | `PENGEMBANGAN` (case-insensitive); kosong atau tidak dikenali akan default ke `TUSI`. Pencarian unit menggunakan nama unit dari auth service (exact match, case-insensitive) — jika unit tidak ditemukan, baris tersebut di-skip sepenuhnya (indikator tidak dibuat). Response mencakup ringkasan: total baris, jumlah sukses, jumlah skip, dan detail per baris.",
         "operationId": "ProgramController_importIndicatorAssign",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "File Excel (.xlsx) dengan kolom: Nama Program | Indikator Unit | Unit Pelaksana",
+          "description": "File Excel (.xlsx) dengan kolom: IKU Code | Nama Program | Indikator Unit | Unit Pelaksana | Satuan | Kategori, beserta tahun program",
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "required": [
-                  "file"
+                  "file",
+                  "year"
                 ],
                 "properties": {
                   "file": {
                     "type": "string",
                     "format": "binary",
                     "description": "File Excel (.xlsx) berisi mapping indikator ke unit"
+                  },
+                  "year": {
+                    "type": "number",
+                    "example": 2026,
+                    "description": "Tahun program kerja — dipakai saat membuat program baru untuk baris yang programnya belum ada"
                   }
                 }
               }
@@ -348,23 +354,53 @@
                 "schema": {
                   "example": {
                     "totalRows": 5,
-                    "success": 4,
-                    "skipped": 1,
+                    "success": 3,
+                    "skipped": 2,
                     "details": [
                       {
                         "row": 2,
-                        "program": "Peningkatan Kualitas Laporan",
-                        "indicator": "Jumlah laporan diterbitkan",
+                        "ikuId": "IKU1.1",
+                        "program": "Seleksi Penerimaan Maba",
+                        "indicator": "Jumlah pendaftar D3 dan D4 di PPNS",
                         "unit": "BAK",
+                        "satuan": "Mahasiswa",
+                        "kategori": "RUTIN",
                         "status": "success"
                       },
                       {
                         "row": 3,
-                        "program": "Program Tidak Dikenal",
-                        "indicator": "Indikator X",
+                        "ikuId": "IKU1.1",
+                        "program": "Program Baru",
+                        "indicator": "Indikator Baru",
                         "unit": "BAK",
+                        "satuan": "Dokumen",
+                        "kategori": "TUSI",
+                        "status": "success",
+                        "programCreated": true,
+                        "indicatorCreated": true,
+                        "satuanCreated": true
+                      },
+                      {
+                        "row": 4,
+                        "ikuId": "IKU1.1",
+                        "program": "Seleksi Penerimaan Maba",
+                        "indicator": "Jumlah pendaftar D3 dan D4 di PPNS",
+                        "unit": "Unit Tidak Dikenal",
+                        "satuan": "Mahasiswa",
+                        "kategori": "RUTIN",
                         "status": "skipped",
-                        "reason": "Program \"Program Tidak Dikenal\" tidak ditemukan"
+                        "reason": "Unit \"Unit Tidak Dikenal\" tidak ditemukan"
+                      },
+                      {
+                        "row": 5,
+                        "ikuId": "IKU1.1",
+                        "program": "Seleksi Penerimaan Maba",
+                        "indicator": "Jumlah pendaftar D3 dan D4 di PPNS",
+                        "unit": "BAK",
+                        "satuan": "Mahasiswa",
+                        "kategori": "RUTIN",
+                        "status": "skipped",
+                        "reason": "Indikator \"Jumlah pendaftar D3 dan D4 di PPNS\" sudah pernah di-assign ke unit \"BAK\" pada program \"Seleksi Penerimaan Maba\""
                       }
                     ]
                   }
@@ -783,7 +819,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramIndicatorResponseDto"
+                  }
                 }
               }
             }
@@ -2861,6 +2900,494 @@
         ]
       }
     },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "TemplateController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List current document templates",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{type}": {
+      "post": {
+        "operationId": "TemplateController_upload",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "Template type",
+            "schema": {
+              "enum": [
+                "TOR",
+                "RAB",
+                "FORMAT_USULAN_PERBAIKAN",
+                "FORMAT_USULAN_BAHAN_HABIS",
+                "FORMAT_USULAN_PERALATAN",
+                "FORMAT_USULAN_PELATIHAN",
+                "FORMAT_USULAN_MEUBELAIR"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The template file to upload"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template uploaded/replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload or replace the template file for a type (ADMIN only)",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{type}/download": {
+      "get": {
+        "description": "Downloads the current template file for the given type, as stored in the database.",
+        "operationId": "TemplateController_download",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "Template type to download",
+            "schema": {
+              "enum": [
+                "TOR",
+                "RAB",
+                "FORMAT_USULAN_PERBAIKAN",
+                "FORMAT_USULAN_BAHAN_HABIS",
+                "FORMAT_USULAN_PERALATAN",
+                "FORMAT_USULAN_PELATIHAN",
+                "FORMAT_USULAN_MEUBELAIR"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template file downloaded"
+          },
+          "404": {
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download a document template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/guides": {
+      "get": {
+        "operationId": "GuideController_findAll",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search by title or description",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/GuideResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List guides",
+        "tags": [
+          "Guides"
+        ]
+      },
+      "post": {
+        "description": "Upload guide material (file) and/or a video link (Google Drive or YouTube). At least one of them is required.",
+        "operationId": "GuideController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Title of the guide"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Description of the guide"
+                  },
+                  "videoUrl": {
+                    "type": "string",
+                    "description": "Google Drive or YouTube video link"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Guide material file (optional)"
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Guide created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuideResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed, or neither file nor video URL provided"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new guide (ADMIN only)",
+        "tags": [
+          "Guides"
+        ]
+      }
+    },
+    "/api/v1/guides/{id}": {
+      "get": {
+        "operationId": "GuideController_findById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Guide UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuideResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Guide not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a guide by ID",
+        "tags": [
+          "Guides"
+        ]
+      },
+      "patch": {
+        "operationId": "GuideController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Guide UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "videoUrl": {
+                    "type": "string",
+                    "description": "Google Drive or YouTube video link (send an empty string to remove it)"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Replacement guide material file (optional)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Guide updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuideResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Guide not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a guide (ADMIN only)",
+        "tags": [
+          "Guides"
+        ]
+      },
+      "delete": {
+        "operationId": "GuideController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Guide UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guide deleted successfully"
+          },
+          "404": {
+            "description": "Guide not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a guide (ADMIN only)",
+        "tags": [
+          "Guides"
+        ]
+      }
+    },
+    "/api/v1/guides/{id}/download": {
+      "get": {
+        "description": "Downloads the uploaded material file for the given guide, if one exists.",
+        "operationId": "GuideController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Guide UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File downloaded"
+          },
+          "404": {
+            "description": "Guide or file not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download the guide material file",
+        "tags": [
+          "Guides"
+        ]
+      }
+    },
     "/api/v1/indicators/submitted": {
       "get": {
         "description": "Returns a paginated list of program indicators with SUBMITTED or REVISION status, waiting for indicator verification (Level 1).",
@@ -3552,6 +4079,296 @@
           }
         ],
         "summary": "Request revision for a program indicator",
+        "tags": [
+          "Approvals"
+        ]
+      }
+    },
+    "/api/v1/indicators/revision": {
+      "get": {
+        "description": "Returns a paginated list of program indicators with `REVISION` status that are assigned to the current user's own unit(s). ADMIN users see indicators across all units.\n\nEach item includes the note and level (`INDICATOR_VERIFICATION` or `BUDGET_VERIFICATION`) from the reviewer who requested the revision, so the unit knows what to fix.",
+        "operationId": "ApprovalController_getRevisionIndicators",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/RevisionIndicatorResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the revision bucket for the current user",
+        "tags": [
+          "Approvals"
+        ]
+      }
+    },
+    "/api/v1/indicators/{id}/revise": {
+      "post": {
+        "description": "Updates the indicator targets/documents (same payload as `set-target`) and reverts its status back to whatever it was before the revision was requested: `SUBMITTED` if the revision came from Level 1 (Verifikasi Indikator), or `INDICATOR_APPROVED` if it came from Level 2 (Verifikasi Anggaran).\n\nThe indicator must currently be in `REVISION` status, and must be assigned to a unit the current user belongs to (unless the user is ADMIN).",
+        "operationId": "ApprovalController_reviseIndicator",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program Indicator UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetIndicatorTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramIndicatorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Indicator is not in REVISION status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Indicator can only be revised from REVISION status. Current: SUBMITTED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Indicator is not assigned to the current user's unit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "You are not allowed to revise an indicator outside your unit"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Program Indicator not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "ProgramIndicator with id 550e8400-... not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revise an indicator and resubmit it",
+        "tags": [
+          "Approvals"
+        ]
+      }
+    },
+    "/api/v1/indicators/rejected": {
+      "get": {
+        "description": "Returns a paginated, read-only list of program indicators with `REJECTED` status that are assigned to the current user's own unit(s). ADMIN users see indicators across all units.\n\nEach item includes the note and level (`INDICATOR_VERIFICATION` or `BUDGET_VERIFICATION`) from the reviewer who rejected it. This list is informational only — no action can be taken on a rejected indicator here.",
+        "operationId": "ApprovalController_getRejectedIndicators",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/RejectedIndicatorResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the rejected indicators list for the current user",
         "tags": [
           "Approvals"
         ]
@@ -5769,6 +6586,48 @@
             "type": "number",
             "example": 1
           },
+          "proposalURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
+            "description": "Full URL of the proposal document, ready to be opened/displayed by the frontend"
+          },
+          "rabURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/def456.pdf",
+            "description": "Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend"
+          },
+          "usulanPerbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Format Usulan Perbaikan document, ready to be opened/displayed by the frontend"
+          },
+          "usulanBahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Format Usulan Bahan Habis document, ready to be opened/displayed by the frontend"
+          },
+          "usulanPeralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Format Usulan Peralatan document, ready to be opened/displayed by the frontend"
+          },
+          "usulanPelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
+            "description": "Full URL of the Format Usulan Pelatihan document, ready to be opened/displayed by the frontend"
+          },
+          "usulanMeubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
+            "description": "Full URL of the Format Usulan Meubelair document, ready to be opened/displayed by the frontend"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -5795,6 +6654,13 @@
           "budget",
           "status",
           "order",
+          "proposalURL",
+          "rabURL",
+          "usulanPerbaikanURL",
+          "usulanBahanHabisURL",
+          "usulanPeralatanURL",
+          "usulanPelatihanURL",
+          "usulanMeubelairURL",
           "createdAt",
           "updatedAt"
         ]
@@ -5811,6 +6677,12 @@
             "type": "string",
             "example": "PRG-2025-001",
             "description": "Program code"
+          },
+          "ikuId": {
+            "type": "object",
+            "example": "IKU1.1",
+            "nullable": true,
+            "description": "IKU (Indikator Kinerja Utama) code this program contributes to"
           },
           "title": {
             "type": "string",
@@ -5862,6 +6734,7 @@
         "required": [
           "id",
           "code",
+          "ikuId",
           "title",
           "description",
           "objective",
@@ -5879,6 +6752,12 @@
             "type": "string",
             "example": "PRG-2025-001",
             "description": "Program code"
+          },
+          "ikuId": {
+            "type": "object",
+            "example": "IKU1.1",
+            "description": "IKU (Indikator Kinerja Utama) code this program contributes to",
+            "nullable": true
           },
           "title": {
             "type": "string",
@@ -5910,6 +6789,12 @@
             "type": "string",
             "example": "Program Penelitian Terapan Baru",
             "description": "Program title"
+          },
+          "ikuId": {
+            "type": "object",
+            "example": "IKU1.1",
+            "description": "IKU (Indikator Kinerja Utama) code this program contributes to",
+            "nullable": true
           },
           "description": {
             "type": "string",
@@ -6000,9 +6885,16 @@
             "description": "Target for Q4"
           },
           "budget": {
-            "type": "object",
             "example": 15000000,
-            "description": "Budget allocated for this indicator"
+            "description": "Budget allocated for this indicator",
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "picIds": {
             "description": "Array of PIC User UUIDs",
@@ -6018,6 +6910,48 @@
             "type": "number",
             "example": 1,
             "description": "Sorting order"
+          },
+          "proposalDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440004",
+            "description": "Document UUID (from POST /documents/upload) to set as the proposal document",
+            "nullable": true
+          },
+          "rabDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440005",
+            "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document",
+            "nullable": true
+          },
+          "usulanPerbaikanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440006",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document",
+            "nullable": true
+          },
+          "usulanBahanHabisDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440007",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document",
+            "nullable": true
+          },
+          "usulanPeralatanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440008",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document",
+            "nullable": true
+          },
+          "usulanPelatihanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440009",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document",
+            "nullable": true
+          },
+          "usulanMeubelairDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-44665544000a",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document",
+            "nullable": true
           }
         },
         "required": [
@@ -6080,9 +7014,16 @@
             "description": "Target for Q4"
           },
           "budget": {
-            "type": "object",
             "example": 15000000,
-            "description": "Budget allocated for this indicator"
+            "description": "Budget allocated for this indicator",
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "picIds": {
             "description": "Array of PIC User UUIDs",
@@ -6098,6 +7039,48 @@
             "type": "number",
             "example": 1,
             "description": "Sorting order"
+          },
+          "proposalDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440004",
+            "description": "Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.",
+            "nullable": true
+          },
+          "rabDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440005",
+            "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPerbaikanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440006",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanBahanHabisDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440007",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPeralatanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440008",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPelatihanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440009",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanMeubelairDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-44665544000a",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.",
+            "nullable": true
           }
         }
       },
@@ -6123,6 +7106,60 @@
             "type": "object",
             "example": 40,
             "description": "Target for Q4"
+          },
+          "budget": {
+            "example": 15000000,
+            "description": "Budget allocated for this indicator",
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "propsal": {
+            "type": "object",
+            "example": "3f5b85cb-a0db-4c5a-a465-f69b57e91a98",
+            "description": "Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.",
+            "nullable": true
+          },
+          "rab": {
+            "type": "object",
+            "example": "1d5a827c-18b5-4dcc-af1b-a071adb0e048",
+            "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPerbaikan": {
+            "type": "object",
+            "example": "2a3b4c5d-6e7f-4890-a1b2-c3d4e5f60718",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanBahanHabis": {
+            "type": "object",
+            "example": "3b4c5d6e-7f80-4901-a2b3-d4e5f6071829",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPeralatan": {
+            "type": "object",
+            "example": "4c5d6e7f-8091-4a12-b3c4-e5f607182930",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanPelatihan": {
+            "type": "object",
+            "example": "5d6e7f80-91a2-4b23-c4d5-f60718293041",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.",
+            "nullable": true
+          },
+          "usulanMeubelair": {
+            "type": "object",
+            "example": "6e7f8091-a2b3-4c34-d5e6-071829304152",
+            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.",
+            "nullable": true
           }
         }
       },
@@ -6159,7 +7196,7 @@
           "filePath": {
             "type": "string",
             "example": "documents/abc123.pdf",
-            "description": "Storage path or URL"
+            "description": "Storage path or URL (returned as a full URL by some endpoints, e.g. indicator realizations)"
           },
           "mimeType": {
             "type": "string",
@@ -7434,6 +8471,136 @@
           "progress"
         ]
       },
+      "TemplateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Template UUID"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TOR",
+              "RAB",
+              "FORMAT_USULAN_PERBAIKAN",
+              "FORMAT_USULAN_BAHAN_HABIS",
+              "FORMAT_USULAN_PERALATAN",
+              "FORMAT_USULAN_PELATIHAN",
+              "FORMAT_USULAN_MEUBELAIR"
+            ],
+            "example": "TOR",
+            "description": "Template type"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "Template TOR 2026.docx",
+            "description": "Original file name"
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "description": "File MIME type"
+          },
+          "fileSize": {
+            "type": "number",
+            "example": 51200,
+            "description": "File size in bytes"
+          },
+          "url": {
+            "type": "string",
+            "example": "http://localhost:3000/uploads/templates/abc123.docx",
+            "description": "Full URL of the template file"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-03T00:00:00.000Z",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "fileName",
+          "mimeType",
+          "fileSize",
+          "url",
+          "updatedAt"
+        ]
+      },
+      "GuideResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Guide UUID"
+          },
+          "title": {
+            "type": "string",
+            "example": "Performance Indicator Guide"
+          },
+          "description": {
+            "type": "object",
+            "example": "Complete guide for filling out annual performance indicators",
+            "nullable": true
+          },
+          "fileName": {
+            "type": "object",
+            "example": "Performance Indicator Guide.pdf",
+            "description": "Original file name",
+            "nullable": true
+          },
+          "mimeType": {
+            "type": "object",
+            "example": "application/pdf",
+            "description": "File MIME type",
+            "nullable": true
+          },
+          "fileSize": {
+            "type": "object",
+            "example": 512000,
+            "description": "File size in bytes",
+            "nullable": true
+          },
+          "url": {
+            "type": "object",
+            "example": "http://localhost:3000/uploads/guides/abc123.pdf",
+            "description": "Full URL of the guide material file",
+            "nullable": true
+          },
+          "videoUrl": {
+            "type": "object",
+            "example": "https://drive.google.com/file/d/abc123/view",
+            "description": "Video link (Google Drive or YouTube)",
+            "nullable": true
+          },
+          "uploadedBy": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "UUID of the user who uploaded the guide"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-05T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-05T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "uploadedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "ApprovalActionDto": {
         "type": "object",
         "properties": {
@@ -7552,6 +8719,36 @@
               "code": "FILKOM"
             }
           },
+          "usulanPerbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Format Usulan Perbaikan document"
+          },
+          "usulanBahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Format Usulan Bahan Habis document"
+          },
+          "usulanPeralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Format Usulan Peralatan document"
+          },
+          "usulanPelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
+            "description": "Full URL of the Format Usulan Pelatihan document"
+          },
+          "usulanMeubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
+            "description": "Full URL of the Format Usulan Meubelair document"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -7569,6 +8766,331 @@
           "status",
           "program",
           "unit",
+          "usulanPerbaikanURL",
+          "usulanBahanHabisURL",
+          "usulanPeralatanURL",
+          "usulanPelatihanURL",
+          "usulanMeubelairURL",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RevisionIndicatorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Indicator UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jumlah Dokumen Laporan",
+            "description": "Name of the indicator"
+          },
+          "status": {
+            "type": "string",
+            "example": "REVISION",
+            "description": "Status of the indicator"
+          },
+          "targetQ1": {
+            "type": "number",
+            "nullable": true,
+            "example": 10
+          },
+          "targetQ2": {
+            "type": "number",
+            "nullable": true,
+            "example": 20
+          },
+          "targetQ3": {
+            "type": "number",
+            "nullable": true,
+            "example": 30
+          },
+          "targetQ4": {
+            "type": "number",
+            "nullable": true,
+            "example": 40
+          },
+          "budget": {
+            "type": "number",
+            "nullable": true,
+            "example": 15000000
+          },
+          "proposalURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
+            "description": "Full URL of the proposal document"
+          },
+          "rabURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/def456.pdf",
+            "description": "Full URL of the RAB (budget plan) document"
+          },
+          "usulanPerbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Format Usulan Perbaikan document"
+          },
+          "usulanBahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Format Usulan Bahan Habis document"
+          },
+          "usulanPeralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Format Usulan Peralatan document"
+          },
+          "usulanPelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
+            "description": "Full URL of the Format Usulan Pelatihan document"
+          },
+          "usulanMeubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
+            "description": "Full URL of the Format Usulan Meubelair document"
+          },
+          "program": {
+            "type": "object",
+            "description": "Program detail object this indicator belongs to",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440010",
+              "title": "Program Peningkatan Kualitas Mahasiswa"
+            }
+          },
+          "unit": {
+            "type": "object",
+            "description": "Unit detail object assigned to this indicator",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440020",
+              "name": "Fakultas Ilmu Komputer",
+              "code": "FILKOM"
+            }
+          },
+          "revisionLevel": {
+            "type": "string",
+            "enum": [
+              "INDICATOR_VERIFICATION",
+              "BUDGET_VERIFICATION"
+            ],
+            "nullable": true,
+            "example": "INDICATOR_VERIFICATION",
+            "description": "The approval level at which revision was requested"
+          },
+          "revisionNote": {
+            "type": "object",
+            "nullable": true,
+            "example": "Silakan perbaiki anggaran pada bagian operasional",
+            "description": "Note/feedback left by the reviewer that requested this revision"
+          },
+          "revisionRequestedAt": {
+            "type": "object",
+            "nullable": true,
+            "example": "2026-08-20T00:00:00.000Z",
+            "description": "Timestamp when the revision was requested"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "targetQ1",
+          "targetQ2",
+          "targetQ3",
+          "targetQ4",
+          "budget",
+          "proposalURL",
+          "rabURL",
+          "usulanPerbaikanURL",
+          "usulanBahanHabisURL",
+          "usulanPeralatanURL",
+          "usulanPelatihanURL",
+          "usulanMeubelairURL",
+          "program",
+          "unit",
+          "revisionLevel",
+          "revisionNote",
+          "revisionRequestedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RejectedIndicatorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Indicator UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jumlah Dokumen Laporan",
+            "description": "Name of the indicator"
+          },
+          "status": {
+            "type": "string",
+            "example": "REJECTED",
+            "description": "Status of the indicator"
+          },
+          "targetQ1": {
+            "type": "number",
+            "nullable": true,
+            "example": 10
+          },
+          "targetQ2": {
+            "type": "number",
+            "nullable": true,
+            "example": 20
+          },
+          "targetQ3": {
+            "type": "number",
+            "nullable": true,
+            "example": 30
+          },
+          "targetQ4": {
+            "type": "number",
+            "nullable": true,
+            "example": 40
+          },
+          "budget": {
+            "type": "number",
+            "nullable": true,
+            "example": 15000000
+          },
+          "proposalURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
+            "description": "Full URL of the proposal document"
+          },
+          "rabURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/def456.pdf",
+            "description": "Full URL of the RAB (budget plan) document"
+          },
+          "usulanPerbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Format Usulan Perbaikan document"
+          },
+          "usulanBahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Format Usulan Bahan Habis document"
+          },
+          "usulanPeralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Format Usulan Peralatan document"
+          },
+          "usulanPelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
+            "description": "Full URL of the Format Usulan Pelatihan document"
+          },
+          "usulanMeubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
+            "description": "Full URL of the Format Usulan Meubelair document"
+          },
+          "program": {
+            "type": "object",
+            "description": "Program detail object this indicator belongs to",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440010",
+              "title": "Program Peningkatan Kualitas Mahasiswa"
+            }
+          },
+          "unit": {
+            "type": "object",
+            "description": "Unit detail object assigned to this indicator",
+            "example": {
+              "id": "550e8400-e29b-41d4-a716-446655440020",
+              "name": "Fakultas Ilmu Komputer",
+              "code": "FILKOM"
+            }
+          },
+          "rejectionLevel": {
+            "type": "string",
+            "enum": [
+              "INDICATOR_VERIFICATION",
+              "BUDGET_VERIFICATION"
+            ],
+            "nullable": true,
+            "example": "INDICATOR_VERIFICATION",
+            "description": "The approval level at which the indicator was rejected"
+          },
+          "rejectionNote": {
+            "type": "object",
+            "nullable": true,
+            "example": "Indikator tidak sesuai dengan target IKU",
+            "description": "Note/reason left by the reviewer that rejected this indicator"
+          },
+          "rejectedAt": {
+            "type": "object",
+            "nullable": true,
+            "example": "2026-08-20T00:00:00.000Z",
+            "description": "Timestamp when the indicator was rejected"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-07-22T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "targetQ1",
+          "targetQ2",
+          "targetQ3",
+          "targetQ4",
+          "budget",
+          "proposalURL",
+          "rabURL",
+          "usulanPerbaikanURL",
+          "usulanBahanHabisURL",
+          "usulanPeralatanURL",
+          "usulanPelatihanURL",
+          "usulanMeubelairURL",
+          "program",
+          "unit",
+          "rejectionLevel",
+          "rejectionNote",
+          "rejectedAt",
           "createdAt",
           "updatedAt"
         ]
