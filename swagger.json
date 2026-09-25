@@ -6598,36 +6598,6 @@
             "example": "http://localhost:3000/uploads/documents/def456.pdf",
             "description": "Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend"
           },
-          "usulanPerbaikanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
-            "description": "Full URL of the Format Usulan Perbaikan document, ready to be opened/displayed by the frontend"
-          },
-          "usulanBahanHabisURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
-            "description": "Full URL of the Format Usulan Bahan Habis document, ready to be opened/displayed by the frontend"
-          },
-          "usulanPeralatanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
-            "description": "Full URL of the Format Usulan Peralatan document, ready to be opened/displayed by the frontend"
-          },
-          "usulanPelatihanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
-            "description": "Full URL of the Format Usulan Pelatihan document, ready to be opened/displayed by the frontend"
-          },
-          "usulanMeubelairURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
-            "description": "Full URL of the Format Usulan Meubelair document, ready to be opened/displayed by the frontend"
-          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -6656,11 +6626,6 @@
           "order",
           "proposalURL",
           "rabURL",
-          "usulanPerbaikanURL",
-          "usulanBahanHabisURL",
-          "usulanPeralatanURL",
-          "usulanPelatihanURL",
-          "usulanMeubelairURL",
           "createdAt",
           "updatedAt"
         ]
@@ -6922,36 +6887,6 @@
             "example": "550e8400-e29b-41d4-a716-446655440005",
             "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document",
             "nullable": true
-          },
-          "usulanPerbaikanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440006",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document",
-            "nullable": true
-          },
-          "usulanBahanHabisDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440007",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document",
-            "nullable": true
-          },
-          "usulanPeralatanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440008",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document",
-            "nullable": true
-          },
-          "usulanPelatihanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440009",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document",
-            "nullable": true
-          },
-          "usulanMeubelairDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-44665544000a",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document",
-            "nullable": true
           }
         },
         "required": [
@@ -7051,36 +6986,6 @@
             "example": "550e8400-e29b-41d4-a716-446655440005",
             "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
             "nullable": true
-          },
-          "usulanPerbaikanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440006",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanBahanHabisDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440007",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanPeralatanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440008",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanPelatihanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440009",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanMeubelairDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-44665544000a",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.",
-            "nullable": true
           }
         }
       },
@@ -7129,36 +7034,6 @@
             "type": "object",
             "example": "1d5a827c-18b5-4dcc-af1b-a071adb0e048",
             "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanPerbaikan": {
-            "type": "object",
-            "example": "2a3b4c5d-6e7f-4890-a1b2-c3d4e5f60718",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Perbaikan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanBahanHabis": {
-            "type": "object",
-            "example": "3b4c5d6e-7f80-4901-a2b3-d4e5f6071829",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Bahan Habis document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanPeralatan": {
-            "type": "object",
-            "example": "4c5d6e7f-8091-4a12-b3c4-e5f607182930",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Peralatan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanPelatihan": {
-            "type": "object",
-            "example": "5d6e7f80-91a2-4b23-c4d5-f60718293041",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Pelatihan document. Pass null to remove it.",
-            "nullable": true
-          },
-          "usulanMeubelair": {
-            "type": "object",
-            "example": "6e7f8091-a2b3-4c34-d5e6-071829304152",
-            "description": "Document UUID (from POST /documents/upload) to set as the Format Usulan Meubelair document. Pass null to remove it.",
             "nullable": true
           }
         }
@@ -8719,36 +8594,6 @@
               "code": "FILKOM"
             }
           },
-          "usulanPerbaikanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
-            "description": "Full URL of the Format Usulan Perbaikan document"
-          },
-          "usulanBahanHabisURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
-            "description": "Full URL of the Format Usulan Bahan Habis document"
-          },
-          "usulanPeralatanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
-            "description": "Full URL of the Format Usulan Peralatan document"
-          },
-          "usulanPelatihanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
-            "description": "Full URL of the Format Usulan Pelatihan document"
-          },
-          "usulanMeubelairURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
-            "description": "Full URL of the Format Usulan Meubelair document"
-          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -8766,11 +8611,6 @@
           "status",
           "program",
           "unit",
-          "usulanPerbaikanURL",
-          "usulanBahanHabisURL",
-          "usulanPeralatanURL",
-          "usulanPelatihanURL",
-          "usulanMeubelairURL",
           "createdAt",
           "updatedAt"
         ]
@@ -8829,36 +8669,6 @@
             "nullable": true,
             "example": "http://localhost:3000/uploads/documents/def456.pdf",
             "description": "Full URL of the RAB (budget plan) document"
-          },
-          "usulanPerbaikanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
-            "description": "Full URL of the Format Usulan Perbaikan document"
-          },
-          "usulanBahanHabisURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
-            "description": "Full URL of the Format Usulan Bahan Habis document"
-          },
-          "usulanPeralatanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
-            "description": "Full URL of the Format Usulan Peralatan document"
-          },
-          "usulanPelatihanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
-            "description": "Full URL of the Format Usulan Pelatihan document"
-          },
-          "usulanMeubelairURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
-            "description": "Full URL of the Format Usulan Meubelair document"
           },
           "program": {
             "type": "object",
@@ -8921,11 +8731,6 @@
           "budget",
           "proposalURL",
           "rabURL",
-          "usulanPerbaikanURL",
-          "usulanBahanHabisURL",
-          "usulanPeralatanURL",
-          "usulanPelatihanURL",
-          "usulanMeubelairURL",
           "program",
           "unit",
           "revisionLevel",
@@ -8990,36 +8795,6 @@
             "example": "http://localhost:3000/uploads/documents/def456.pdf",
             "description": "Full URL of the RAB (budget plan) document"
           },
-          "usulanPerbaikanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
-            "description": "Full URL of the Format Usulan Perbaikan document"
-          },
-          "usulanBahanHabisURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
-            "description": "Full URL of the Format Usulan Bahan Habis document"
-          },
-          "usulanPeralatanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
-            "description": "Full URL of the Format Usulan Peralatan document"
-          },
-          "usulanPelatihanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/pqr678.pdf",
-            "description": "Full URL of the Format Usulan Pelatihan document"
-          },
-          "usulanMeubelairURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/stu901.pdf",
-            "description": "Full URL of the Format Usulan Meubelair document"
-          },
           "program": {
             "type": "object",
             "description": "Program detail object this indicator belongs to",
@@ -9081,11 +8856,6 @@
           "budget",
           "proposalURL",
           "rabURL",
-          "usulanPerbaikanURL",
-          "usulanBahanHabisURL",
-          "usulanPeralatanURL",
-          "usulanPelatihanURL",
-          "usulanMeubelairURL",
           "program",
           "unit",
           "rejectionLevel",

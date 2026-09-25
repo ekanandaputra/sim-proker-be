@@ -13,6 +13,7 @@ import {
 import { PaginatedResponse, PaginationQuery } from '@common/dto/pagination.dto';
 import { buildPaginationArgs, buildPaginatedResponse } from '@common/utils/pagination.util';
 import { EntityNotFoundException } from '@common/exceptions';
+import { buildTimestampedFileName, sanitizeFileNamePart } from '@common/utils/file-name.util';
 
 @Injectable()
 export class GuideService {
@@ -26,18 +27,6 @@ export class GuideService {
   private toResponse(g: Parameters<typeof GuideMapper.toResponse>[0]): GuideResponseDto {
     const url = g.filePath ? this.storageService.getUrl(g.filePath) : null;
     return GuideMapper.toResponse(g, url);
-  }
-
-  private sanitizeTitle(title: string): string {
-    return title
-      .trim()
-      .replace(/[\\/:*?"<>|]/g, '_')
-      .replace(/\s+/g, '_');
-  }
-
-  private buildStorageFileName(title: string): string {
-    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
-    return `${this.sanitizeTitle(title)}_${timestamp}`;
   }
 
   async findAll(query: PaginationQuery): Promise<PaginatedResponse<GuideResponseDto>> {
@@ -85,7 +74,7 @@ export class GuideService {
       filePath = await this.storageService.upload(
         file,
         'guides',
-        this.buildStorageFileName(dto.title),
+        buildTimestampedFileName(dto.title),
       );
     }
 
@@ -120,7 +109,7 @@ export class GuideService {
       filePath = await this.storageService.upload(
         file,
         'guides',
-        this.buildStorageFileName(titleForFileName),
+        buildTimestampedFileName(titleForFileName),
       );
     }
 
@@ -176,7 +165,7 @@ export class GuideService {
     }
 
     const buffer = await this.storageService.read(guide.filePath);
-    const fileName = `${this.sanitizeTitle(guide.title)}${extname(guide.fileName)}`;
+    const fileName = `${sanitizeFileNamePart(guide.title)}${extname(guide.fileName)}`;
     return { buffer, fileName, mimeType: guide.mimeType };
   }
 }

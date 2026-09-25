@@ -50,21 +50,6 @@ export class SubmittedProgramIndicatorResponseDto {
   })
   unit!: any;
 
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/ghi789.pdf', description: 'Full URL of the Format Usulan Perbaikan document' })
-  usulanPerbaikanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/jkl012.pdf', description: 'Full URL of the Format Usulan Bahan Habis document' })
-  usulanBahanHabisURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/mno345.pdf', description: 'Full URL of the Format Usulan Peralatan document' })
-  usulanPeralatanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/pqr678.pdf', description: 'Full URL of the Format Usulan Pelatihan document' })
-  usulanPelatihanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/stu901.pdf', description: 'Full URL of the Format Usulan Meubelair document' })
-  usulanMeubelairURL!: string | null;
-
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) createdAt!: Date;
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) updatedAt!: Date;
 }
@@ -85,21 +70,6 @@ export class RevisionIndicatorResponseDto {
 
   @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/def456.pdf', description: 'Full URL of the RAB (budget plan) document' })
   rabURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/ghi789.pdf', description: 'Full URL of the Format Usulan Perbaikan document' })
-  usulanPerbaikanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/jkl012.pdf', description: 'Full URL of the Format Usulan Bahan Habis document' })
-  usulanBahanHabisURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/mno345.pdf', description: 'Full URL of the Format Usulan Peralatan document' })
-  usulanPeralatanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/pqr678.pdf', description: 'Full URL of the Format Usulan Pelatihan document' })
-  usulanPelatihanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/stu901.pdf', description: 'Full URL of the Format Usulan Meubelair document' })
-  usulanMeubelairURL!: string | null;
 
   @ApiProperty({
     description: 'Program detail object this indicator belongs to',
@@ -151,21 +121,6 @@ export class RejectedIndicatorResponseDto {
 
   @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/def456.pdf', description: 'Full URL of the RAB (budget plan) document' })
   rabURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/ghi789.pdf', description: 'Full URL of the Format Usulan Perbaikan document' })
-  usulanPerbaikanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/jkl012.pdf', description: 'Full URL of the Format Usulan Bahan Habis document' })
-  usulanBahanHabisURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/mno345.pdf', description: 'Full URL of the Format Usulan Peralatan document' })
-  usulanPeralatanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/pqr678.pdf', description: 'Full URL of the Format Usulan Pelatihan document' })
-  usulanPelatihanURL!: string | null;
-
-  @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/stu901.pdf', description: 'Full URL of the Format Usulan Meubelair document' })
-  usulanMeubelairURL!: string | null;
 
   @ApiProperty({
     description: 'Program detail object this indicator belongs to',

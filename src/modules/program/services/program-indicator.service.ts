@@ -81,11 +81,6 @@ export class ProgramIndicatorService {
         masterUnitType: true,
         proposalDocument: true,
         rabDocument: true,
-        usulanPerbaikanDocument: true,
-        usulanBahanHabisDocument: true,
-        usulanPeralatanDocument: true,
-        usulanPelatihanDocument: true,
-        usulanMeubelairDocument: true,
       }
     });
 
@@ -109,11 +104,6 @@ export class ProgramIndicatorService {
       picIds: indicator.pics.map(p => p.userId),
       proposalURL: this.getDocumentUrl(indicator.proposalDocument),
       rabURL: this.getDocumentUrl(indicator.rabDocument),
-      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     }));
   }
 
@@ -137,11 +127,6 @@ export class ProgramIndicatorService {
         pics: true,
         proposalDocument: true,
         rabDocument: true,
-        usulanPerbaikanDocument: true,
-        usulanBahanHabisDocument: true,
-        usulanPeralatanDocument: true,
-        usulanPelatihanDocument: true,
-        usulanMeubelairDocument: true,
       }
     });
 
@@ -164,11 +149,6 @@ export class ProgramIndicatorService {
       picIds: indicator.pics.map(p => p.userId),
       proposalURL: this.getDocumentUrl(indicator.proposalDocument),
       rabURL: this.getDocumentUrl(indicator.rabDocument),
-      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     };
   }
 
@@ -197,11 +177,6 @@ export class ProgramIndicatorService {
         pics: true,
         proposalDocument: true,
         rabDocument: true,
-        usulanPerbaikanDocument: true,
-        usulanBahanHabisDocument: true,
-        usulanPeralatanDocument: true,
-        usulanPelatihanDocument: true,
-        usulanMeubelairDocument: true,
       }
     });
 
@@ -228,11 +203,6 @@ export class ProgramIndicatorService {
       picIds: updated.pics.map(p => p.userId),
       proposalURL: this.getDocumentUrl(updated.proposalDocument),
       rabURL: this.getDocumentUrl(updated.rabDocument),
-      usulanPerbaikanURL: this.getDocumentUrl(updated.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(updated.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(updated.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(updated.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(updated.usulanMeubelairDocument),
     };
   }
 
@@ -278,7 +248,7 @@ export class ProgramIndicatorService {
       }
     }
 
-    const { propsal, rab, usulanPerbaikan, usulanBahanHabis, usulanPeralatan, usulanPelatihan, usulanMeubelair, ...targets } = dto;
+    const { propsal, rab, ...targets } = dto;
 
     const updated = await this.prisma.programIndicator.update({
       where: { id },
@@ -286,21 +256,11 @@ export class ProgramIndicatorService {
         ...targets,
         proposalDocumentId: propsal,
         rabDocumentId: rab,
-        usulanPerbaikanDocumentId: usulanPerbaikan,
-        usulanBahanHabisDocumentId: usulanBahanHabis,
-        usulanPeralatanDocumentId: usulanPeralatan,
-        usulanPelatihanDocumentId: usulanPelatihan,
-        usulanMeubelairDocumentId: usulanMeubelair,
         status: newStatus,
       },
       include: {
         proposalDocument: true,
         rabDocument: true,
-        usulanPerbaikanDocument: true,
-        usulanBahanHabisDocument: true,
-        usulanPeralatanDocument: true,
-        usulanPelatihanDocument: true,
-        usulanMeubelairDocument: true,
       },
     });
 
@@ -318,11 +278,6 @@ export class ProgramIndicatorService {
       ...updated,
       proposalURL: this.getDocumentUrl(updated.proposalDocument),
       rabURL: this.getDocumentUrl(updated.rabDocument),
-      usulanPerbaikanURL: this.getDocumentUrl(updated.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(updated.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(updated.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(updated.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(updated.usulanMeubelairDocument),
     };
   }
 

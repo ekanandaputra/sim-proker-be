@@ -251,11 +251,6 @@ export class ApprovalService {
         where,
         include: {
           program: true,
-          usulanPerbaikanDocument: true,
-          usulanBahanHabisDocument: true,
-          usulanPeralatanDocument: true,
-          usulanPelatihanDocument: true,
-          usulanMeubelairDocument: true,
         },
         skip,
         take: limit,
@@ -277,11 +272,6 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
-      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     }));
 
     return {
@@ -347,11 +337,6 @@ export class ApprovalService {
         where,
         include: {
           program: true,
-          usulanPerbaikanDocument: true,
-          usulanBahanHabisDocument: true,
-          usulanPeralatanDocument: true,
-          usulanPelatihanDocument: true,
-          usulanMeubelairDocument: true,
         },
         skip,
         take: limit,
@@ -373,11 +358,6 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
-      usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
     }));
 
     return {
@@ -416,11 +396,6 @@ export class ApprovalService {
           program: true,
           proposalDocument: true,
           rabDocument: true,
-          usulanPerbaikanDocument: true,
-          usulanBahanHabisDocument: true,
-          usulanPeralatanDocument: true,
-          usulanPelatihanDocument: true,
-          usulanMeubelairDocument: true,
           approvals: {
             where: { status: ApprovalStatus.REVISION },
             orderBy: { createdAt: 'desc' },
@@ -450,11 +425,6 @@ export class ApprovalService {
         unit: unitMap.get(indicator.unitId) || null,
         proposalURL: this.getDocumentUrl(indicator.proposalDocument),
         rabURL: this.getDocumentUrl(indicator.rabDocument),
-        usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-        usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-        usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-        usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-        usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
         revisionLevel: lastRevision?.level ?? null,
         revisionNote: lastRevision?.note ?? null,
         revisionRequestedAt: lastRevision?.createdAt ?? null,
@@ -497,11 +467,6 @@ export class ApprovalService {
           program: true,
           proposalDocument: true,
           rabDocument: true,
-          usulanPerbaikanDocument: true,
-          usulanBahanHabisDocument: true,
-          usulanPeralatanDocument: true,
-          usulanPelatihanDocument: true,
-          usulanMeubelairDocument: true,
           approvals: {
             where: { status: ApprovalStatus.REJECTED },
             orderBy: { createdAt: 'desc' },
@@ -531,11 +496,6 @@ export class ApprovalService {
         unit: unitMap.get(indicator.unitId) || null,
         proposalURL: this.getDocumentUrl(indicator.proposalDocument),
         rabURL: this.getDocumentUrl(indicator.rabDocument),
-        usulanPerbaikanURL: this.getDocumentUrl(indicator.usulanPerbaikanDocument),
-        usulanBahanHabisURL: this.getDocumentUrl(indicator.usulanBahanHabisDocument),
-        usulanPeralatanURL: this.getDocumentUrl(indicator.usulanPeralatanDocument),
-        usulanPelatihanURL: this.getDocumentUrl(indicator.usulanPelatihanDocument),
-        usulanMeubelairURL: this.getDocumentUrl(indicator.usulanMeubelairDocument),
         rejectionLevel: lastRejection?.level ?? null,
         rejectionNote: lastRejection?.note ?? null,
         rejectedAt: lastRejection?.createdAt ?? null,
@@ -587,7 +547,7 @@ export class ApprovalService {
       ? ProgramStatus.INDICATOR_APPROVED
       : ProgramStatus.SUBMITTED;
 
-    const { propsal, rab, usulanPerbaikan, usulanBahanHabis, usulanPeralatan, usulanPelatihan, usulanMeubelair, ...targets } = dto;
+    const { propsal, rab, ...targets } = dto;
 
     const updated = await this.prisma.programIndicator.update({
       where: { id: indicatorId },
@@ -595,21 +555,11 @@ export class ApprovalService {
         ...targets,
         proposalDocumentId: propsal,
         rabDocumentId: rab,
-        usulanPerbaikanDocumentId: usulanPerbaikan,
-        usulanBahanHabisDocumentId: usulanBahanHabis,
-        usulanPeralatanDocumentId: usulanPeralatan,
-        usulanPelatihanDocumentId: usulanPelatihan,
-        usulanMeubelairDocumentId: usulanMeubelair,
         status: newStatus,
       },
       include: {
         proposalDocument: true,
         rabDocument: true,
-        usulanPerbaikanDocument: true,
-        usulanBahanHabisDocument: true,
-        usulanPeralatanDocument: true,
-        usulanPelatihanDocument: true,
-        usulanMeubelairDocument: true,
       },
     });
 
@@ -629,11 +579,6 @@ export class ApprovalService {
       ...updated,
       proposalURL: this.getDocumentUrl(updated.proposalDocument),
       rabURL: this.getDocumentUrl(updated.rabDocument),
-      usulanPerbaikanURL: this.getDocumentUrl(updated.usulanPerbaikanDocument),
-      usulanBahanHabisURL: this.getDocumentUrl(updated.usulanBahanHabisDocument),
-      usulanPeralatanURL: this.getDocumentUrl(updated.usulanPeralatanDocument),
-      usulanPelatihanURL: this.getDocumentUrl(updated.usulanPelatihanDocument),
-      usulanMeubelairURL: this.getDocumentUrl(updated.usulanMeubelairDocument),
     };
   }
 }
