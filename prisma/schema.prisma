@@ -279,10 +279,15 @@ model Document {
   createdAt  DateTime     @default(now()) @map("created_at")
 
   // Relations
-  activity              Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  realizations          RealizationDocument[]
-  proposalForIndicators ProgramIndicator[]    @relation("IndicatorProposalDocument")
-  rabForIndicators      ProgramIndicator[]    @relation("IndicatorRabDocument")
+  activity                         Activity?             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  realizations                     RealizationDocument[]
+  proposalForIndicators            ProgramIndicator[]    @relation("IndicatorProposalDocument")
+  rabForIndicators                 ProgramIndicator[]    @relation("IndicatorRabDocument")
+  perbaikanForUnitBudgetProposals  UnitBudgetProposal[]  @relation("UnitBudgetProposalPerbaikanDocument")
+  bahanHabisForUnitBudgetProposals UnitBudgetProposal[]  @relation("UnitBudgetProposalBahanHabisDocument")
+  peralatanForUnitBudgetProposals  UnitBudgetProposal[]  @relation("UnitBudgetProposalPeralatanDocument")
+  pelatihanForUnitBudgetProposals  UnitBudgetProposal[]  @relation("UnitBudgetProposalPelatihanDocument")
+  meubelairForUnitBudgetProposals  UnitBudgetProposal[]  @relation("UnitBudgetProposalMeubelairDocument")
 
   @@index([activityId])
   @@map("documents")
@@ -482,4 +487,44 @@ model MasterBudget {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("master_budgets")
+}
+
+// ============================================================================
+// PROPOSED UNIT BUDGET
+// ============================================================================
+
+/// Proposed Unit Budget — dokumen usulan (perbaikan, bahan habis, peralatan, pelatihan, meubelair) beserta nilainya, per unit per tahun
+model UnitBudgetProposal {
+  id                   String   @id @default(uuid())
+  unitId               String   @map("unit_id")
+  year                 Int
+  perbaikanDocumentId  String?  @map("perbaikan_document_id")
+  perbaikanValue       Decimal? @map("perbaikan_value") @db.Decimal(20, 2)
+  bahanHabisDocumentId String?  @map("bahan_habis_document_id")
+  bahanHabisValue      Decimal? @map("bahan_habis_value") @db.Decimal(20, 2)
+  peralatanDocumentId  String?  @map("peralatan_document_id")
+  peralatanValue       Decimal? @map("peralatan_value") @db.Decimal(20, 2)
+  pelatihanDocumentId  String?  @map("pelatihan_document_id")
+  pelatihanValue       Decimal? @map("pelatihan_value") @db.Decimal(20, 2)
+  meubelairDocumentId  String?  @map("meubelair_document_id")
+  meubelairValue       Decimal? @map("meubelair_value") @db.Decimal(20, 2)
+  createdBy            String   @map("created_by")
+  updatedBy            String?  @map("updated_by")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  perbaikanDocument  Document? @relation("UnitBudgetProposalPerbaikanDocument", fields: [perbaikanDocumentId], references: [id], onDelete: SetNull)
+  bahanHabisDocument Document? @relation("UnitBudgetProposalBahanHabisDocument", fields: [bahanHabisDocumentId], references: [id], onDelete: SetNull)
+  peralatanDocument  Document? @relation("UnitBudgetProposalPeralatanDocument", fields: [peralatanDocumentId], references: [id], onDelete: SetNull)
+  pelatihanDocument  Document? @relation("UnitBudgetProposalPelatihanDocument", fields: [pelatihanDocumentId], references: [id], onDelete: SetNull)
+  meubelairDocument  Document? @relation("UnitBudgetProposalMeubelairDocument", fields: [meubelairDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([unitId, year])
+  @@index([perbaikanDocumentId])
+  @@index([bahanHabisDocumentId])
+  @@index([peralatanDocumentId])
+  @@index([pelatihanDocumentId])
+  @@index([meubelairDocumentId])
+  @@map("unit_budget_proposals")
 }

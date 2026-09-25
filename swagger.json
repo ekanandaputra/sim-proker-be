@@ -6345,6 +6345,255 @@
           "Master Budget"
         ]
       }
+    },
+    "/api/v1/unit-budget-proposals": {
+      "get": {
+        "description": "ADMIN sees all units; other roles only see the units they belong to.",
+        "operationId": "UnitBudgetProposalController_findAll",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Filter by year",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all proposed unit budgets",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
+    "/api/v1/unit-budget-proposals/{unitId}/{year}": {
+      "get": {
+        "operationId": "UnitBudgetProposalController_findOne",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No proposal yet for this unit and year"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get proposed unit budget by unit and year",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      },
+      "put": {
+        "description": "Creates the record for the unit/year if it does not exist yet, otherwise updates it. Only fields present in the body are changed; pass null to clear a field. Upload documents first via POST /documents/upload.",
+        "operationId": "UnitBudgetProposalController_upsert",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertUnitBudgetProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create or update proposed unit budget",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      },
+      "delete": {
+        "operationId": "UnitBudgetProposalController_remove",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposed unit budget successfully deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete proposed unit budget",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
     }
   },
   "info": {
@@ -9655,6 +9904,217 @@
         "required": [
           "realization"
         ]
+      },
+      "UnitBudgetProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-uuid"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "perbaikanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "perbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
+            "description": "Full URL of the Usulan Perbaikan document"
+          },
+          "perbaikanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 15000000
+          },
+          "bahanHabisDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "bahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/def456.pdf",
+            "description": "Full URL of the Usulan Bahan Habis document"
+          },
+          "bahanHabisValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 5000000
+          },
+          "peralatanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440003"
+          },
+          "peralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Usulan Peralatan document"
+          },
+          "peralatanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 25000000
+          },
+          "pelatihanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440004"
+          },
+          "pelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Usulan Pelatihan document"
+          },
+          "pelatihanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 10000000
+          },
+          "meubelairDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440005"
+          },
+          "meubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Usulan Meubelair document"
+          },
+          "meubelairValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 8000000
+          },
+          "totalValue": {
+            "type": "number",
+            "example": 63000000,
+            "description": "Total of all five proposal values"
+          },
+          "createdBy": {
+            "type": "string",
+            "example": "user-uuid"
+          },
+          "updatedBy": {
+            "type": "object",
+            "nullable": true,
+            "example": "user-uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-25T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-25T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "unitId",
+          "year",
+          "perbaikanDocumentId",
+          "perbaikanURL",
+          "perbaikanValue",
+          "bahanHabisDocumentId",
+          "bahanHabisURL",
+          "bahanHabisValue",
+          "peralatanDocumentId",
+          "peralatanURL",
+          "peralatanValue",
+          "pelatihanDocumentId",
+          "pelatihanURL",
+          "pelatihanValue",
+          "meubelairDocumentId",
+          "meubelairURL",
+          "meubelairValue",
+          "totalValue",
+          "createdBy",
+          "updatedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpsertUnitBudgetProposalDto": {
+        "type": "object",
+        "properties": {
+          "perbaikanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Perbaikan. Pass null to remove it.",
+            "nullable": true
+          },
+          "perbaikanValue": {
+            "type": "object",
+            "example": 15000000,
+            "description": "Nilai Usulan Perbaikan. Pass null to clear it.",
+            "nullable": true
+          },
+          "bahanHabisDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Bahan Habis. Pass null to remove it.",
+            "nullable": true
+          },
+          "bahanHabisValue": {
+            "type": "object",
+            "example": 5000000,
+            "description": "Nilai Usulan Bahan Habis. Pass null to clear it.",
+            "nullable": true
+          },
+          "peralatanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440003",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Peralatan. Pass null to remove it.",
+            "nullable": true
+          },
+          "peralatanValue": {
+            "type": "object",
+            "example": 25000000,
+            "description": "Nilai Usulan Peralatan. Pass null to clear it.",
+            "nullable": true
+          },
+          "pelatihanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440004",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Pelatihan. Pass null to remove it.",
+            "nullable": true
+          },
+          "pelatihanValue": {
+            "type": "object",
+            "example": 10000000,
+            "description": "Nilai Usulan Pelatihan. Pass null to clear it.",
+            "nullable": true
+          },
+          "meubelairDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440005",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Meubelair. Pass null to remove it.",
+            "nullable": true
+          },
+          "meubelairValue": {
+            "type": "object",
+            "example": 8000000,
+            "description": "Nilai Usulan Meubelair. Pass null to clear it.",
+            "nullable": true
+          }
+        }
       }
     }
   }

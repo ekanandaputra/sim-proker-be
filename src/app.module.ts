@@ -20,6 +20,7 @@ import { DefaultProgramModule } from '@modules/default-program/default-program.m
 import { IkuModule } from '@modules/iku/iku.module';
 import { MasterUnitTypeModule } from './modules/master-unit-type/master-unit-type.module';
 import { MasterBudgetModule } from './modules/master-budget/master-budget.module';
+import { UnitBudgetProposalModule } from '@modules/unit-budget-proposal/unit-budget-proposal.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { MasterBudgetModule } from './modules/master-budget/master-budget.module
     UnitModule,
     MasterUnitTypeModule,
     MasterBudgetModule,
+    UnitBudgetProposalModule,
   ],
 })
 export class AppModule implements NestModule {
