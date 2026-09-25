@@ -210,3 +210,38 @@ export class UnitBudgetProposalResponseDto {
   @ApiProperty({ example: '2026-09-25T00:00:00.000Z' })
   updatedAt!: Date;
 }
+
+// --- My Units ---
+
+export const myUnitBudgetProposalQuerySchema = z.object({
+  year: z.coerce
+    .number()
+    .int()
+    .min(2000)
+    .default(() => new Date().getFullYear()),
+});
+
+export type MyUnitBudgetProposalQuery = z.infer<typeof myUnitBudgetProposalQuerySchema>;
+
+export class MyUnitBudgetProposalUnitDto {
+  @ApiProperty({ example: '50c42d0a-e798-4d41-be97-31593d422bbe' })
+  id!: string;
+
+  @ApiProperty({ nullable: true, example: 'Unit Teknik Informatika' })
+  name!: string | null;
+}
+
+export class MyUnitBudgetProposalResponseDto {
+  @ApiProperty({ type: MyUnitBudgetProposalUnitDto })
+  unit!: MyUnitBudgetProposalUnitDto;
+
+  @ApiProperty({ example: 2026 })
+  year!: number;
+
+  @ApiProperty({
+    type: UnitBudgetProposalResponseDto,
+    nullable: true,
+    description: 'Proposed budget of this unit for the year, or null if it has not been filled yet',
+  })
+  proposal!: UnitBudgetProposalResponseDto | null;
+}

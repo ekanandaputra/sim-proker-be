@@ -29,6 +29,9 @@ import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { UnitBudgetProposalService } from '../services/unit-budget-proposal.service';
 import {
+  MyUnitBudgetProposalQuery,
+  MyUnitBudgetProposalResponseDto,
+  myUnitBudgetProposalQuerySchema,
   UnitBudgetProposalQuery,
   UnitBudgetProposalResponseDto,
   UpsertUnitBudgetProposalDto,
@@ -69,6 +72,31 @@ export class UnitBudgetProposalController {
     @Req() req: Request,
   ) {
     return this.unitBudgetProposalService.findAll(query, user, req.headers.authorization);
+  }
+
+  @Get('my-units')
+  @ApiOperation({
+    summary: 'Get proposed budgets for all units of the current user',
+    description:
+      'Returns one entry per unit assigned to the current user (same units as GET /units/my-units). `proposal` is null when the unit has not filled it yet for that year.',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    description: 'Tahun usulan (default: current year)',
+  })
+  @ApiResponse({ status: 200, type: [MyUnitBudgetProposalResponseDto] })
+  async findMyUnits(
+    @Query(new ZodValidationPipe(myUnitBudgetProposalQuerySchema)) query: MyUnitBudgetProposalQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+  ) {
+    return this.unitBudgetProposalService.findMyUnits(
+      query.year,
+      user,
+      req.headers.authorization || '',
+    );
   }
 
   @Get(':unitId/:year')

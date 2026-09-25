@@ -14,6 +14,7 @@ import { UnitService } from '../../unit/services/unit.service';
 import { AuditLogService } from '../../audit-log/services/audit-log.service';
 import {
   UNIT_BUDGET_PROPOSAL_KINDS,
+  MyUnitBudgetProposalResponseDto,
   UnitBudgetProposalQuery,
   UnitBudgetProposalResponseDto,
   UpsertUnitBudgetProposalDto,
@@ -172,6 +173,37 @@ export class UnitBudgetProposalService {
         totalPages: Math.ceil(totalItems / limit),
       },
     };
+  }
+
+  /** Proposals of every unit the current user belongs to (same source as GET /units/my-units). */
+  async findMyUnits(
+    year: number,
+    currentUser: JwtPayload,
+    token: string,
+  ): Promise<MyUnitBudgetProposalResponseDto[]> {
+    const userUnits = await this.unitService.getUserUnits(currentUser.userId, token);
+    const units = userUnits
+      .map((u: { id?: string; unitId?: string; name?: string; unit?: { name?: string } }) => ({
+        id: u.unitId || u.id,
+        name: u.name ?? u.unit?.name ?? null,
+      }))
+      .filter((u): u is { id: string; name: string | null } => Boolean(u.id));
+    if (units.length === 0) return [];
+
+    const proposals = await this.prisma.unitBudgetProposal.findMany({
+      where: { year, unitId: { in: units.map((u) => u.id) } },
+      include: DOCUMENT_INCLUDE,
+    });
+    const proposalByUnitId = new Map(proposals.map((p) => [p.unitId, p]));
+
+    return units.map((unit) => {
+      const proposal = proposalByUnitId.get(unit.id);
+      return {
+        unit,
+        year,
+        proposal: proposal ? this.mapToDto(proposal) : null,
+      };
+    });
   }
 
   async findByUnitAndYear(unitId: string, year: number, currentUser: JwtPayload, token?: string) {

@@ -6454,6 +6454,47 @@
         ]
       }
     },
+    "/api/v1/unit-budget-proposals/my-units": {
+      "get": {
+        "description": "Returns one entry per unit assigned to the current user (same units as GET /units/my-units). `proposal` is null when the unit has not filled it yet for that year.",
+        "operationId": "UnitBudgetProposalController_findMyUnits",
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Tahun usulan (default: current year)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyUnitBudgetProposalResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get proposed budgets for all units of the current user",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
     "/api/v1/unit-budget-proposals/{unitId}/{year}": {
       "get": {
         "operationId": "UnitBudgetProposalController_findOne",
@@ -10049,6 +10090,51 @@
           "updatedBy",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "MyUnitBudgetProposalUnitDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "name": {
+            "type": "object",
+            "nullable": true,
+            "example": "Unit Teknik Informatika"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MyUnitBudgetProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/MyUnitBudgetProposalUnitDto"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "proposal": {
+            "nullable": true,
+            "description": "Proposed budget of this unit for the year, or null if it has not been filled yet",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "unit",
+          "year",
+          "proposal"
         ]
       },
       "UpsertUnitBudgetProposalDto": {
