@@ -276,7 +276,6 @@ export class ProgramController {
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.UNIT_ADMIN, Role.PIC)
   @ApiOperation({
     summary: 'Create program',
     description: 'Create a new program kerja. Requires Admin, Unit Admin, or PIC role.',
