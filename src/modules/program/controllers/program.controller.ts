@@ -278,9 +278,58 @@ export class ProgramController {
   @Post()
   @ApiOperation({
     summary: 'Create program',
-    description: 'Create a new program kerja. Requires Admin, Unit Admin, or PIC role.',
+    description:
+      'Create a new program kerja. `ikuId` is the IKU UUID from SIM IKU. ' +
+      'Optionally pass `indicators` to create one or more program indicators together with the program in a single transaction ' +
+      '(indicator status defaults to SUBMITTED).',
   })
-  @ApiBody({ type: CreateProgramDto })
+  @ApiBody({
+    type: CreateProgramDto,
+    examples: {
+      withIndicators: {
+        summary: 'Program with indicators',
+        value: {
+          code: 'PRG-2026-001',
+          ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
+          title: 'Program Penelitian Terapan',
+          description: 'Research program for applied sciences',
+          objective: 'Advance applied research output',
+          year: 2026,
+          indicators: [
+            {
+              unitId: '550e8400-e29b-41d4-a716-446655440001',
+              name: 'Jumlah Dokumen Laporan',
+              masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440010',
+              category: 'TUSI',
+              targetQ1: 10,
+              targetQ2: 20,
+              targetQ3: 30,
+              targetQ4: 40,
+              budget: 15000000,
+              picIds: ['550e8400-e29b-41d4-a716-446655440003'],
+              order: 1,
+            },
+            {
+              unitId: '550e8400-e29b-41d4-a716-446655440002',
+              name: 'Jumlah Publikasi',
+              masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440011',
+              category: 'TUSI',
+              order: 2,
+            },
+          ],
+        },
+      },
+      programOnly: {
+        summary: 'Program without indicators',
+        value: {
+          code: 'PRG-2026-002',
+          ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
+          title: 'Program Pengabdian Masyarakat',
+          year: 2026,
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Program created', type: ProgramResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiResponse({ status: 409, description: 'Program code already exists' })

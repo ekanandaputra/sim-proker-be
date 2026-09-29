@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProgramStatus } from '@prisma/client';
+import { createProgramIndicatorSchema, CreateProgramIndicatorDto } from './program-indicator.dto';
 
 export const createProgramSchema = z.object({
   code: z
@@ -23,13 +23,14 @@ export const createProgramSchema = z.object({
     .int()
     .min(2000, 'Year must be at least 2000')
     .max(2100, 'Year must be at most 2100'),
+  indicators: z.array(createProgramIndicatorSchema).optional(),
 });
 
 export class CreateProgramDto {
   @ApiProperty({ example: 'PRG-2025-001', description: 'Program code' })
   code!: string;
 
-  @ApiPropertyOptional({ example: 'IKU1.1', description: 'IKU (Indikator Kinerja Utama) code this program contributes to', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', example: '69391cba-5eeb-4218-80fd-596e2c096171', description: 'IKU (Indikator Kinerja Utama) UUID from SIM IKU this program contributes to', nullable: true })
   ikuId?: string | null;
 
   @ApiProperty({ example: 'Program Penelitian Terapan' })
@@ -43,4 +44,10 @@ export class CreateProgramDto {
 
   @ApiProperty({ example: 2025 })
   year!: number;
+
+  @ApiPropertyOptional({
+    type: () => [CreateProgramIndicatorDto],
+    description: 'Program indicators to create together with the program (optional, multiple allowed)',
+  })
+  indicators?: CreateProgramIndicatorDto[];
 }

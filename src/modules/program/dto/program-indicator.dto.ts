@@ -32,7 +32,7 @@ export class CreateProgramIndicatorDto {
   @ApiProperty({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' })
   name!: string;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440010', description: 'Master Unit Type UUID' })
   masterUnitTypeId!: string;
 
   @ApiPropertyOptional({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
@@ -79,7 +79,7 @@ export class UpdateProgramIndicatorDto {
   @ApiPropertyOptional({ example: 'Jumlah Dokumen Laporan', description: 'Name of the indicator' })
   name?: string;
 
-  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-44665544000x', description: 'Master Unit Type UUID' })
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440010', description: 'Master Unit Type UUID' })
   masterUnitTypeId?: string;
 
   @ApiPropertyOptional({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })

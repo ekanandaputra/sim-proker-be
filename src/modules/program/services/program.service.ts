@@ -129,6 +129,16 @@ export class ProgramService {
       objective: dto.objective,
       year: dto.year,
       createdBy: userId,
+      indicators: dto.indicators?.length
+        ? {
+            create: dto.indicators.map(({ picIds, ...indicator }) => ({
+              ...indicator,
+              pics: picIds?.length
+                ? { create: picIds.map((picId) => ({ userId: picId })) }
+                : undefined,
+            })),
+          }
+        : undefined,
     });
 
     this.logger.log(`Program created: ${program.id} by user ${userId}`);
