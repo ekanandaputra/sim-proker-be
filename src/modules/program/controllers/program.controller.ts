@@ -277,17 +277,19 @@ export class ProgramController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create program',
+    summary: 'Buat program kerja beserta indikatornya',
     description:
-      'Create a new program kerja. `ikuId` is the IKU UUID from SIM IKU. ' +
-      'Optionally pass `indicators` to create one or more program indicators together with the program in a single transaction ' +
-      '(indicator status defaults to SUBMITTED).',
+      'Membuat program kerja baru.\n\n' +
+      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU (bukan kode IKU seperti `IKU1.1`).\n' +
+      '- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. ' +
+      'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
+      '- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.',
   })
   @ApiBody({
     type: CreateProgramDto,
     examples: {
       withIndicators: {
-        summary: 'Program with indicators',
+        summary: 'Program beserta indikator',
         value: {
           code: 'PRG-2026-001',
           ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
@@ -320,7 +322,7 @@ export class ProgramController {
         },
       },
       programOnly: {
-        summary: 'Program without indicators',
+        summary: 'Program tanpa indikator',
         value: {
           code: 'PRG-2026-002',
           ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',

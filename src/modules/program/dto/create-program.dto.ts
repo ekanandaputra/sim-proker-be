@@ -47,7 +47,7 @@ export class CreateProgramDto {
 
   @ApiPropertyOptional({
     type: () => [CreateProgramIndicatorDto],
-    description: 'Program indicators to create together with the program (optional, multiple allowed)',
+    description: 'Daftar indikator program yang dibuat bersamaan dengan program (opsional, bisa lebih dari satu)',
   })
   indicators?: CreateProgramIndicatorDto[];
 }
