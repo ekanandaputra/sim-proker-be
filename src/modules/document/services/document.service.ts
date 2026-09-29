@@ -5,6 +5,7 @@ import { STORAGE_SERVICE, IStorageService } from '@common/storage/storage.interf
 import { DocumentMapper, DocumentResponseDto } from '../dto/document.dto';
 import { EntityNotFoundException } from '@common/exceptions';
 import { DocumentType } from '@prisma/client';
+import { buildTimestampedFileName } from '@common/utils/file-name.util';
 
 @Injectable()
 export class DocumentService {
@@ -26,7 +27,11 @@ export class DocumentService {
     type: DocumentType,
     userId: string,
   ): Promise<DocumentResponseDto> {
-    const filePath = await this.storageService.upload(file, 'documents');
+    const filePath = await this.storageService.upload(
+      file,
+      'documents',
+      buildTimestampedFileName(type),
+    );
 
     const document = await this.documentRepository.create({
       fileName: file.originalname,
@@ -47,7 +52,11 @@ export class DocumentService {
     type: DocumentType,
     userId: string,
   ): Promise<DocumentResponseDto> {
-    const filePath = await this.storageService.upload(file, 'documents');
+    const filePath = await this.storageService.upload(
+      file,
+      'documents',
+      buildTimestampedFileName(type),
+    );
 
     const document = await this.documentRepository.create({
       fileName: file.originalname,

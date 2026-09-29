@@ -16,12 +16,16 @@ export class LocalStorageService implements IStorageService {
     this.ensureDirectoryExists(this.uploadDir);
   }
 
-  async upload(file: Express.Multer.File, directory: string): Promise<string> {
+  async upload(
+    file: Express.Multer.File,
+    directory: string,
+    fileNameOverride?: string,
+  ): Promise<string> {
     const targetDir = path.join(this.uploadDir, directory);
     this.ensureDirectoryExists(targetDir);
 
     const ext = path.extname(file.originalname);
-    const fileName = `${uuidv4()}${ext}`;
+    const fileName = fileNameOverride ? `${fileNameOverride}${ext}` : `${uuidv4()}${ext}`;
     const filePath = path.join(directory, fileName);
     const fullPath = path.join(this.uploadDir, filePath);
 

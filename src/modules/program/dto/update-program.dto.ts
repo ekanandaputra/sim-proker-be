@@ -14,7 +14,7 @@ export class UpdateProgramDto {
   @ApiPropertyOptional({ example: 'Program Penelitian Terapan Baru', description: 'Program title' })
   title?: string;
 
-  @ApiPropertyOptional({ example: 'IKU1.1', description: 'IKU (Indikator Kinerja Utama) code this program contributes to', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', example: '69391cba-5eeb-4218-80fd-596e2c096171', description: 'IKU (Indikator Kinerja Utama) UUID from SIM IKU this program contributes to', nullable: true })
   ikuId?: string | null;
 
   @ApiPropertyOptional({ example: 'Updated research program for applied sciences', description: 'Optional detailed description' })

@@ -9,7 +9,7 @@ export class ProgramResponseDto {
   @ApiProperty({ example: 'PRG-2025-001', description: 'Program code' })
   code!: string;
 
-  @ApiProperty({ example: 'IKU1.1', nullable: true, description: 'IKU (Indikator Kinerja Utama) code this program contributes to' })
+  @ApiProperty({ type: String, format: 'uuid', example: '69391cba-5eeb-4218-80fd-596e2c096171', nullable: true, description: 'IKU (Indikator Kinerja Utama) UUID from SIM IKU this program contributes to' })
   ikuId!: string | null;
 
   @ApiProperty({ example: 'Program Penelitian Terapan', description: 'Program title' })

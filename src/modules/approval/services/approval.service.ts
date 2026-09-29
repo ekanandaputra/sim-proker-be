@@ -249,7 +249,9 @@ export class ApprovalService {
       this.prisma.programIndicator.count({ where }),
       this.prisma.programIndicator.findMany({
         where,
-        include: { program: true },
+        include: {
+          program: true,
+        },
         skip,
         take: limit,
       }),
@@ -333,7 +335,9 @@ export class ApprovalService {
       this.prisma.programIndicator.count({ where }),
       this.prisma.programIndicator.findMany({
         where,
-        include: { program: true },
+        include: {
+          program: true,
+        },
         skip,
         take: limit,
       }),

@@ -276,12 +276,62 @@ export class ProgramController {
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.UNIT_ADMIN, Role.PIC)
   @ApiOperation({
-    summary: 'Create program',
-    description: 'Create a new program kerja. Requires Admin, Unit Admin, or PIC role.',
+    summary: 'Buat program kerja beserta indikatornya',
+    description:
+      'Membuat program kerja baru.\n\n' +
+      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU (bukan kode IKU seperti `IKU1.1`).\n' +
+      '- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. ' +
+      'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
+      '- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.',
   })
-  @ApiBody({ type: CreateProgramDto })
+  @ApiBody({
+    type: CreateProgramDto,
+    examples: {
+      withIndicators: {
+        summary: 'Program beserta indikator',
+        value: {
+          code: 'PRG-2026-001',
+          ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
+          title: 'Program Penelitian Terapan',
+          description: 'Research program for applied sciences',
+          objective: 'Advance applied research output',
+          year: 2026,
+          indicators: [
+            {
+              unitId: '550e8400-e29b-41d4-a716-446655440001',
+              name: 'Jumlah Dokumen Laporan',
+              masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440010',
+              category: 'TUSI',
+              targetQ1: 10,
+              targetQ2: 20,
+              targetQ3: 30,
+              targetQ4: 40,
+              budget: 15000000,
+              picIds: ['550e8400-e29b-41d4-a716-446655440003'],
+              order: 1,
+            },
+            {
+              unitId: '550e8400-e29b-41d4-a716-446655440002',
+              name: 'Jumlah Publikasi',
+              masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440011',
+              category: 'TUSI',
+              order: 2,
+            },
+          ],
+        },
+      },
+      programOnly: {
+        summary: 'Program tanpa indikator',
+        value: {
+          code: 'PRG-2026-002',
+          ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
+          title: 'Program Pengabdian Masyarakat',
+          year: 2026,
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Program created', type: ProgramResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiResponse({ status: 409, description: 'Program code already exists' })

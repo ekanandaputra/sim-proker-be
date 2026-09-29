@@ -21,7 +21,7 @@ export class ProgramIndicatorController {
   @Get()
   @ApiOperation({ summary: 'Get all indicators for a program' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
-  @ApiResponse({ status: 200, type: () => [ProgramIndicatorResponseDto] })
+  @ApiResponse({ status: 200, type: [ProgramIndicatorResponseDto] })
   async findAll(
     @Param('programId') programId: string,
     @Req() req: Request,

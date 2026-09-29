@@ -47,8 +47,9 @@ export class SubmittedProgramIndicatorResponseDto {
       name: 'Fakultas Ilmu Komputer',
       code: 'FILKOM'
     }
-  }) 
+  })
   unit!: any;
+
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) createdAt!: Date;
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' }) updatedAt!: Date;
 }

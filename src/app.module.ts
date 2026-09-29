@@ -8,6 +8,7 @@ import { OutputModule } from '@modules/output/output.module';
 import { ProgressModule } from '@modules/progress/progress.module';
 import { DocumentModule } from '@modules/document/document.module';
 import { TemplateModule } from '@modules/template/template.module';
+import { GuideModule } from '@modules/guide/guide.module';
 import { ApprovalModule } from '@modules/approval/approval.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { IntegrationModule } from './integrations/integration.module';
@@ -19,6 +20,7 @@ import { DefaultProgramModule } from '@modules/default-program/default-program.m
 import { IkuModule } from '@modules/iku/iku.module';
 import { MasterUnitTypeModule } from './modules/master-unit-type/master-unit-type.module';
 import { MasterBudgetModule } from './modules/master-budget/master-budget.module';
+import { UnitBudgetProposalModule } from '@modules/unit-budget-proposal/unit-budget-proposal.module';
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { MasterBudgetModule } from './modules/master-budget/master-budget.module
     ProgressModule,
     DocumentModule,
     TemplateModule,
+    GuideModule,
     ApprovalModule,
     DashboardModule,
     DefaultProgramModule,
@@ -46,6 +49,7 @@ import { MasterBudgetModule } from './modules/master-budget/master-budget.module
     UnitModule,
     MasterUnitTypeModule,
     MasterBudgetModule,
+    UnitBudgetProposalModule,
   ],
 })
 export class AppModule implements NestModule {

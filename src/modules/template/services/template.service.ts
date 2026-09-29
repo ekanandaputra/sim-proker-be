@@ -5,6 +5,7 @@ import { TEMPLATE_REPOSITORY, ITemplateRepository } from '../repositories/templa
 import { STORAGE_SERVICE, IStorageService } from '@common/storage/storage.interface';
 import { TemplateMapper, TemplateResponseDto } from '../dto/template.dto';
 import { EntityNotFoundException } from '@common/exceptions';
+import { buildTimestampedFileName } from '@common/utils/file-name.util';
 
 @Injectable()
 export class TemplateService {
@@ -23,7 +24,11 @@ export class TemplateService {
   async upload(type: TemplateType, file: Express.Multer.File, userId: string): Promise<TemplateResponseDto> {
     const existing = await this.templateRepository.findByType(type);
 
-    const filePath = await this.storageService.upload(file, 'templates');
+    const filePath = await this.storageService.upload(
+      file,
+      'templates',
+      buildTimestampedFileName(type),
+    );
 
     const template = await this.templateRepository.upsert(type, {
       fileName: file.originalname,

@@ -25,7 +25,7 @@ export class TemplateController {
   constructor(private readonly templateService: TemplateService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List current document templates (TOR, RAB)' })
+  @ApiOperation({ summary: 'List current document templates' })
   @ApiResponse({ status: 200, type: [TemplateResponseDto] })
   async findAll() {
     return this.templateService.findAll();
@@ -62,7 +62,7 @@ export class TemplateController {
 
   @Get(':type/download')
   @ApiOperation({
-    summary: 'Download a document template (TOR or RAB)',
+    summary: 'Download a document template',
     description: 'Downloads the current template file for the given type, as stored in the database.',
   })
   @ApiParam({ name: 'type', enum: TemplateType, description: 'Template type to download' })
