@@ -78,10 +78,6 @@ export class ProgramExportService {
       ],
     });
 
-    // Map default programs to get IKU IDs
-    const defaultPrograms = await this.prisma.defaultProgram.findMany({});
-    const titleToIkuId = new Map(defaultPrograms.map(dp => [dp.title, dp.ikuId]));
-
     // Generate Workbook
     const workbook = new exceljs.Workbook();
     workbook.creator = 'SIM PROKER';
@@ -185,7 +181,7 @@ export class ProgramExportService {
       const q4 = ind.targetQ4 ? Number(ind.targetQ4) : 0;
       const targetTahunan = q1 + q2 + q3 + q4;
 
-      const ikuId = titleToIkuId.get(ind.program.title);
+      const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
       const ikuName = iku?.name || '-';
       const ikuSasaran = iku?.target || '-';
@@ -274,10 +270,6 @@ export class ProgramExportService {
         { order: 'asc' },
       ],
     });
-
-    // Map default programs to get IKU IDs
-    const defaultPrograms = await this.prisma.defaultProgram.findMany({});
-    const titleToIkuId = new Map(defaultPrograms.map(dp => [dp.title, dp.ikuId]));
 
     // Generate Workbook
     const workbook = new exceljs.Workbook();
@@ -382,7 +374,7 @@ export class ProgramExportService {
       const q4 = ind.targetQ4 ? Number(ind.targetQ4) : 0;
       const targetTahunan = q1 + q2 + q3 + q4;
 
-      const ikuId = titleToIkuId.get(ind.program.title);
+      const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
       const ikuName = iku?.name || '-';
       const ikuSasaran = iku?.target || '-';
