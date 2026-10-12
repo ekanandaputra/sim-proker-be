@@ -280,7 +280,7 @@ export class ProgramController {
     summary: 'Buat program kerja beserta indikatornya',
     description:
       'Membuat program kerja baru.\n\n' +
-      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU (bukan kode IKU seperti `IKU1.1`).\n' +
+      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. Backend akan mengonversinya dan menyimpan **kode IKU** (mis. `IKU1.1`). Kode IKU juga diterima langsung.\n' +
       '- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. ' +
       'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
       '- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.',
@@ -338,8 +338,9 @@ export class ProgramController {
   async create(
     @Body(new ZodValidationPipe(createProgramSchema)) dto: CreateProgramDto,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.programService.create(dto, user.userId);
+    return this.programService.create(dto, user.userId, req.headers.authorization as string);
   }
 
   @Patch(':id')
@@ -356,8 +357,9 @@ export class ProgramController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateProgramSchema)) dto: UpdateProgramDto,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.programService.update(id, dto, user.userId);
+    return this.programService.update(id, dto, user.userId, req.headers.authorization as string);
   }
 
   @Post(':id/assign')
