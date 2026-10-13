@@ -78,13 +78,15 @@ export class UnitBudgetProposalController {
   @ApiOperation({
     summary: 'Get proposed budgets for all units of the current user',
     description:
-      'Returns one entry per unit assigned to the current user (same units as GET /units/my-units). `proposal` is null when the unit has not filled it yet for that year.',
+      'Returns entries for every unit assigned to the current user (same units as GET /units/my-units). ' +
+      'With `year`: one entry per unit for that year, `proposal` is null when the unit has not filled it yet. ' +
+      'Without `year`: one entry per unit per year that has a proposal (newest year first); units without any proposal get a single entry for the current year with `proposal` null.',
   })
   @ApiQuery({
     name: 'year',
     required: false,
     type: Number,
-    description: 'Tahun usulan (default: current year)',
+    description: 'Tahun usulan. Kosongkan untuk mengambil semua tahun.',
   })
   @ApiResponse({ status: 200, type: [MyUnitBudgetProposalResponseDto] })
   async findMyUnits(

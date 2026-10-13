@@ -214,11 +214,7 @@ export class UnitBudgetProposalResponseDto {
 // --- My Units ---
 
 export const myUnitBudgetProposalQuerySchema = z.object({
-  year: z.coerce
-    .number()
-    .int()
-    .min(2000)
-    .default(() => new Date().getFullYear()),
+  year: z.coerce.number().int().min(2000).optional(),
 });
 
 export type MyUnitBudgetProposalQuery = z.infer<typeof myUnitBudgetProposalQuerySchema>;
