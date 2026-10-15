@@ -206,7 +206,7 @@ export class ApprovalService {
   /**
    * Get indicators pending verification (SUBMITTED / REVISION status — waiting for Level 1).
    */
-  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
+  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number; unitId?: string }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
@@ -214,6 +214,10 @@ export class ApprovalService {
     const where: any = {
       status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
     };
+
+    if (query?.unitId && query.unitId.trim()) {
+      where.unitId = query.unitId.trim();
+    }
 
     const userId = user?.userId || user?.id;
     if (!userId) {
@@ -299,7 +303,7 @@ export class ApprovalService {
   /**
    * Get indicators pending budget verification (INDICATOR_APPROVED status — waiting for Level 2).
    */
-  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
+  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number; unitId?: string }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
@@ -307,6 +311,10 @@ export class ApprovalService {
     const where: any = {
       status: ProgramStatus.INDICATOR_APPROVED,
     };
+
+    if (query?.unitId && query.unitId.trim()) {
+      where.unitId = query.unitId.trim();
+    }
 
     const userId = user?.userId || user?.id;
     if (!userId) {
