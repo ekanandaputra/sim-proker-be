@@ -584,7 +584,7 @@
         ]
       },
       "post": {
-        "description": "Membuat program kerja baru.\n\n- `ikuId` diisi dengan **UUID IKU** dari SIM IKU (bukan kode IKU seperti `IKU1.1`).\n- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.",
+        "description": "Membuat program kerja baru.\n\n- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. Backend akan mengonversinya dan menyimpan **kode IKU** (mis. `IKU1.1`). Kode IKU juga diterima langsung.\n- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.",
         "operationId": "ProgramController_create",
         "parameters": [],
         "requestBody": {
@@ -3440,6 +3440,15 @@
         "operationId": "ApprovalController_getSubmittedIndicators",
         "parameters": [
           {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter indicators by unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -3531,6 +3540,15 @@
         "description": "Returns a paginated list of program indicators with INDICATOR_APPROVED status, waiting for budget verification (Level 2).",
         "operationId": "ApprovalController_getIndicatorApprovedIndicators",
         "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter indicators by unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "limit",
             "required": false,
@@ -6502,14 +6520,14 @@
     },
     "/api/v1/unit-budget-proposals/my-units": {
       "get": {
-        "description": "Returns one entry per unit assigned to the current user (same units as GET /units/my-units). `proposal` is null when the unit has not filled it yet for that year.",
+        "description": "Returns entries for every unit assigned to the current user (same units as GET /units/my-units). With `year`: one entry per unit for that year, `proposal` is null when the unit has not filled it yet. Without `year`: one entry per unit per year that has a proposal (newest year first); units without any proposal get a single entry for the current year with `proposal` null.",
         "operationId": "UnitBudgetProposalController_findMyUnits",
         "parameters": [
           {
             "name": "year",
             "required": false,
             "in": "query",
-            "description": "Tahun usulan (default: current year)",
+            "description": "Tahun usulan. Kosongkan untuk mengambil semua tahun.",
             "schema": {
               "type": "number"
             }

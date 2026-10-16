@@ -175,9 +175,13 @@ export class UnitBudgetProposalService {
     };
   }
 
-  /** Proposals of every unit the current user belongs to (same source as GET /units/my-units). */
+  /**
+   * Proposals of every unit the current user belongs to (same source as GET /units/my-units).
+   * With `year`: one entry per unit for that year. Without `year`: one entry per unit per year
+   * that has a proposal; units with no proposal at all get an empty entry for the current year.
+   */
   async findMyUnits(
-    year: number,
+    year: number | undefined,
     currentUser: JwtPayload,
     token: string,
   ): Promise<MyUnitBudgetProposalResponseDto[]> {
@@ -191,18 +195,34 @@ export class UnitBudgetProposalService {
     if (units.length === 0) return [];
 
     const proposals = await this.prisma.unitBudgetProposal.findMany({
-      where: { year, unitId: { in: units.map((u) => u.id) } },
+      where: { unitId: { in: units.map((u) => u.id) }, ...(year ? { year } : {}) },
       include: DOCUMENT_INCLUDE,
+      orderBy: { year: 'desc' },
     });
-    const proposalByUnitId = new Map(proposals.map((p) => [p.unitId, p]));
 
-    return units.map((unit) => {
-      const proposal = proposalByUnitId.get(unit.id);
-      return {
+    if (year) {
+      const proposalByUnitId = new Map(proposals.map((p) => [p.unitId, p]));
+      return units.map((unit) => {
+        const proposal = proposalByUnitId.get(unit.id);
+        return {
+          unit,
+          year,
+          proposal: proposal ? this.mapToDto(proposal) : null,
+        };
+      });
+    }
+
+    const currentYear = new Date().getFullYear();
+    return units.flatMap((unit): MyUnitBudgetProposalResponseDto[] => {
+      const unitProposals = proposals.filter((p) => p.unitId === unit.id);
+      if (unitProposals.length === 0) {
+        return [{ unit, year: currentYear, proposal: null }];
+      }
+      return unitProposals.map((proposal) => ({
         unit,
-        year,
-        proposal: proposal ? this.mapToDto(proposal) : null,
-      };
+        year: proposal.year,
+        proposal: this.mapToDto(proposal),
+      }));
     });
   }
 

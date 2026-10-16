@@ -48,22 +48,14 @@ export class ApprovalService {
   }
 
   /**
-   * Resolve the IKU ID for a program indicator by tracing:
-   * ProgramIndicator → Program (title) → DefaultProgram (ikuId)
+   * Resolve the IKU ID for a program indicator via ProgramIndicator → Program (ikuId).
    */
   private async resolveIkuId(indicatorId: string): Promise<string | null> {
     const indicator = await this.prisma.programIndicator.findUnique({
       where: { id: indicatorId },
-      include: { program: true },
+      include: { program: { select: { ikuId: true } } },
     });
-    if (!indicator || !indicator.program) return null;
-
-    // Find DefaultProgram by matching program title
-    const defaultProgram = await this.prisma.defaultProgram.findFirst({
-      where: { title: indicator.program.title },
-    });
-
-    return defaultProgram?.ikuId || null;
+    return indicator?.program?.ikuId || null;
   }
 
   /**
@@ -88,7 +80,7 @@ export class ApprovalService {
     if (level === ApprovalLevel.INDICATOR_VERIFICATION) {
       const resolvedIkuId = await this.resolveIkuId(indicatorId);
       if (!resolvedIkuId) {
-        throw new InvalidStateException('Cannot resolve IKU for this program indicator. Ensure the program has an associated DefaultProgram.');
+        throw new InvalidStateException('Cannot resolve IKU for this program indicator. Ensure the program has an IKU assigned.');
       }
       ikuId = resolvedIkuId;
     }
@@ -214,7 +206,7 @@ export class ApprovalService {
   /**
    * Get indicators pending verification (SUBMITTED / REVISION status — waiting for Level 1).
    */
-  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
+  async getSubmittedIndicators(token: string, query: { page?: number; limit?: number; unitId?: string }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
@@ -222,6 +214,10 @@ export class ApprovalService {
     const where: any = {
       status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
     };
+
+    if (query?.unitId && query.unitId.trim()) {
+      where.unitId = query.unitId.trim();
+    }
 
     const userId = user?.userId || user?.id;
     if (!userId) {
@@ -234,15 +230,7 @@ export class ApprovalService {
     if (allowedIkuIds.length === 0) {
       return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
     }
-    const defaultPrograms = await this.prisma.defaultProgram.findMany({
-      where: { ikuId: { in: allowedIkuIds } },
-      select: { title: true },
-    });
-    const allowedTitles = defaultPrograms.map(dp => dp.title);
-    if (allowedTitles.length === 0) {
-      return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
-    }
-    where.program = { title: { in: allowedTitles } };
+    where.program = { ikuId: { in: allowedIkuIds } };
 
 
     const [totalItems, indicators] = await Promise.all([
@@ -251,6 +239,8 @@ export class ApprovalService {
         where,
         include: {
           program: true,
+          proposalDocument: true,
+          rabDocument: true,
         },
         skip,
         take: limit,
@@ -272,6 +262,8 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
+      proposalURL: this.getDocumentUrl(indicator.proposalDocument),
+      rabURL: this.getDocumentUrl(indicator.rabDocument),
     }));
 
     return {
@@ -311,7 +303,7 @@ export class ApprovalService {
   /**
    * Get indicators pending budget verification (INDICATOR_APPROVED status — waiting for Level 2).
    */
-  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number }, user: any) {
+  async getIndicatorApprovedIndicators(token: string, query: { page?: number; limit?: number; unitId?: string }, user: any) {
     const page = query?.page ? Number(query.page) : 1;
     const limit = query?.limit ? Number(query.limit) : 10;
     const skip = (page - 1) * limit;
@@ -319,6 +311,10 @@ export class ApprovalService {
     const where: any = {
       status: ProgramStatus.INDICATOR_APPROVED,
     };
+
+    if (query?.unitId && query.unitId.trim()) {
+      where.unitId = query.unitId.trim();
+    }
 
     const userId = user?.userId || user?.id;
     if (!userId) {
@@ -337,6 +333,8 @@ export class ApprovalService {
         where,
         include: {
           program: true,
+          proposalDocument: true,
+          rabDocument: true,
         },
         skip,
         take: limit,
@@ -358,6 +356,8 @@ export class ApprovalService {
     const items = indicators.map(indicator => ({
       ...indicator,
       unit: unitMap.get(indicator.unitId) || null,
+      proposalURL: this.getDocumentUrl(indicator.proposalDocument),
+      rabURL: this.getDocumentUrl(indicator.rabDocument),
     }));
 
     return {

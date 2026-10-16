@@ -15,12 +15,16 @@ import { buildPaginationArgs, buildPaginatedResponse } from '@common/utils/pagin
 import {
   EntityNotFoundException,
   EntityConflictException,
+  InvalidStateException,
 } from '@common/exceptions';
 import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
 import { UnitService } from '../../unit/services/unit.service';
+import { IkuService } from '../../iku/services/iku.service';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class ProgramService {
@@ -32,7 +36,23 @@ export class ProgramService {
     private readonly auditLogService: AuditLogService,
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
+    private readonly ikuService: IkuService,
   ) {}
+
+  /**
+   * FE mengirim UUID IKU, sedangkan kolom programs.iku_id menyimpan kode IKU (mis. `IKU1.1`).
+   * Jika nilai berupa UUID, resolve ke kode IKU via SIM IKU; jika sudah berupa kode, simpan apa adanya.
+   */
+  private async resolveIkuCode(ikuId: string | null | undefined, token?: string): Promise<string | null | undefined> {
+    if (!ikuId || !UUID_REGEX.test(ikuId)) return ikuId;
+
+    const { items } = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
+    const iku = items.find((i) => i.id === ikuId);
+    if (!iku) {
+      throw new InvalidStateException(`IKU with id '${ikuId}' not found in SIM IKU`);
+    }
+    return iku.code;
+  }
 
   async findAll(query: ProgramQueryDto, currentUser: JwtPayload, token?: string): Promise<PaginatedResponse<ProgramResponseDto>> {
     const { skip, take, orderBy } = buildPaginationArgs(query);
@@ -114,16 +134,18 @@ export class ProgramService {
     );
   }
 
-  async create(dto: CreateProgramDto, userId: string): Promise<ProgramResponseDto> {
+  async create(dto: CreateProgramDto, userId: string, token?: string): Promise<ProgramResponseDto> {
     // Check for duplicate code
     const existing = await this.programRepository.findByCode(dto.code);
     if (existing) {
       throw new EntityConflictException(`Program with code '${dto.code}' already exists`);
     }
 
+    const ikuCode = await this.resolveIkuCode(dto.ikuId, token);
+
     const program = await this.programRepository.create({
       code: dto.code,
-      ikuId: dto.ikuId,
+      ikuId: ikuCode,
       title: dto.title,
       description: dto.description,
       objective: dto.objective,
@@ -216,6 +238,7 @@ export class ProgramService {
     id: string,
     dto: UpdateProgramDto,
     userId: string,
+    token?: string,
   ): Promise<ProgramResponseDto> {
     const existing = await this.programRepository.findById(id);
     if (!existing) {
@@ -232,6 +255,7 @@ export class ProgramService {
 
     const updateData: Prisma.ProgramUpdateInput = {
       ...dto,
+      ikuId: await this.resolveIkuCode(dto.ikuId, token),
       updatedBy: userId,
     };
 

@@ -60,7 +60,8 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
+    // programs.iku_id menyimpan kode IKU
+    const ikuMap = new Map(ikuList.map(i => [i.code, i]));
 
     // Fetch Indicators matching the filter
     const indicators = await this.prisma.programIndicator.findMany({
@@ -77,10 +78,6 @@ export class ProgramExportService {
         { order: 'asc' },
       ],
     });
-
-    // Map default programs to get IKU IDs
-    const defaultPrograms = await this.prisma.defaultProgram.findMany({});
-    const titleToIkuId = new Map(defaultPrograms.map(dp => [dp.title, dp.ikuId]));
 
     // Generate Workbook
     const workbook = new exceljs.Workbook();
@@ -185,7 +182,7 @@ export class ProgramExportService {
       const q4 = ind.targetQ4 ? Number(ind.targetQ4) : 0;
       const targetTahunan = q1 + q2 + q3 + q4;
 
-      const ikuId = titleToIkuId.get(ind.program.title);
+      const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
       const ikuName = iku?.name || '-';
       const ikuSasaran = iku?.target || '-';
@@ -256,7 +253,8 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
+    // programs.iku_id menyimpan kode IKU
+    const ikuMap = new Map(ikuList.map(i => [i.code, i]));
 
     // Fetch only APPROVED indicators
     const indicators = await this.prisma.programIndicator.findMany({
@@ -274,10 +272,6 @@ export class ProgramExportService {
         { order: 'asc' },
       ],
     });
-
-    // Map default programs to get IKU IDs
-    const defaultPrograms = await this.prisma.defaultProgram.findMany({});
-    const titleToIkuId = new Map(defaultPrograms.map(dp => [dp.title, dp.ikuId]));
 
     // Generate Workbook
     const workbook = new exceljs.Workbook();
@@ -382,7 +376,7 @@ export class ProgramExportService {
       const q4 = ind.targetQ4 ? Number(ind.targetQ4) : 0;
       const targetTahunan = q1 + q2 + q3 + q4;
 
-      const ikuId = titleToIkuId.get(ind.program.title);
+      const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
       const ikuName = iku?.name || '-';
       const ikuSasaran = iku?.target || '-';

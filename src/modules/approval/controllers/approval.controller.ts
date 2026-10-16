@@ -29,6 +29,7 @@ export class ApprovalController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter indicators by unit ID' })
   @ApiPaginatedResponse(SubmittedProgramIndicatorResponseDto)
   async getSubmittedIndicators(@Req() req: any, @Query() query: any) {
     const token = req.headers.authorization as string;
@@ -44,6 +45,7 @@ export class ApprovalController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter indicators by unit ID' })
   @ApiPaginatedResponse(SubmittedProgramIndicatorResponseDto)
   async getIndicatorApprovedIndicators(@Req() req: any, @Query() query: any) {
     const token = req.headers.authorization as string;
