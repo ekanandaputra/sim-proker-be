@@ -170,6 +170,7 @@ export const setIndicatorTargetSchema = z.object({
   targetQ3: z.number().nullable().optional(),
   targetQ4: z.number().nullable().optional(),
   budget: budgetSchema,
+  picIds: z.array(z.string().uuid('PIC must be a valid UUID')).optional(),
   propsal: z.string().uuid('propsal must be a valid document UUID').nullable().optional(),
   rab: z.string().uuid('rab must be a valid document UUID').nullable().optional(),
 });
@@ -189,6 +190,9 @@ export class SetIndicatorTargetDto {
 
   @ApiPropertyOptional({ example: 15000000.00, description: 'Budget allocated for this indicator', type: 'number', oneOf: [{ type: 'number' }, { type: 'string' }] })
   budget?: number | string | null;
+
+  @ApiPropertyOptional({ type: [String], description: 'PIC User UUIDs. Replaces existing PICs; pass [] or omit to remove all PICs.', example: ['550e8400-e29b-41d4-a716-446655440003'] })
+  picIds?: string[];
 
   @ApiPropertyOptional({ example: '3f5b85cb-a0db-4c5a-a465-f69b57e91a98', description: 'Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.', nullable: true })
   propsal?: string | null;

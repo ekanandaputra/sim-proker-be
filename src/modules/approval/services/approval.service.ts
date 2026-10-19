@@ -520,7 +520,7 @@ export class ApprovalService {
    * at the level that asked for the revision.
    */
   async revise(indicatorId: string, dto: SetIndicatorTargetDto, currentUser: JwtPayload, token?: string) {
-    const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
+    const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId }, include: { pics: true } });
     if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
     if (indicator.status !== ProgramStatus.REVISION) {
@@ -547,17 +547,22 @@ export class ApprovalService {
       ? ProgramStatus.INDICATOR_APPROVED
       : ProgramStatus.SUBMITTED;
 
-    const { propsal, rab, ...targets } = dto;
+    const { propsal, rab, picIds, ...targets } = dto;
 
     const updated = await this.prisma.programIndicator.update({
       where: { id: indicatorId },
       data: {
         ...targets,
+        pics: {
+          deleteMany: {},
+          create: [...new Set(picIds ?? [])].map(userId => ({ userId })),
+        },
         proposalDocumentId: propsal,
         rabDocumentId: rab,
         status: newStatus,
       },
       include: {
+        pics: true,
         proposalDocument: true,
         rabDocument: true,
       },
@@ -577,6 +582,7 @@ export class ApprovalService {
 
     return {
       ...updated,
+      picIds: updated.pics.map(p => p.userId),
       proposalURL: this.getDocumentUrl(updated.proposalDocument),
       rabURL: this.getDocumentUrl(updated.rabDocument),
     };
