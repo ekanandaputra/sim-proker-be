@@ -1,7 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException, BusinessException } from '@common/exceptions';
-import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, UpdateProgramIndicatorStatusDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto } from '../dto/program-indicator-realization.dto';
 import { UnitService } from '../../unit/services/unit.service';
 import { AuditLogService } from '../../audit-log/services/audit-log.service';
@@ -196,6 +196,38 @@ export class ProgramIndicatorService {
         ...updated,
         pics: newPicsWithName,
       } as unknown as Record<string, unknown>
+    });
+
+    return {
+      ...updated,
+      picIds: updated.pics.map(p => p.userId),
+      proposalURL: this.getDocumentUrl(updated.proposalDocument),
+      rabURL: this.getDocumentUrl(updated.rabDocument),
+    };
+  }
+
+  async updateStatus(programId: string, id: string, dto: UpdateProgramIndicatorStatusDto, user: { id: string, name: string }) {
+    const indicator = await this.prisma.programIndicator.findFirst({
+      where: { id, programId },
+    });
+    if (!indicator) {
+      throw new EntityNotFoundException('ProgramIndicator', id);
+    }
+
+    const updated = await this.prisma.programIndicator.update({
+      where: { id },
+      data: { status: dto.status },
+      include: { pics: true, proposalDocument: true, rabDocument: true },
+    });
+
+    await this.auditLogService.log({
+      action: AuditAction.UPDATE,
+      entityType: 'ProgramIndicator',
+      entityId: id,
+      userId: user.id,
+      userName: user.name,
+      oldValue: { status: indicator.status },
+      newValue: { status: updated.status },
     });
 
     return {

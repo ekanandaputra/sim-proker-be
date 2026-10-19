@@ -116,6 +116,15 @@ export class UpdateProgramIndicatorDto {
   rabDocumentId?: string | null;
 }
 
+export const updateProgramIndicatorStatusSchema = z.object({
+  status: z.nativeEnum(ProgramStatus),
+});
+
+export class UpdateProgramIndicatorStatusDto {
+  @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.APPROVED, description: 'New status of the indicator' })
+  status!: ProgramStatus;
+}
+
 // --- Response ---
 export class ProgramIndicatorResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', description: 'Indicator UUID' })

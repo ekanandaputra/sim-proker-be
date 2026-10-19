@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard, JwtPayload } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
-import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, UpdateProgramIndicatorStatusDto, updateProgramIndicatorStatusSchema, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationResponseDto, programIndicatorRealizationSchema } from '../dto/program-indicator-realization.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
@@ -61,6 +61,24 @@ export class ProgramIndicatorController {
     const user = { id: req.user?.id, name: req.user?.name };
     const token = req.headers.authorization as string;
     return this.indicatorService.update(programId, id, dto, user, token);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Update an indicator status' })
+  @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
+  @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
+  @ApiBody({ type: UpdateProgramIndicatorStatusDto })
+  @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid status' })
+  @ApiResponse({ status: 404, description: 'Indicator not found in the program' })
+  async updateStatus(
+    @Param('programId') programId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateProgramIndicatorStatusSchema)) dto: UpdateProgramIndicatorStatusDto,
+    @Req() req: any
+  ) {
+    const user = { id: req.user?.id, name: req.user?.name };
+    return this.indicatorService.updateStatus(programId, id, dto, user);
   }
 
   @Delete(':id')
