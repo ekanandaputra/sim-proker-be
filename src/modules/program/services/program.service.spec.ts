@@ -9,6 +9,7 @@ describe('ProgramService', () => {
   let service: ProgramService;
   let repository: IProgramRepository;
   let auditLogService: any;
+  let unitService: { getUserUnits: ReturnType<typeof vi.fn>; getUnitById: ReturnType<typeof vi.fn> };
   let authIntegrationService: { getAllUsers: ReturnType<typeof vi.fn> };
 
   const mockProgram = {
@@ -53,7 +54,8 @@ describe('ProgramService', () => {
     };
 
     authIntegrationService = { getAllUsers: vi.fn() };
-    service = new ProgramService(repository, auditLogService, prismaService as any, {} as any, {} as any, authIntegrationService as any);
+    unitService = { getUserUnits: vi.fn(), getUnitById: vi.fn() };
+    service = new ProgramService(repository, auditLogService, prismaService as any, unitService as any, {} as any, authIntegrationService as any);
   });
 
   const mockAdminUser = {
@@ -141,6 +143,54 @@ describe('ProgramService', () => {
           }),
         }),
       );
+    });
+
+    it.each([
+      { roles: ['PIC'], unitId: undefined, units: [{ unitId: 'unit-a' }, { id: 'unit-b' }], expected: { unitId: { in: ['unit-a', 'unit-b'] } } },
+      { roles: ['PIC'], unitId: 'unit-a', units: [{ unitId: 'unit-a' }], expected: { unitId: 'unit-a' } },
+      { roles: ['PIC'], unitId: 'unit-other', units: [{ unitId: 'unit-a' }], expected: { unitId: { in: [] } } },
+      { roles: ['PIC'], unitId: undefined, units: [], expected: { unitId: { in: [] } } },
+      { roles: ['admin_sim_iku'], unitId: 'unit-a', units: [], expected: { unitId: 'unit-a' } },
+    ])('filters nested indicators consistently with program access: $roles / $unitId / $units', async ({ roles, unitId, units, expected }) => {
+      vi.mocked(repository.findAll).mockResolvedValue([]);
+      vi.mocked(repository.count).mockResolvedValue(0);
+      unitService.getUserUnits.mockResolvedValue(units);
+
+      await service.findAll(
+        { page: 1, limit: 50, unitId },
+        { ...mockRegularUser, roles, unitId: '' },
+        'Bearer token',
+      );
+
+      expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: { indicators: { some: expected } },
+        include: { indicators: { where: expected, include: { pics: true } } },
+      }));
+      expect(repository.count).toHaveBeenCalledWith({ indicators: { some: expected } });
+    });
+
+    it('returns unit names and fetches each assigned unit once', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+        { id: 'indicator-1', unitId: 'unit-a', pics: [] },
+        { id: 'indicator-2', unitId: 'unit-a', pics: [] },
+      ] } as any]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+      unitService.getUnitById.mockResolvedValue({ id: 'unit-a', name: 'Program Studi A' });
+      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser, 'Bearer token');
+      expect(result.items[0].indicators.map(indicator => indicator.unit)).toEqual([
+        { id: 'unit-a', name: 'Program Studi A' }, { id: 'unit-a', name: 'Program Studi A' },
+      ]);
+      expect(unitService.getUnitById).toHaveBeenCalledExactlyOnceWith('unit-a', 'Bearer token');
+    });
+
+    it('returns the unit ID when unit details are unavailable', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+        { id: 'indicator-1', unitId: 'unit-a', pics: [] },
+      ] } as any]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+      unitService.getUnitById.mockRejectedValue(new Error('Unavailable'));
+      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      expect(result.items[0].indicators[0].unit).toEqual({ id: 'unit-a', name: 'unit-a' });
     });
 
     it('should apply search filter', async () => {

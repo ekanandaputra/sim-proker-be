@@ -113,7 +113,12 @@ export class ProgramService {
         take,
         where,
         orderBy: orderBy as Prisma.ProgramOrderByWithRelationInput,
-        include: { indicators: { include: { pics: true } } },
+        include: {
+          indicators: {
+            ...(where.indicators?.some ? { where: where.indicators.some } : {}),
+            include: { pics: true },
+          },
+        },
       }),
       this.programRepository.count(where),
     ]);
@@ -121,6 +126,20 @@ export class ProgramService {
     const items = ProgramMapper.toResponseList(
       programs as Array<typeof programs[0] & { category?: { name: string } | null }>,
     );
+
+    const unitIds = [...new Set(items.flatMap(program =>
+      program.indicators.map(indicator => indicator.unitId).filter(Boolean),
+    ))];
+    const units = new Map<string, { id: string; name: string }>();
+    await Promise.all(unitIds.map(async id => {
+      try {
+        const unit = await this.unitService.getUnitById(id, token ?? '');
+        units.set(id, { id, name: unit.name || unit.unitName || id });
+      } catch (e) {
+        this.logger.warn(`Failed to fetch unit ${id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        units.set(id, { id, name: id });
+      }
+    }));
 
     const unresolvedIds = new Set(items.flatMap(program =>
       program.indicators.flatMap(indicator => indicator.picIds ?? []),
@@ -149,6 +168,7 @@ export class ProgramService {
     }
     for (const program of items) {
       for (const indicator of program.indicators) {
+        indicator.unit = units.get(indicator.unitId) ?? null;
         indicator.pics = (indicator.picIds ?? []).map(id => ({ id, name: names.get(id) ?? id }));
       }
     }
