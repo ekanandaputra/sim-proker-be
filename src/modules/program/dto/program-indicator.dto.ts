@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProgramStatus, IndicatorCategory } from '@prisma/client';
+import { DocumentResponseDto } from '../../document/dto/document.dto';
 
 const budgetSchema = z
   .union([z.number(), z.string().refine((val) => val.trim() !== '' && !isNaN(Number(val)), 'Budget must be a valid number')])
@@ -167,6 +168,18 @@ export class ProgramIndicatorResponseDto {
 
   @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT }) status!: ProgramStatus;
   @ApiProperty({ example: 1 }) order!: number;
+
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'TOR document UUID for prefill' })
+  proposalDocumentId?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'RAB document UUID for prefill' })
+  rabDocumentId?: string | null;
+
+  @ApiPropertyOptional({ type: () => DocumentResponseDto, nullable: true, description: 'TOR document metadata for prefill' })
+  proposalDocument?: DocumentResponseDto | null;
+
+  @ApiPropertyOptional({ type: () => DocumentResponseDto, nullable: true, description: 'RAB document metadata for prefill' })
+  rabDocument?: DocumentResponseDto | null;
 
   @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/abc123.pdf', description: 'Full URL of the proposal document, ready to be opened/displayed by the frontend' })
   proposalURL!: string | null;

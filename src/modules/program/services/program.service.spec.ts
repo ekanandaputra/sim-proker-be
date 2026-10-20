@@ -55,7 +55,7 @@ describe('ProgramService', () => {
 
     authIntegrationService = { getAllUsers: vi.fn() };
     unitService = { getUserUnits: vi.fn(), getUnitById: vi.fn() };
-    service = new ProgramService(repository, auditLogService, prismaService as any, unitService as any, {} as any, authIntegrationService as any);
+    service = new ProgramService(repository, auditLogService, prismaService as any, unitService as any, {} as any, authIntegrationService as any, { getUrl: (path: string) => `https://files.example/${path}` } as any);
   });
 
   const mockAdminUser = {
@@ -101,7 +101,7 @@ describe('ProgramService', () => {
       const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser, 'Bearer token');
 
       expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
-        include: { indicators: { include: { pics: true } } },
+        include: { indicators: { include: { pics: true, proposalDocument: true, rabDocument: true } } },
       }));
       expect(result.items[0].indicators[0].picIds).toEqual(['user-1', 'user-2']);
       expect(result.items[0].indicators[0].pics).toEqual([
@@ -164,7 +164,7 @@ describe('ProgramService', () => {
 
       expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
         where: { indicators: { some: expected } },
-        include: { indicators: { where: expected, include: { pics: true } } },
+        include: { indicators: { where: expected, include: { pics: true, proposalDocument: true, rabDocument: true } } },
       }));
       expect(repository.count).toHaveBeenCalledWith({ indicators: { some: expected } });
     });
@@ -191,6 +191,29 @@ describe('ProgramService', () => {
       unitService.getUnitById.mockRejectedValue(new Error('Unavailable'));
       const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
       expect(result.items[0].indicators[0].unit).toEqual({ id: 'unit-a', name: 'unit-a' });
+    });
+
+    it('includes TOR and RAB metadata, IDs and full URLs for prefill', async () => {
+      const tor = { id: 'tor-id', fileName: 'tor.pdf', filePath: 'documents/tor.pdf' };
+      const rab = { id: 'rab-id', fileName: 'rab.xlsx', filePath: 'documents/rab.xlsx' };
+      vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+        { id: 'indicator-1', pics: [], proposalDocumentId: tor.id, rabDocumentId: rab.id,
+          proposalDocument: tor, rabDocument: rab },
+        { id: 'indicator-2', pics: [] },
+      ] } as any]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      expect(result.items[0].indicators[0]).toMatchObject({
+        proposalDocumentId: 'tor-id', rabDocumentId: 'rab-id',
+        proposalDocument: { ...tor, filePath: 'https://files.example/documents/tor.pdf' },
+        rabDocument: { ...rab, filePath: 'https://files.example/documents/rab.xlsx' },
+        proposalURL: 'https://files.example/documents/tor.pdf',
+        rabURL: 'https://files.example/documents/rab.xlsx',
+      });
+      expect(result.items[0].indicators[1]).toMatchObject({
+        proposalDocumentId: null, rabDocumentId: null, proposalDocument: null,
+        rabDocument: null, proposalURL: null, rabURL: null,
+      });
     });
 
     it('should apply search filter', async () => {

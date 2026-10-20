@@ -21,6 +21,7 @@ import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
+import { STORAGE_SERVICE, IStorageService } from '@common/storage';
 import { UnitService } from '../../unit/services/unit.service';
 import { IkuService } from '../../iku/services/iku.service';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
@@ -39,6 +40,7 @@ export class ProgramService {
     private readonly unitService: UnitService,
     private readonly ikuService: IkuService,
     private readonly authIntegrationService: AuthIntegrationService,
+    @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 
   /**
@@ -116,7 +118,7 @@ export class ProgramService {
         include: {
           indicators: {
             ...(where.indicators?.some ? { where: where.indicators.some } : {}),
-            include: { pics: true },
+            include: { pics: true, proposalDocument: true, rabDocument: true },
           },
         },
       }),
@@ -169,6 +171,14 @@ export class ProgramService {
     for (const program of items) {
       for (const indicator of program.indicators) {
         indicator.unit = units.get(indicator.unitId) ?? null;
+        for (const key of ['proposalDocument', 'rabDocument'] as const) {
+          const document = indicator[key];
+          if (document) {
+            indicator[key] = { ...document, filePath: this.storageService.getUrl(document.filePath) };
+          }
+        }
+        indicator.proposalURL = indicator.proposalDocument?.filePath ?? null;
+        indicator.rabURL = indicator.rabDocument?.filePath ?? null;
         indicator.pics = (indicator.picIds ?? []).map(id => ({ id, name: names.get(id) ?? id }));
       }
     }
