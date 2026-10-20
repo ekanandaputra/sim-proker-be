@@ -23,6 +23,7 @@ import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
 import { UnitService } from '../../unit/services/unit.service';
 import { IkuService } from '../../iku/services/iku.service';
+import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -37,6 +38,7 @@ export class ProgramService {
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
     private readonly ikuService: IkuService,
+    private readonly authIntegrationService: AuthIntegrationService,
   ) {}
 
   /**
@@ -111,6 +113,7 @@ export class ProgramService {
         take,
         where,
         orderBy: orderBy as Prisma.ProgramOrderByWithRelationInput,
+        include: { indicators: { include: { pics: true } } },
       }),
       this.programRepository.count(where),
     ]);
@@ -118,6 +121,37 @@ export class ProgramService {
     const items = ProgramMapper.toResponseList(
       programs as Array<typeof programs[0] & { category?: { name: string } | null }>,
     );
+
+    const unresolvedIds = new Set(items.flatMap(program =>
+      program.indicators.flatMap(indicator => indicator.picIds ?? []),
+    ));
+    const names = new Map<string, string>();
+    if (unresolvedIds.size > 0) {
+      try {
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const response = await this.authIntegrationService.getAllUsers(token, {
+            page, limit: 100, sortOrder: 'desc',
+          });
+          for (const user of response.items) {
+            if (unresolvedIds.has(user.id)) {
+              names.set(user.id, user.name || user.id);
+              unresolvedIds.delete(user.id);
+            }
+          }
+          totalPages = response.pagination.totalPages;
+          page++;
+        } while (page <= totalPages && unresolvedIds.size > 0);
+      } catch (e) {
+        this.logger.warn(`Failed to fetch PIC names: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      }
+    }
+    for (const program of items) {
+      for (const indicator of program.indicators) {
+        indicator.pics = (indicator.picIds ?? []).map(id => ({ id, name: names.get(id) ?? id }));
+      }
+    }
 
     return buildPaginatedResponse(items, totalItems, query);
   }

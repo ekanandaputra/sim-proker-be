@@ -9,6 +9,7 @@ describe('ProgramService', () => {
   let service: ProgramService;
   let repository: IProgramRepository;
   let auditLogService: any;
+  let authIntegrationService: { getAllUsers: ReturnType<typeof vi.fn> };
 
   const mockProgram = {
     id: 'test-uuid-1',
@@ -51,7 +52,8 @@ describe('ProgramService', () => {
       }
     };
 
-    service = new ProgramService(repository, auditLogService, prismaService as any);
+    authIntegrationService = { getAllUsers: vi.fn() };
+    service = new ProgramService(repository, auditLogService, prismaService as any, {} as any, {} as any, authIntegrationService as any);
   });
 
   const mockAdminUser = {
@@ -82,6 +84,41 @@ describe('ProgramService', () => {
       expect(result.pagination.totalItems).toBe(1);
       expect(result.pagination.page).toBe(1);
       expect(repository.findAll).toHaveBeenCalledOnce();
+    });
+
+    it('includes PIC names across user pages and preserves unassigned indicators', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+        { id: 'indicator-1', pics: [{ userId: 'user-1' }, { userId: 'user-2' }] },
+        { id: 'indicator-2', pics: [] },
+      ] } as any]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+      authIntegrationService.getAllUsers
+        .mockResolvedValueOnce({ items: [{ id: 'user-1', name: 'Budi' }], pagination: { totalPages: 2 } })
+        .mockResolvedValueOnce({ items: [{ id: 'user-2', name: 'Siti' }], pagination: { totalPages: 2 } });
+
+      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser, 'Bearer token');
+
+      expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
+        include: { indicators: { include: { pics: true } } },
+      }));
+      expect(result.items[0].indicators[0].picIds).toEqual(['user-1', 'user-2']);
+      expect(result.items[0].indicators[0].pics).toEqual([
+        { id: 'user-1', name: 'Budi' }, { id: 'user-2', name: 'Siti' },
+      ]);
+      expect(result.items[0].indicators[1].pics).toEqual([]);
+      expect(authIntegrationService.getAllUsers).toHaveBeenLastCalledWith('Bearer token', {
+        page: 2, limit: 100, sortOrder: 'desc',
+      });
+    });
+
+    it('preserves PIC IDs when the user service is unavailable', async () => {
+      vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+        { id: 'indicator-1', pics: [{ userId: 'user-1' }] },
+      ] } as any]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+      authIntegrationService.getAllUsers.mockRejectedValue(new Error('Unavailable'));
+      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      expect(result.items[0].indicators[0].pics).toEqual([{ id: 'user-1', name: 'user-1' }]);
     });
 
     it('should filter programs by user unitId for non-admin', async () => {

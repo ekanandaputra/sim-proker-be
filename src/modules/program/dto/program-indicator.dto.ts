@@ -157,6 +157,14 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ nullable: true, example: 40, type: Number }) targetQ4!: any;
   @ApiProperty({ nullable: true, example: 15000000.00, type: Number }) budget?: any;
   @ApiProperty({ description: 'Array of PIC User UUIDs', type: [String], required: false }) picIds?: string[];
+  @ApiPropertyOptional({
+    description: 'PIC users with display names (program list). Falls back to the user UUID when unavailable.',
+    example: [{ id: '550e8400-e29b-41d4-a716-446655440003', name: 'Budi Santoso' }],
+    type: 'array',
+    items: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
+  })
+  pics?: { id: string; name: string }[];
+
   @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.DRAFT }) status!: ProgramStatus;
   @ApiProperty({ example: 1 }) order!: number;
 
