@@ -220,6 +220,14 @@ export class UnitProgramIndicatorDto {
   })
   picIds!: string[];
 
+  @ApiProperty({
+    description: 'PIC users with display names; falls back to the user ID when unavailable',
+    type: 'array',
+    items: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
+    example: [{ id: 'uuid-user-1', name: 'Budi' }],
+  })
+  pics!: { id: string; name: string }[];
+
   @ApiProperty({ type: [UnitProgramIndicatorRealizationDto] })
   realizations!: UnitProgramIndicatorRealizationDto[];
 }

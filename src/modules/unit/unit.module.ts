@@ -5,8 +5,10 @@ import { UnitService } from './services/unit.service';
 import { PrismaModule } from '@database/prisma/prisma.module';
 import { IkuIntegrationModule } from '../external/iku-integration/iku-integration.module';
 
+import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
+
 @Module({
-  imports: [HttpModule, PrismaModule, IkuIntegrationModule],
+  imports: [HttpModule, PrismaModule, IkuIntegrationModule, AuthIntegrationModule],
   controllers: [UnitController],
   providers: [UnitService],
   exports: [UnitService],

@@ -183,6 +183,7 @@ export class UnitController {
               status: 'SUBMITTED',
               order: 1,
               picIds: ['uuid-user-pic-1', 'uuid-user-pic-2'],
+              pics: [{ id: 'uuid-user-pic-1', name: 'Budi' }, { id: 'uuid-user-pic-2', name: 'Siti' }],
               realizations: [
                 { id: 'uuid-real-1', month: 1, realization: 1, remark: 'Selesai tepat waktu' },
                 { id: 'uuid-real-2', month: 2, realization: 2, remark: null },
@@ -194,9 +195,9 @@ export class UnitController {
     },
   })
   @Get(':id/programs')
-  async getUnitPrograms(@Param('id') id: string, @Query('year') year?: string) {
+  async getUnitPrograms(@Param('id') id: string, @Req() req: Request, @Query('year') year?: string) {
     const filterYear = year ? Number(year) : new Date().getFullYear();
-    return this.unitService.getUnitPrograms(id, filterYear);
+    return this.unitService.getUnitPrograms(id, filterYear, req.headers.authorization as string);
   }
 
 }

@@ -5,6 +5,7 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { getAppConfig } from '@common/config';
 import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto } from '../dto/unit.dto';
 import { PaginatedResponse, PaginationMeta } from '@common/dto/pagination.dto';
+import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
 @Injectable()
 export class UnitService {
@@ -15,6 +16,7 @@ export class UnitService {
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    private readonly authIntegrationService: AuthIntegrationService,
   ) { }
 
   async getUnits(token: string, query?: any): Promise<PaginatedResponse<any>> {
@@ -256,7 +258,7 @@ export class UnitService {
     };
   }
 
-  async getUnitPrograms(unitId: string, year: number) {
+  async getUnitPrograms(unitId: string, year: number, token?: string) {
     const indicators = await this.prisma.programIndicator.findMany({
       where: {
         unitId: unitId,
@@ -274,6 +276,30 @@ export class UnitService {
       },
       orderBy: { order: 'asc' }
     });
+
+    const unresolvedIds = new Set(indicators.flatMap(indicator => indicator.pics.map(pic => pic.userId)));
+    const picNames = new Map<string, string>();
+    if (unresolvedIds.size > 0) {
+      try {
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const response = await this.authIntegrationService.getAllUsers(token, {
+            page, limit: 100, sortOrder: 'desc',
+          });
+          for (const user of response.items) {
+            if (unresolvedIds.has(user.id)) {
+              picNames.set(user.id, user.name || user.id);
+              unresolvedIds.delete(user.id);
+            }
+          }
+          totalPages = response.pagination.totalPages;
+          page++;
+        } while (page <= totalPages && unresolvedIds.size > 0);
+      } catch (e) {
+        this.logger.warn(`Failed to fetch PIC names: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      }
+    }
 
     const programMap = new Map<string, any>();
 
@@ -313,6 +339,7 @@ export class UnitService {
         status: indicator.status,
         order: indicator.order,
         picIds: indicator.pics.map((p) => p.userId),
+        pics: indicator.pics.map((p) => ({ id: p.userId, name: picNames.get(p.userId) ?? p.userId })),
         realizations: indicator.realizations.map((r) => ({
           id: r.id,
           month: r.month,
