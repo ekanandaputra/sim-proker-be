@@ -153,7 +153,7 @@ export class ProgramService {
         let totalPages = 1;
         do {
           const response = await this.authIntegrationService.getAllUsers(token, {
-            page, limit: 100, sortOrder: 'desc',
+            page, limit: 1000, sortOrder: 'desc',
           });
           for (const user of response.items) {
             if (unresolvedIds.has(user.id)) {
