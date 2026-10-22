@@ -176,10 +176,11 @@ export class ProgramExportService {
 
     let currentRow = 8;
     for (const ind of indicators) {
-      // Ambil target kuartal terakhir yang terisi, termasuk nilai 0.
-      const targetTahunan = Number(
-        ind.targetQ4 ?? ind.targetQ3 ?? ind.targetQ2 ?? ind.targetQ1 ?? 0,
-      );
+      // Ambil target kuartal terakhir yang memiliki nilai bukan nol.
+      const targetTahunan =
+        [ind.targetQ4, ind.targetQ3, ind.targetQ2, ind.targetQ1]
+          .map(value => Number(value ?? 0))
+          .find(value => value !== 0) ?? 0;
 
       const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
@@ -369,10 +370,11 @@ export class ProgramExportService {
 
     let currentRow = 8;
     for (const ind of indicators) {
-      // Ambil target kuartal terakhir yang terisi, termasuk nilai 0.
-      const targetTahunan = Number(
-        ind.targetQ4 ?? ind.targetQ3 ?? ind.targetQ2 ?? ind.targetQ1 ?? 0,
-      );
+      // Ambil target kuartal terakhir yang memiliki nilai bukan nol.
+      const targetTahunan =
+        [ind.targetQ4, ind.targetQ3, ind.targetQ2, ind.targetQ1]
+          .map(value => Number(value ?? 0))
+          .find(value => value !== 0) ?? 0;
 
       const ikuId = ind.program.ikuId;
       const iku = ikuId ? ikuMap.get(ikuId) : undefined;
