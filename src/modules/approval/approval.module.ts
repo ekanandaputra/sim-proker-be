@@ -11,9 +11,10 @@ import { APPROVAL_REVIEWER_REPOSITORY } from './repositories/approval-reviewer.r
 import { UnitModule } from '../unit/unit.module';
 import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
 import { StorageModule } from '@common/storage';
+import { IkuModule } from '../iku/iku.module';
 
 @Module({
-  imports: [UnitModule, AuthIntegrationModule, StorageModule],
+  imports: [UnitModule, AuthIntegrationModule, StorageModule, IkuModule],
   controllers: [ApprovalController, ApprovalReviewerController],
   providers: [
     ApprovalService,

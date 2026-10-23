@@ -7,6 +7,7 @@ describe('ApprovalService', () => {
   let mockPrisma: any;
   let mockUnitService: any;
   let mockStorageService: any;
+  let mockIkuService: any;
 
   beforeEach(() => {
     mockPrisma = {
@@ -38,6 +39,8 @@ describe('ApprovalService', () => {
       getUrl: vi.fn().mockReturnValue(null),
     };
 
+    mockIkuService = { getAllIkus: vi.fn() };
+
     service = new ApprovalService(
       {} as any,
       mockPrisma as any,
@@ -45,10 +48,47 @@ describe('ApprovalService', () => {
       {} as any,
       {} as any,
       mockStorageService as any,
+      mockIkuService as any,
     );
   });
 
   describe('getSubmittedIndicators', () => {
+    it('resolves assigned UUIDs across IKU pages and preserves code assignments', async () => {
+      const ikuId = '550e8400-e29b-41d4-a716-446655440001';
+      mockPrisma.approvalReviewer.findMany.mockResolvedValue([
+        { ikuId }, { ikuId: 'IKU2.1' },
+      ]);
+      mockIkuService.getAllIkus
+        .mockResolvedValueOnce({ items: [], pagination: { totalPages: 2 } })
+        .mockResolvedValueOnce({ items: [{ id: ikuId, code: 'IKU1.1' }], pagination: { totalPages: 2 } });
+
+      await service.getSubmittedIndicators('mock-token', { page: 1, limit: 10 }, { userId: 'user-1' });
+
+      expect(mockIkuService.getAllIkus).toHaveBeenLastCalledWith('mock-token', { page: 2, limit: 1000 });
+      expect(mockPrisma.programIndicator.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: {
+          status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
+          program: { ikuId: { in: ['IKU2.1', 'IKU1.1'] } },
+        },
+        skip: 0,
+        take: 10,
+      }));
+    });
+
+    it('keeps the filter restricted when an assigned UUID cannot be resolved', async () => {
+      mockPrisma.approvalReviewer.findMany.mockResolvedValue([
+        { ikuId: '550e8400-e29b-41d4-a716-446655440001' },
+      ]);
+      mockIkuService.getAllIkus.mockResolvedValue({ items: [], pagination: { totalPages: 0 } });
+
+      await service.getSubmittedIndicators('mock-token', {}, { userId: 'user-1' });
+
+      expect(mockPrisma.programIndicator.count).toHaveBeenCalledWith({ where: {
+        status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
+        program: { ikuId: { in: [] } },
+      } });
+    });
+
     it('should query without unitId when not provided', async () => {
       mockPrisma.approvalReviewer.findMany.mockResolvedValue([{ ikuId: 'iku-1' }]);
 
