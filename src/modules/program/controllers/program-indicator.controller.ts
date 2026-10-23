@@ -64,10 +64,18 @@ export class ProgramIndicatorController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Update an indicator status' })
+  @ApiOperation({
+    operationId: 'updateProgramIndicatorStatus',
+    summary: 'Update status indikator',
+    description: 'Memperbarui status indikator pada program yang diberikan dan mencatat perubahan pada audit log. Field status wajib diisi dengan salah satu nilai enum pada schema.',
+  })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
-  @ApiBody({ type: UpdateProgramIndicatorStatusDto })
+  @ApiBody({ type: UpdateProgramIndicatorStatusDto, examples: {
+    submitted: { summary: 'Ubah menjadi SUBMITTED', value: { status: 'SUBMITTED' } },
+    approved: { summary: 'Ubah menjadi APPROVED', value: { status: 'APPROVED' } },
+    inProgress: { summary: 'Ubah menjadi IN_PROGRESS', value: { status: 'IN_PROGRESS' } },
+  } })
   @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid status' })
   @ApiResponse({ status: 404, description: 'Indicator not found in the program' })
@@ -75,9 +83,9 @@ export class ProgramIndicatorController {
     @Param('programId') programId: string,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateProgramIndicatorStatusSchema)) dto: UpdateProgramIndicatorStatusDto,
-    @Req() req: any
+    @CurrentUser() currentUser: JwtPayload,
   ) {
-    const user = { id: req.user?.id, name: req.user?.name };
+    const user = { id: currentUser.userId, name: currentUser.name };
     return this.indicatorService.updateStatus(programId, id, dto, user);
   }
 

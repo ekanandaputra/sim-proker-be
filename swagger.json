@@ -1069,7 +1069,8 @@
     },
     "/api/v1/programs/{programId}/indicators/{id}/status": {
       "patch": {
-        "operationId": "ProgramIndicatorController_updateStatus",
+        "description": "Memperbarui status indikator pada program yang diberikan dan mencatat perubahan pada audit log. Field status wajib diisi dengan salah satu nilai enum pada schema.",
+        "operationId": "updateProgramIndicatorStatus",
         "parameters": [
           {
             "name": "programId",
@@ -1096,6 +1097,26 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateProgramIndicatorStatusDto"
+              },
+              "examples": {
+                "submitted": {
+                  "summary": "Ubah menjadi SUBMITTED",
+                  "value": {
+                    "status": "SUBMITTED"
+                  }
+                },
+                "approved": {
+                  "summary": "Ubah menjadi APPROVED",
+                  "value": {
+                    "status": "APPROVED"
+                  }
+                },
+                "inProgress": {
+                  "summary": "Ubah menjadi IN_PROGRESS",
+                  "value": {
+                    "status": "IN_PROGRESS"
+                  }
+                }
               }
             }
           }
@@ -1123,7 +1144,7 @@
             "bearer": []
           }
         ],
-        "summary": "Update an indicator status",
+        "summary": "Update status indikator",
         "tags": [
           "Program Indicators"
         ]
