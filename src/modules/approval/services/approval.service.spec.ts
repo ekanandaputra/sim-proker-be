@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApprovalService } from './approval.service';
-import { ProgramStatus } from '@prisma/client';
+import { ApprovalLevel, ProgramStatus } from '@prisma/client';
 
 describe('ApprovalService', () => {
   let service: ApprovalService;
@@ -50,6 +50,55 @@ describe('ApprovalService', () => {
       mockStorageService as any,
       mockIkuService as any,
     );
+  });
+
+  describe('approve reviewer authorization', () => {
+    const ikuUuid = '550e8400-e29b-41d4-a716-446655440001';
+
+    async function approveWithAssignments(assignedIds: string[]) {
+      const reviewer = {
+        isAuthorizedReviewer: vi.fn(async (_userId, _level, ikuId) => assignedIds.includes(ikuId)),
+      };
+      const repository = { create: vi.fn().mockResolvedValue({ id: 'approval-1' }) };
+      mockPrisma.programIndicator.findUnique = vi.fn().mockResolvedValue({
+        id: 'ind-1', status: ProgramStatus.SUBMITTED, program: { ikuId: 'IKU1.3' },
+      });
+      mockPrisma.programIndicator.update = vi.fn().mockResolvedValue({});
+      mockIkuService.getAllIkus.mockResolvedValue({
+        items: [{ id: ikuUuid, code: 'IKU1.3' }], pagination: { totalPages: 1 },
+      });
+      const approvalService = new ApprovalService(
+        repository as any, mockPrisma, mockUnitService, reviewer as any,
+        {} as any, mockStorageService, mockIkuService,
+      );
+      return { reviewer, repository, approvalService };
+    }
+
+    it('accepts a UUID assignment for the program IKU code', async () => {
+      const { reviewer, approvalService } = await approveWithAssignments([ikuUuid]);
+      await approvalService.approve('ind-1', {}, 'user-1', 'Bearer token');
+      expect(mockIkuService.getAllIkus).toHaveBeenCalledWith('Bearer token', { page: 1, limit: 1000 });
+      expect(reviewer.isAuthorizedReviewer).toHaveBeenLastCalledWith(
+        'user-1', ApprovalLevel.INDICATOR_VERIFICATION, ikuUuid,
+      );
+      expect(mockPrisma.programIndicator.update).toHaveBeenCalledWith({
+        where: { id: 'ind-1' }, data: { status: ProgramStatus.INDICATOR_APPROVED },
+      });
+    });
+
+    it('continues to accept code assignments without fetching SIM IKU', async () => {
+      const { approvalService } = await approveWithAssignments(['IKU1.3']);
+      await approvalService.approve('ind-1', {}, 'user-1', 'Bearer token');
+      expect(mockIkuService.getAllIkus).not.toHaveBeenCalled();
+    });
+
+    it('rejects a reviewer assigned to another IKU without changing the indicator', async () => {
+      const { repository, approvalService } = await approveWithAssignments(['other-iku']);
+      await expect(approvalService.approve('ind-1', {}, 'user-1', 'Bearer token'))
+        .rejects.toThrow('is not authorized');
+      expect(repository.create).not.toHaveBeenCalled();
+      expect(mockPrisma.programIndicator.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('getSubmittedIndicators', () => {

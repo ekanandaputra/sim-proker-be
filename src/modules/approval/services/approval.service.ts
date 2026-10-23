@@ -76,7 +76,7 @@ export class ApprovalService {
   /**
    * Check if the user is authorized to review at the determined level.
    */
-  private async assertReviewerAuthorized(userId: string, level: ApprovalLevel, indicatorId: string): Promise<void> {
+  private async assertReviewerAuthorized(userId: string, level: ApprovalLevel, indicatorId: string, token?: string): Promise<void> {
     let ikuId: string | undefined;
 
     if (level === ApprovalLevel.INDICATOR_VERIFICATION) {
@@ -87,7 +87,21 @@ export class ApprovalService {
       ikuId = resolvedIkuId;
     }
 
-    const isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, ikuId);
+    let isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, ikuId);
+    // Reviewer assignments can contain UUIDs while programs store IKU codes.
+    if (!isAuthorized && level === ApprovalLevel.INDICATOR_VERIFICATION && ikuId) {
+      let page = 1;
+      while (true) {
+        const response = await this.ikuService.getAllIkus(token, { page, limit: 1000 });
+        const matchingIku = response.items.find(iku => iku.code === ikuId);
+        if (matchingIku) {
+          isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, matchingIku.id);
+          break;
+        }
+        if (page >= response.pagination.totalPages) break;
+        page++;
+      }
+    }
     if (!isAuthorized) {
       throw new ForbiddenException(
         `User ${userId} is not authorized as a ${level} reviewer${ikuId ? ` for IKU ${ikuId}` : ''}`
@@ -95,7 +109,7 @@ export class ApprovalService {
     }
   }
 
-  async approve(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+  async approve(indicatorId: string, dto: ApprovalActionDto, userId: string, token?: string): Promise<ApprovalResponseDto> {
     const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
     if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
@@ -110,7 +124,7 @@ export class ApprovalService {
     const level = this.determineLevel(indicator.status);
 
     // Check reviewer authorization
-    await this.assertReviewerAuthorized(userId, level, indicatorId);
+    await this.assertReviewerAuthorized(userId, level, indicatorId, token);
 
     // Determine new status based on level
     const newStatus = level === ApprovalLevel.INDICATOR_VERIFICATION
@@ -136,7 +150,7 @@ export class ApprovalService {
     return ApprovalMapper.toResponse(approval);
   }
 
-  async reject(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+  async reject(indicatorId: string, dto: ApprovalActionDto, userId: string, token?: string): Promise<ApprovalResponseDto> {
     const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
     if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
@@ -150,7 +164,7 @@ export class ApprovalService {
     const level = this.determineLevel(indicator.status);
 
     // Check reviewer authorization
-    await this.assertReviewerAuthorized(userId, level, indicatorId);
+    await this.assertReviewerAuthorized(userId, level, indicatorId, token);
 
     const approval = await this.approvalRepository.create({
       status: ApprovalStatus.REJECTED,
@@ -171,7 +185,7 @@ export class ApprovalService {
     return ApprovalMapper.toResponse(approval);
   }
 
-  async requestRevision(indicatorId: string, dto: ApprovalActionDto, userId: string): Promise<ApprovalResponseDto> {
+  async requestRevision(indicatorId: string, dto: ApprovalActionDto, userId: string, token?: string): Promise<ApprovalResponseDto> {
     const indicator = await this.prisma.programIndicator.findUnique({ where: { id: indicatorId } });
     if (!indicator) throw new EntityNotFoundException('ProgramIndicator', indicatorId);
 
@@ -185,7 +199,7 @@ export class ApprovalService {
     const level = this.determineLevel(indicator.status);
 
     // Check reviewer authorization
-    await this.assertReviewerAuthorized(userId, level, indicatorId);
+    await this.assertReviewerAuthorized(userId, level, indicatorId, token);
 
     const approval = await this.approvalRepository.create({
       status: ApprovalStatus.REVISION,

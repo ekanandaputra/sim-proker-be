@@ -133,8 +133,9 @@ export class ApprovalController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.approvalService.approve(id, dto, user.userId);
+    return this.approvalService.approve(id, dto, user.userId, req.headers.authorization);
   }
 
   @Post('indicators/:id/reject')
@@ -212,8 +213,9 @@ export class ApprovalController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.approvalService.reject(id, dto, user.userId);
+    return this.approvalService.reject(id, dto, user.userId, req.headers.authorization);
   }
 
   @Post('indicators/:id/revision')
@@ -292,8 +294,9 @@ export class ApprovalController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(approvalActionSchema)) dto: ApprovalActionDto,
     @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
   ) {
-    return this.approvalService.requestRevision(id, dto, user.userId);
+    return this.approvalService.requestRevision(id, dto, user.userId, req.headers.authorization);
   }
 
   @Get('indicators/revision')
