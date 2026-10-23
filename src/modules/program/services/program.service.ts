@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   PROGRAM_REPOSITORY,
@@ -202,7 +202,23 @@ export class ProgramService {
     dto: Omit<CreateProgramDto, 'indicators'> & Partial<Pick<CreateProgramDto, 'indicators'>>,
     userId: string,
     token?: string,
+    roles: string[] = [],
   ): Promise<ProgramResponseDto> {
+    if (!roles.includes('admin_sim_proker')) {
+      const errors = (dto.indicators ?? []).flatMap((indicator, index) => {
+        if (indicator.category !== 'PENGEMBANGAN' && indicator.category !== 'RUTIN') return [];
+        return (['proposalDocumentId', 'rabDocumentId'] as const)
+          .filter(field => !indicator[field])
+          .map(field => ({
+            field: `indicators.${index}.${field}`,
+            message: `${field === 'proposalDocumentId' ? 'Proposal' : 'RAB'} is required for ${indicator.category} indicators`,
+          }));
+      });
+      if (errors.length > 0) {
+        throw new BadRequestException({ isSuccess: false, message: 'Validation failed', errors });
+      }
+    }
+
     // Check for duplicate code
     const existing = await this.programRepository.findByCode(dto.code);
     if (existing) {

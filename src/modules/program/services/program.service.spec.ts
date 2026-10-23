@@ -255,6 +255,32 @@ describe('ProgramService', () => {
   });
 
   describe('create', () => {
+    it.each(['RUTIN', 'PENGEMBANGAN'] as const)('requires both documents for ordinary users creating %s', async category => {
+      const indicator = { category, name: 'Indicator', unitId: 'unit-1', masterUnitTypeId: 'type-1' };
+      for (const documents of [{}, { proposalDocumentId: 'proposal-1' }, { rabDocumentId: 'rab-1' }]) {
+        await expect(service.create({
+          code: 'PRG-TEST', title: 'Test', year: 2026, indicators: [{ ...indicator, ...documents }],
+        }, 'user-1', undefined, ['PIC'])).rejects.toThrow('Validation failed');
+      }
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['RUTIN', ['PIC'], { proposalDocumentId: 'proposal-1', rabDocumentId: 'rab-1' }],
+      ['PENGEMBANGAN', ['PIC'], { proposalDocumentId: 'proposal-1', rabDocumentId: 'rab-1' }],
+      ['RUTIN', ['admin_sim_proker'], {}],
+      ['PENGEMBANGAN', ['admin_sim_proker', 'PIC'], {}],
+      ['TUSI', ['PIC'], {}],
+    ] as const)('allows %s with roles %s and appropriate documents', async (category, roles, documents) => {
+      vi.mocked(repository.findByCode).mockResolvedValue(null);
+      vi.mocked(repository.create).mockResolvedValue(mockProgram);
+      await service.create({
+        code: 'PRG-TEST', title: 'Test', year: 2026,
+        indicators: [{ category, name: 'Indicator', unitId: 'unit-1', masterUnitTypeId: 'type-1', ...documents }],
+      }, 'user-1', undefined, [...roles]);
+      expect(repository.create).toHaveBeenCalledOnce();
+    });
+
     it('should create a program successfully', async () => {
       vi.mocked(repository.findByCode).mockResolvedValue(null);
       vi.mocked(repository.create).mockResolvedValue(mockProgram);

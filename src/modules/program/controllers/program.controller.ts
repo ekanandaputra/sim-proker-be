@@ -283,6 +283,8 @@ export class ProgramController {
       '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. Backend akan mengonversinya dan menyimpan **kode IKU** (mis. `IKU1.1`). Kode IKU juga diterima langsung.\n' +
       '- `indicators` wajib diisi minimal satu indikator dan dapat berisi lebih dari satu indikator. ' +
       'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
+      '- Untuk kategori PENGEMBANGAN dan RUTIN, `proposalDocumentId` dan `rabDocumentId` wajib diisi, kecuali pengguna memiliki role `admin_sim_proker`.\n' +
+      '- Upload file terlebih dahulu melalui `POST /api/v1/documents/upload` (multipart/form-data: `file` dan `type` = `PROPOSAL` atau `RAB`). Gunakan `id` pada respons upload sebagai `proposalDocumentId` atau `rabDocumentId` di masing-masing indikator. Endpoint create program menerima JSON.\n' +
       '- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.',
   })
   @ApiBody({
@@ -302,7 +304,9 @@ export class ProgramController {
               unitId: '550e8400-e29b-41d4-a716-446655440001',
               name: 'Jumlah Dokumen Laporan',
               masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440010',
-              category: 'TUSI',
+              category: 'PENGEMBANGAN',
+              proposalDocumentId: '550e8400-e29b-41d4-a716-446655440004',
+              rabDocumentId: '550e8400-e29b-41d4-a716-446655440005',
               targetQ1: 10,
               targetQ2: 20,
               targetQ3: 30,
@@ -322,12 +326,18 @@ export class ProgramController {
         },
       },
       programOnly: {
-        summary: 'Program tanpa indikator',
+        summary: 'Program TUSI dengan dokumen opsional',
         value: {
           code: 'PRG-2026-002',
           ikuId: '69391cba-5eeb-4218-80fd-596e2c096171',
           title: 'Program Pengabdian Masyarakat',
           year: 2026,
+          indicators: [{
+            unitId: '550e8400-e29b-41d4-a716-446655440001',
+            name: 'Jumlah Dokumen Laporan',
+            masterUnitTypeId: '550e8400-e29b-41d4-a716-446655440010',
+            category: 'TUSI',
+          }],
         },
       },
     },
@@ -340,7 +350,7 @@ export class ProgramController {
     @CurrentUser() user: JwtPayload,
     @Req() req: Request,
   ) {
-    return this.programService.create(dto, user.userId, req.headers.authorization as string);
+    return this.programService.create(dto, user.userId, req.headers.authorization as string, user.roles);
   }
 
   @Patch(':id')
