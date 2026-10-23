@@ -1,5 +1,4 @@
 import { BadRequestException } from '@nestjs/common';
-import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { describe, it, expect, vi } from 'vitest';
 import { ProgramIndicatorService } from './program-indicator.service';
 import { ProgramStatus } from '@prisma/client';
@@ -28,7 +27,7 @@ describe('ProgramIndicatorService.setTarget PICs', () => {
     };
     const audit = { log: vi.fn() };
     const service = new ProgramIndicatorService(prisma as any, {} as any, audit as any, {} as any, {} as any);
-    const dto = setIndicatorTargetSchema.parse({ targetQ1: 10, picIds: input });
+    const dto = setIndicatorTargetSchema.parse({ targetQ1: 10, picIds: input, propsal: picIds[0], rab: picIds[1] });
 
     const result = await service.setTarget('program', 'indicator', dto, { id: 'user', name: 'User' });
 
@@ -37,8 +36,8 @@ describe('ProgramIndicatorService.setTarget PICs', () => {
       data: {
         targetQ1: 10,
         pics: expected,
-        proposalDocumentId: undefined,
-        rabDocumentId: undefined,
+        proposalDocumentId: picIds[0],
+        rabDocumentId: picIds[1],
         status: 'SUBMITTED',
       },
       include: { pics: true, proposalDocument: true, rabDocument: true },
@@ -103,38 +102,48 @@ describe('ProgramIndicatorService.updateStatus', () => {
   });
 });
 
-describe('set-target submission document validation', () => {
-  const documents = { propsal: picIds[0], rab: picIds[1] };
-  it.each([
-    {}, { rab: picIds[1] }, { propsal: picIds[0] },
-    { ...documents, propsal: null }, { ...documents, rab: null },
-    { ...documents, propsal: '' }, { ...documents, rab: '' },
-  ])('rejects incomplete documents: %j', input => {
-    expect(submitIndicatorTargetSchema.safeParse(input).success).toBe(false);
+describe('set-target category document requirements', () => {
+  function setup(category: string) {
+    const indicator = { id: 'indicator', category, status: 'ASSIGNED_TO_UNIT', pics: [] };
+    const prisma = { programIndicator: {
+      findFirst: vi.fn().mockResolvedValue(indicator),
+      update: vi.fn().mockResolvedValue(indicator),
+    } };
+    const audit = { log: vi.fn() };
+    const service = new ProgramIndicatorService(prisma as any, {} as any, audit as any, {} as any, {} as any);
+    return { service, prisma, audit };
+  }
+  it.each(['RUTIN', 'PENGEMBANGAN'])('requires both documents for %s', async category => {
+    const { service, prisma, audit } = setup(category);
+    for (const value of [undefined, null, '', '   ']) {
+      const dto = submitIndicatorTargetSchema.parse({ propsal: value, rab: value });
+      let response: unknown;
+      try { await service.setTarget('program', 'indicator', dto, { id: 'user', name: 'User' }); }
+      catch (error) { response = (error as BadRequestException).getResponse(); }
+      expect(response).toEqual({
+        isSuccess: false,
+        message: 'Dokumen proposal wajib dilampirkan. Dokumen RAB wajib dilampirkan.',
+        errors: [
+          { field: 'propsal', message: 'Dokumen proposal wajib dilampirkan.' },
+          { field: 'rab', message: 'Dokumen RAB wajib dilampirkan.' },
+        ],
+      });
+    }
+    for (const dto of [{ rab: picIds[1] }, { propsal: picIds[0] }]) {
+      await expect(service.setTarget('program', 'indicator', dto, { id: 'user', name: 'User' })).rejects.toThrow();
+    }
+    expect(prisma.programIndicator.update).not.toHaveBeenCalled();
+    expect(audit.log).not.toHaveBeenCalled();
+    await service.setTarget('program', 'indicator', { propsal: picIds[0], rab: picIds[1] }, { id: 'user', name: 'User' });
+    expect(prisma.programIndicator.update).toHaveBeenCalledOnce();
   });
-  it('accepts both proposal and RAB UUIDs', () => {
-    expect(submitIndicatorTargetSchema.safeParse(documents).success).toBe(true);
+  it('allows TUSI without either document', async () => {
+    const { service, prisma } = setup('TUSI');
+    await service.setTarget('program', 'indicator', submitIndicatorTargetSchema.parse({}), { id: 'user', name: 'User' });
+    expect(prisma.programIndicator.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED' }) }));
   });
-});
-
-describe('set-target errors for frontend', () => {
-  it.each([undefined, null, '', '   '])('returns consistent required errors for %j', value => {
-    const pipe = new ZodValidationPipe(submitIndicatorTargetSchema, true);
-    let response: unknown;
-    try { pipe.transform({ propsal: value, rab: value }); }
-    catch (error) { response = (error as BadRequestException).getResponse(); }
-    expect(response).toEqual({
-      isSuccess: false,
-      message: 'Dokumen proposal wajib dilampirkan. Dokumen RAB wajib dilampirkan.',
-      errors: [
-        { field: 'propsal', message: 'Dokumen proposal wajib dilampirkan.' },
-        { field: 'rab', message: 'Dokumen RAB wajib dilampirkan.' },
-      ],
-    });
-  });
-
-  it.each(['invalid', 123, {}])('identifies an invalid proposal ID: %j', propsal => {
-    const result = submitIndicatorTargetSchema.safeParse({ propsal, rab: picIds[1] });
+  it.each(['invalid', 123, {}])('rejects an invalid provided document ID: %j', propsal => {
+    const result = submitIndicatorTargetSchema.safeParse({ propsal });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues).toEqual([
       expect.objectContaining({ path: ['propsal'], message: 'ID dokumen proposal tidak valid. Silakan unggah ulang dokumen.' }),

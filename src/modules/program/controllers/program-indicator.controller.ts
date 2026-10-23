@@ -103,7 +103,7 @@ export class ProgramIndicatorController {
   }
 
   @Post(':id/set-target')
-  @ApiOperation({ summary: 'Set indicator targets', description: 'Proposal (`propsal`) and RAB (`rab`) document UUIDs are required. Upload both files through POST /documents/upload before submitting.' })
+  @ApiOperation({ summary: 'Set indicator targets', description: 'Proposal (`propsal`) dan RAB (`rab`) wajib untuk kategori RUTIN dan PENGEMBANGAN, opsional untuk TUSI. Upload both files through POST /documents/upload before submitting.' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
   @ApiBody({ type: SubmitIndicatorTargetDto })

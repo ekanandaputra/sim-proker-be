@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException, BusinessException } from '@common/exceptions';
 import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, UpdateProgramIndicatorStatusDto, SetIndicatorTargetDto } from '../dto/program-indicator.dto';
@@ -268,6 +268,17 @@ export class ProgramIndicatorService {
     });
     if (!indicator) {
       throw new EntityNotFoundException('ProgramIndicator', id);
+    }
+
+    if (indicator.category === 'RUTIN' || indicator.category === 'PENGEMBANGAN') {
+      const errors = ([['propsal', 'proposal'], ['rab', 'RAB']] as const)
+        .filter(([field]) => !dto[field]?.trim())
+        .map(([field, label]) => ({ field, message: `Dokumen ${label} wajib dilampirkan.` }));
+      if (errors.length > 0) {
+        throw new BadRequestException({
+          isSuccess: false, message: errors.map(error => error.message).join(' '), errors,
+        });
+      }
     }
 
     // Ubah status ke IN_PROGRESS jika sebelumnya ASSIGNED_TO_UNIT

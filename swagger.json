@@ -1152,7 +1152,7 @@
     },
     "/api/v1/programs/{programId}/indicators/{id}/set-target": {
       "post": {
-        "description": "Proposal (`propsal`) and RAB (`rab`) document UUIDs are required. Upload both files through POST /documents/upload before submitting.",
+        "description": "Proposal (`propsal`) dan RAB (`rab`) wajib untuk kategori RUTIN dan PENGEMBANGAN, opsional untuk TUSI. Upload both files through POST /documents/upload before submitting.",
         "operationId": "ProgramIndicatorController_setTarget",
         "parameters": [
           {
@@ -7707,24 +7707,20 @@
             }
           },
           "propsal": {
-            "type": "string",
+            "type": "object",
             "example": "3f5b85cb-a0db-4c5a-a465-f69b57e91a98",
-            "description": "Required proposal document UUID from POST /documents/upload (field name: propsal)",
-            "nullable": false,
+            "description": "Proposal document UUID. Wajib untuk RUTIN dan PENGEMBANGAN; opsional untuk TUSI (field: propsal)",
+            "nullable": true,
             "format": "uuid"
           },
           "rab": {
-            "type": "string",
+            "type": "object",
             "example": "1d5a827c-18b5-4dcc-af1b-a071adb0e048",
-            "description": "Required RAB document UUID from POST /documents/upload",
-            "nullable": false,
+            "description": "RAB document UUID. Wajib untuk RUTIN dan PENGEMBANGAN; opsional untuk TUSI",
+            "nullable": true,
             "format": "uuid"
           }
-        },
-        "required": [
-          "propsal",
-          "rab"
-        ]
+        }
       },
       "ProgramIndicatorRealizationResponseDto": {
         "type": "object",

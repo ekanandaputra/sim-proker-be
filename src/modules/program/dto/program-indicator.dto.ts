@@ -231,13 +231,13 @@ export class SetIndicatorTargetDto {
   rab?: string | null;
 }
 
-// Submission requires both documents; revision continues to use SetIndicatorTargetDto.
+// Required documents depend on the stored indicator category (validated in the service).
 const requiredSubmissionDocument = (label: string) => z.preprocess(
   value => value === null || (typeof value === 'string' && value.trim() === '') ? undefined : value,
   z.string({
     required_error: `Dokumen ${label} wajib dilampirkan.`,
     invalid_type_error: `ID dokumen ${label} tidak valid. Silakan unggah ulang dokumen.`,
-  }).trim().uuid(`ID dokumen ${label} tidak valid. Silakan unggah ulang dokumen.`),
+  }).trim().uuid(`ID dokumen ${label} tidak valid. Silakan unggah ulang dokumen.`).optional(),
 );
 
 export const submitIndicatorTargetSchema = setIndicatorTargetSchema.extend({
@@ -246,9 +246,9 @@ export const submitIndicatorTargetSchema = setIndicatorTargetSchema.extend({
 });
 
 export class SubmitIndicatorTargetDto extends SetIndicatorTargetDto {
-  @ApiProperty({ required: true, nullable: false, format: 'uuid', example: '3f5b85cb-a0db-4c5a-a465-f69b57e91a98', description: 'Required proposal document UUID from POST /documents/upload (field name: propsal)' })
-  declare propsal: string;
+  @ApiPropertyOptional({ nullable: true, format: 'uuid', example: '3f5b85cb-a0db-4c5a-a465-f69b57e91a98', description: 'Proposal document UUID. Wajib untuk RUTIN dan PENGEMBANGAN; opsional untuk TUSI (field: propsal)' })
+  declare propsal?: string | null;
 
-  @ApiProperty({ required: true, nullable: false, format: 'uuid', example: '1d5a827c-18b5-4dcc-af1b-a071adb0e048', description: 'Required RAB document UUID from POST /documents/upload' })
-  declare rab: string;
+  @ApiPropertyOptional({ nullable: true, format: 'uuid', example: '1d5a827c-18b5-4dcc-af1b-a071adb0e048', description: 'RAB document UUID. Wajib untuk RUTIN dan PENGEMBANGAN; opsional untuk TUSI' })
+  declare rab?: string | null;
 }
