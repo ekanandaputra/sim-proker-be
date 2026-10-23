@@ -1,8 +1,10 @@
+import { BadRequestException } from '@nestjs/common';
+import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { describe, it, expect, vi } from 'vitest';
 import { ProgramIndicatorService } from './program-indicator.service';
 import { ProgramStatus } from '@prisma/client';
 import { EntityNotFoundException } from '@common/exceptions';
-import { setIndicatorTargetSchema, updateProgramIndicatorStatusSchema } from '../dto/program-indicator.dto';
+import { submitIndicatorTargetSchema, setIndicatorTargetSchema, updateProgramIndicatorStatusSchema } from '../dto/program-indicator.dto';
 
 const picIds = [
   '550e8400-e29b-41d4-a716-446655440003',
@@ -98,5 +100,44 @@ describe('ProgramIndicatorService.updateStatus', () => {
     for (const body of [{}, { status: null }, { status: 'INVALID' }]) {
       expect(updateProgramIndicatorStatusSchema.safeParse(body).success).toBe(false);
     }
+  });
+});
+
+describe('set-target submission document validation', () => {
+  const documents = { propsal: picIds[0], rab: picIds[1] };
+  it.each([
+    {}, { rab: picIds[1] }, { propsal: picIds[0] },
+    { ...documents, propsal: null }, { ...documents, rab: null },
+    { ...documents, propsal: '' }, { ...documents, rab: '' },
+  ])('rejects incomplete documents: %j', input => {
+    expect(submitIndicatorTargetSchema.safeParse(input).success).toBe(false);
+  });
+  it('accepts both proposal and RAB UUIDs', () => {
+    expect(submitIndicatorTargetSchema.safeParse(documents).success).toBe(true);
+  });
+});
+
+describe('set-target errors for frontend', () => {
+  it.each([undefined, null, '', '   '])('returns consistent required errors for %j', value => {
+    const pipe = new ZodValidationPipe(submitIndicatorTargetSchema, true);
+    let response: unknown;
+    try { pipe.transform({ propsal: value, rab: value }); }
+    catch (error) { response = (error as BadRequestException).getResponse(); }
+    expect(response).toEqual({
+      isSuccess: false,
+      message: 'Dokumen proposal wajib dilampirkan. Dokumen RAB wajib dilampirkan.',
+      errors: [
+        { field: 'propsal', message: 'Dokumen proposal wajib dilampirkan.' },
+        { field: 'rab', message: 'Dokumen RAB wajib dilampirkan.' },
+      ],
+    });
+  });
+
+  it.each(['invalid', 123, {}])('identifies an invalid proposal ID: %j', propsal => {
+    const result = submitIndicatorTargetSchema.safeParse({ propsal, rab: picIds[1] });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues).toEqual([
+      expect.objectContaining({ path: ['propsal'], message: 'ID dokumen proposal tidak valid. Silakan unggah ulang dokumen.' }),
+    ]);
   });
 });

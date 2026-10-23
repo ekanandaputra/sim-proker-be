@@ -1131,6 +1131,7 @@
     },
     "/api/v1/programs/{programId}/indicators/{id}/set-target": {
       "post": {
+        "description": "Proposal (`propsal`) and RAB (`rab`) document UUIDs are required. Upload both files through POST /documents/upload before submitting.",
         "operationId": "ProgramIndicatorController_setTarget",
         "parameters": [
           {
@@ -1157,7 +1158,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetIndicatorTargetDto"
+                "$ref": "#/components/schemas/SubmitIndicatorTargetDto"
               }
             }
           }
@@ -1172,6 +1173,29 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Validasi gagal. Gunakan message untuk notifikasi dan errors untuk pesan per field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "isSuccess": false,
+                    "message": "Dokumen proposal wajib dilampirkan. Dokumen RAB wajib dilampirkan.",
+                    "errors": [
+                      {
+                        "field": "propsal",
+                        "message": "Dokumen proposal wajib dilampirkan."
+                      },
+                      {
+                        "field": "rab",
+                        "message": "Dokumen RAB wajib dilampirkan."
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1179,7 +1203,7 @@
             "bearer": []
           }
         ],
-        "summary": "Set targets for an indicator and upgrade status to IN_PROGRESS",
+        "summary": "Set indicator targets",
         "tags": [
           "Program Indicators"
         ]
@@ -7616,7 +7640,7 @@
           "status"
         ]
       },
-      "SetIndicatorTargetDto": {
+      "SubmitIndicatorTargetDto": {
         "type": "object",
         "properties": {
           "targetQ1": {
@@ -7662,18 +7686,24 @@
             }
           },
           "propsal": {
-            "type": "object",
+            "type": "string",
             "example": "3f5b85cb-a0db-4c5a-a465-f69b57e91a98",
-            "description": "Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.",
-            "nullable": true
+            "description": "Required proposal document UUID from POST /documents/upload (field name: propsal)",
+            "nullable": false,
+            "format": "uuid"
           },
           "rab": {
-            "type": "object",
+            "type": "string",
             "example": "1d5a827c-18b5-4dcc-af1b-a071adb0e048",
-            "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
-            "nullable": true
+            "description": "Required RAB document UUID from POST /documents/upload",
+            "nullable": false,
+            "format": "uuid"
           }
-        }
+        },
+        "required": [
+          "propsal",
+          "rab"
+        ]
       },
       "ProgramIndicatorRealizationResponseDto": {
         "type": "object",
@@ -9454,6 +9484,65 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "SetIndicatorTargetDto": {
+        "type": "object",
+        "properties": {
+          "targetQ1": {
+            "type": "object",
+            "example": 10,
+            "description": "Target for Q1"
+          },
+          "targetQ2": {
+            "type": "object",
+            "example": 20,
+            "description": "Target for Q2"
+          },
+          "targetQ3": {
+            "type": "object",
+            "example": 30,
+            "description": "Target for Q3"
+          },
+          "targetQ4": {
+            "type": "object",
+            "example": 40,
+            "description": "Target for Q4"
+          },
+          "budget": {
+            "example": 15000000,
+            "description": "Budget allocated for this indicator",
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "picIds": {
+            "description": "PIC User UUIDs. Replaces existing PICs; pass [] or omit to remove all PICs.",
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440003"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propsal": {
+            "type": "object",
+            "example": "3f5b85cb-a0db-4c5a-a465-f69b57e91a98",
+            "description": "Document UUID (from POST /documents/upload) to set as the proposal document. Pass null to remove it.",
+            "nullable": true
+          },
+          "rab": {
+            "type": "object",
+            "example": "1d5a827c-18b5-4dcc-af1b-a071adb0e048",
+            "description": "Document UUID (from POST /documents/upload) to set as the RAB (budget plan) document. Pass null to remove it.",
+            "nullable": true
+          }
+        }
       },
       "CreateApprovalReviewerDto": {
         "type": "object",

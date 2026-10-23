@@ -8,7 +8,10 @@ import { ZodSchema, ZodError } from 'zod';
  */
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  constructor(private readonly schema: ZodSchema) {}
+  constructor(
+    private readonly schema: ZodSchema,
+    private readonly useFieldMessages = false,
+  ) {}
 
   transform(value: unknown) {
     const result = this.schema.safeParse(value);
@@ -17,7 +20,9 @@ export class ZodValidationPipe implements PipeTransform {
       const errors = this.formatErrors(result.error);
       throw new BadRequestException({
         isSuccess: false,
-        message: 'Validation failed',
+        message: this.useFieldMessages
+          ? [...new Set(errors.map(error => error.message))].join(' ')
+          : 'Validation failed',
         errors,
       });
     }

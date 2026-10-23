@@ -5,7 +5,7 @@ import { JwtAuthGuard, JwtPayload } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ProgramIndicatorService } from '../services/program-indicator.service';
-import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, UpdateProgramIndicatorStatusDto, updateProgramIndicatorStatusSchema, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SetIndicatorTargetDto, setIndicatorTargetSchema } from '../dto/program-indicator.dto';
+import { CreateProgramIndicatorDto, UpdateProgramIndicatorDto, UpdateProgramIndicatorStatusDto, updateProgramIndicatorStatusSchema, ProgramIndicatorResponseDto, createProgramIndicatorSchema, updateProgramIndicatorSchema, SubmitIndicatorTargetDto, submitIndicatorTargetSchema } from '../dto/program-indicator.dto';
 import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationResponseDto, programIndicatorRealizationSchema } from '../dto/program-indicator-realization.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
@@ -93,15 +93,25 @@ export class ProgramIndicatorController {
   }
 
   @Post(':id/set-target')
-  @ApiOperation({ summary: 'Set targets for an indicator and upgrade status to IN_PROGRESS' })
+  @ApiOperation({ summary: 'Set indicator targets', description: 'Proposal (`propsal`) and RAB (`rab`) document UUIDs are required. Upload both files through POST /documents/upload before submitting.' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
-  @ApiBody({ type: SetIndicatorTargetDto })
+  @ApiBody({ type: SubmitIndicatorTargetDto })
+  @ApiResponse({ status: 400, description: 'Validasi gagal. Gunakan message untuk notifikasi dan errors untuk pesan per field.', schema: {
+    example: {
+      isSuccess: false,
+      message: 'Dokumen proposal wajib dilampirkan. Dokumen RAB wajib dilampirkan.',
+      errors: [
+        { field: 'propsal', message: 'Dokumen proposal wajib dilampirkan.' },
+        { field: 'rab', message: 'Dokumen RAB wajib dilampirkan.' },
+      ],
+    },
+  } })
   @ApiResponse({ status: 200, type: ProgramIndicatorResponseDto })
   async setTarget(
     @Param('programId') programId: string,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(setIndicatorTargetSchema)) dto: SetIndicatorTargetDto,
+    @Body(new ZodValidationPipe(submitIndicatorTargetSchema, true)) dto: SubmitIndicatorTargetDto,
     @Req() req: any
   ) {
     const user = { id: req.user?.id, name: req.user?.name };
