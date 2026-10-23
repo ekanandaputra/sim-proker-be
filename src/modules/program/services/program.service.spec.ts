@@ -94,10 +94,22 @@ describe('ProgramService', () => {
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
-    it('rejects unknown codes before writing any data', async () => {
+    it('skips unknown codes without writing any data', async () => {
       prismaService.program.findMany.mockResolvedValue([{ id: 'legacy', ikuId: 'UNKNOWN' }]);
-      await expect(service.migrateIkuIds('token', 'admin-1')).rejects.toThrow('IKU codes not found');
+      expect(await service.migrateIkuIds('token', 'admin-1')).toEqual({ updatedCount: 0, skippedCount: 1 });
       expect(prismaService.program.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('updates matching programs while skipping unknown and empty codes', async () => {
+      prismaService.program.findMany.mockResolvedValue([
+        { id: 'legacy', ikuId: 'IKU1.3' },
+        { id: 'unknown', ikuId: 'UNKNOWN' },
+        { id: 'blank', ikuId: '' },
+      ]);
+      expect(await service.migrateIkuIds('token', 'admin-1')).toEqual({ updatedCount: 1, skippedCount: 2 });
+      expect(prismaService.program.updateMany).toHaveBeenCalledExactlyOnceWith({
+        where: { id: 'legacy', ikuId: 'IKU1.3' }, data: { ikuId, updatedBy: 'admin-1' },
+      });
     });
 
     it('rejects ambiguous mappings before writing any data', async () => {

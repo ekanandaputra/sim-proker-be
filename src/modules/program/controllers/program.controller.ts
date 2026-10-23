@@ -65,13 +65,14 @@ export class ProgramController {
   @Patch('migrate-iku-ids')
   @Roles(Role.ADMIN, 'admin_sim_proker')
   @ApiOperation({
-    summary: 'Konversi kode IKU program lama menjadi UUID',
-    description: 'Mengambil mapping kode ke UUID dari SIM IKU dan memperbarui program lama dalam satu transaksi. Tidak memerlukan body. Program dengan UUID atau IKU kosong dilewati. Jika kode tidak ditemukan atau ambigu, tidak ada data yang diubah. Aman dipanggil ulang.',
+    operationId: 'migrateProgramIkuIds',
+    summary: 'Patch data lama: konversi kode IKU program menjadi UUID',
+    description: 'Mengambil mapping kode ke UUID dari SIM IKU dan memperbarui program lama dalam satu transaksi. Tidak memerlukan body. Program dengan UUID atau IKU kosong dilewati. Kode IKU yang tidak ditemukan dilewati dan dihitung dalam skippedCount; data yang cocok tetap diperbarui. Jika mapping ambigu, migrasi dibatalkan. Aman dipanggil ulang.',
   })
   @ApiResponse({ status: 200, description: 'Migrasi selesai', schema: {
     example: { updatedCount: 10, skippedCount: 5 },
   } })
-  @ApiResponse({ status: 400, description: 'Kode IKU tidak ditemukan atau ambigu; tidak ada data diubah' })
+  @ApiResponse({ status: 400, description: 'Mapping IKU ambigu atau UUID dari SIM IKU tidak valid; tidak ada data diubah' })
   async migrateIkuIds(@Req() req: Request, @CurrentUser() user: JwtPayload) {
     return this.programService.migrateIkuIds(req.headers.authorization, user.userId);
   }

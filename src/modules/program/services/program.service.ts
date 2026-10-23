@@ -68,22 +68,18 @@ export class ProgramService {
       page++;
     }
 
-    const missingCodes = [...new Set(legacyPrograms
-      .filter(program => !idByCode.has(program.ikuId!.trim().toLowerCase()))
-      .map(program => program.ikuId))];
-    if (missingCodes.length > 0) {
-      throw new BadRequestException({
-        message: 'IKU codes not found in SIM IKU; no changes applied',
-        missingCodes,
-      });
-    }
-    const results = await this.prisma.$transaction(legacyPrograms.map(program =>
+    const matchedPrograms = legacyPrograms.filter(program =>
+      idByCode.has(program.ikuId!.trim().toLowerCase()),
+    );
+    if (matchedPrograms.length === 0) return { updatedCount: 0, skippedCount: programs.length };
+    const results = await this.prisma.$transaction(matchedPrograms.map(program =>
       this.prisma.program.updateMany({
         where: { id: program.id, ikuId: program.ikuId },
         data: { ikuId: idByCode.get(program.ikuId!.trim().toLowerCase())!, updatedBy: userId },
       }),
     ));
-    return { updatedCount: results.reduce((total, result) => total + result.count, 0), skippedCount };
+    const updatedCount = results.reduce((total, result) => total + result.count, 0);
+    return { updatedCount, skippedCount: programs.length - updatedCount };
   }
 
   async findAll(query: ProgramQueryDto, currentUser: JwtPayload, token?: string): Promise<PaginatedResponse<ProgramResponseDto>> {
