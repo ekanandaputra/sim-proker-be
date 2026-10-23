@@ -130,6 +130,15 @@ export class ApprovalService {
       data: { status: newStatus },
     });
 
+    await this.auditLogService.log({
+      action: AuditAction.APPROVE,
+      entityType: 'ProgramIndicator',
+      entityId: indicatorId,
+      userId,
+      oldValue: { status: indicator.status },
+      newValue: { status: newStatus, level, note: dto.note ?? null, approvalId: approval.id },
+    });
+
     this.logger.log(`Program Indicator ${indicatorId} approved at level ${level} by ${userId} → ${newStatus}`);
     return ApprovalMapper.toResponse(approval);
   }
@@ -165,6 +174,15 @@ export class ApprovalService {
       data: { status: ProgramStatus.REJECTED },
     });
 
+    await this.auditLogService.log({
+      action: AuditAction.REJECT,
+      entityType: 'ProgramIndicator',
+      entityId: indicatorId,
+      userId,
+      oldValue: { status: indicator.status },
+      newValue: { status: ProgramStatus.REJECTED, level, note: dto.note ?? null, approvalId: approval.id },
+    });
+
     this.logger.log(`Program Indicator ${indicatorId} rejected at level ${level} by ${userId}`);
     return ApprovalMapper.toResponse(approval);
   }
@@ -197,6 +215,15 @@ export class ApprovalService {
     await this.prisma.programIndicator.update({
       where: { id: indicatorId },
       data: { status: ProgramStatus.REVISION },
+    });
+
+    await this.auditLogService.log({
+      action: AuditAction.UPDATE,
+      entityType: 'ProgramIndicator',
+      entityId: indicatorId,
+      userId,
+      oldValue: { status: indicator.status },
+      newValue: { status: ProgramStatus.REVISION, level, note: dto.note ?? null, approvalId: approval.id },
     });
 
     this.logger.log(`Program Indicator ${indicatorId} revision requested at level ${level} by ${userId}`);
@@ -280,9 +307,11 @@ export class ApprovalService {
   /**
    * Reset all APPROVED indicators in a given year to IN_PROGRESS.
    */
-  async changeApprovedToInProgress(year: number): Promise<{ updatedCount: number }> {
-    const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-    const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+  async changeApprovedToInProgress(year: number, userId: string): Promise<{ updatedCount: number }> {
+    const indicators = await this.prisma.programIndicator.findMany({
+      where: { status: ProgramStatus.APPROVED, program: { year } },
+      select: { id: true },
+    });
 
     const result = await this.prisma.programIndicator.updateMany({
       where: {
@@ -295,6 +324,13 @@ export class ApprovalService {
         status: ProgramStatus.IN_PROGRESS,
       },
     });
+
+    for (const indicator of indicators) {
+      await this.auditLogService.log({
+        action: AuditAction.STATUS_CHANGE, entityType: 'ProgramIndicator', entityId: indicator.id, userId,
+        oldValue: { status: ProgramStatus.APPROVED }, newValue: { status: ProgramStatus.IN_PROGRESS },
+      });
+    }
 
     this.logger.log(`Changed ${result.count} APPROVED indicators to IN_PROGRESS for year ${year}`);
     return { updatedCount: result.count };

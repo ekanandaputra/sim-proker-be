@@ -284,6 +284,13 @@ export class ProgramService {
       },
     });
 
+    for (const indicator of (program as typeof program & { indicators?: { id: string }[] }).indicators ?? []) {
+      await this.auditLogService.log({
+        action: 'CREATE', entityType: 'ProgramIndicator', entityId: indicator.id, userId,
+        newValue: indicator as unknown as Record<string, unknown>,
+      });
+    }
+
     return ProgramMapper.toResponse(
       program as typeof program & { category?: { name: string } | null },
     );

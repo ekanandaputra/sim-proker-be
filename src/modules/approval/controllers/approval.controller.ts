@@ -410,7 +410,7 @@ export class ApprovalController {
       },
     },
   })
-  async changeApprovedToInProgress(@Param('year') year: string) {
-    return this.approvalService.changeApprovedToInProgress(Number(year));
+  async changeApprovedToInProgress(@Param('year') year: string, @CurrentUser() user: JwtPayload) {
+    return this.approvalService.changeApprovedToInProgress(Number(year), user.userId);
   }
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { ProgramStatus } from '@prisma/client';
@@ -221,8 +222,8 @@ export class DefaultProgramService {
     if (dp.indicators && dp.indicators.length > 0) {
       const indicatorsToCreate = dp.indicators.filter(ind => !existingIndicatorNames.has(ind.name));
       if (indicatorsToCreate.length > 0) {
-        await this.prisma.programIndicator.createMany({
-          data: indicatorsToCreate.map((ind) => ({
+        const indicatorData = indicatorsToCreate.map((ind) => ({
+            id: randomUUID(),
             programId: program.id,
             unitId,
             name: ind.name,
@@ -231,8 +232,14 @@ export class DefaultProgramService {
             isDefaultProgramIndicator: true,
             status: ProgramStatus.ASSIGNED_TO_UNIT,
             order: ind.order,
-          }))
-        });
+          }));
+        await this.prisma.programIndicator.createMany({ data: indicatorData });
+        for (const indicator of indicatorData) {
+          await this.auditLogService.log({
+            action: AuditAction.CREATE, entityType: 'ProgramIndicator', entityId: indicator.id, userId,
+            newValue: indicator,
+          });
+        }
         createdCount += indicatorsToCreate.length;
       }
     } else {
@@ -243,7 +250,7 @@ export class DefaultProgramService {
         defaultUnit = await this.prisma.masterUnitType.create({ data: { name: 'N/A', type: 'TEXT' } });
       }
       if (!existingIndicatorNames.has(dp.title)) {
-        await this.prisma.programIndicator.create({
+        const createdIndicator = await this.prisma.programIndicator.create({
           data: {
             programId: program.id,
             unitId,
@@ -253,6 +260,10 @@ export class DefaultProgramService {
             isDefaultProgramIndicator: true,
             status: ProgramStatus.ASSIGNED_TO_UNIT,
           }
+        });
+        await this.auditLogService.log({
+          action: AuditAction.CREATE, entityType: 'ProgramIndicator', entityId: createdIndicator.id, userId,
+          newValue: createdIndicator as unknown as Record<string, unknown>,
         });
         createdCount++;
       }
@@ -312,7 +323,7 @@ export class DefaultProgramService {
       throw new BadRequestException(`Indikator dengan nama '${ind.name}' sudah diassign pada tahun ${period}`);
     }
 
-    await this.prisma.programIndicator.create({
+    const createdIndicator = await this.prisma.programIndicator.create({
       data: {
         programId: program.id,
         unitId,
@@ -325,6 +336,10 @@ export class DefaultProgramService {
       }
     });
 
+    await this.auditLogService.log({
+      action: AuditAction.CREATE, entityType: 'ProgramIndicator', entityId: createdIndicator.id, userId,
+      newValue: createdIndicator as unknown as Record<string, unknown>,
+    });
     return { createdCount: 1 };
   }
 

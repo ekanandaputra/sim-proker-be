@@ -141,3 +141,61 @@ describe('set-target errors for frontend', () => {
     ]);
   });
 });
+
+describe('ProgramIndicatorService audit logging', () => {
+  const user = { id: 'jwt-user-id', name: 'User' };
+  const indicator = { id: 'indicator', programId: 'program', name: 'Before', pics: [], masterUnitType: { type: 'NUMBER' } };
+  function setup() {
+    const prisma = {
+      program: { findUnique: vi.fn().mockResolvedValue({ id: 'program' }) },
+      programIndicator: {
+        findFirst: vi.fn().mockResolvedValue(indicator),
+        create: vi.fn().mockResolvedValue(indicator),
+        update: vi.fn().mockResolvedValue({ ...indicator, name: 'After' }),
+        delete: vi.fn().mockResolvedValue(indicator),
+      },
+      programIndicatorRealization: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        upsert: vi.fn().mockResolvedValue({ id: 'realization', documents: [] }),
+      },
+    };
+    const audit = { log: vi.fn().mockResolvedValue(undefined) };
+    const service = new ProgramIndicatorService(prisma as any, {} as any, audit as any, {} as any, {} as any);
+    return { prisma, audit, service };
+  }
+  it('records create and update with the actor and snapshots', async () => {
+    const { service, audit } = setup();
+    await service.create('program', { name: 'Before', unitId: 'unit', masterUnitTypeId: 'type' }, user);
+    expect(audit.log).toHaveBeenLastCalledWith(expect.objectContaining({
+      action: 'CREATE', entityType: 'ProgramIndicator', entityId: 'indicator', userId: user.id, userName: user.name,
+      newValue: expect.objectContaining({ name: 'Before' }),
+    }));
+    await service.update('program', 'indicator', { name: 'After' }, user);
+    expect(audit.log).toHaveBeenLastCalledWith(expect.objectContaining({
+      action: 'UPDATE', userId: user.id,
+      oldValue: expect.objectContaining({ name: 'Before' }), newValue: expect.objectContaining({ name: 'After' }),
+    }));
+  });
+  it('records delete with the full previous indicator', async () => {
+    const { service, audit } = setup();
+    await service.remove('program', 'indicator', user);
+    expect(audit.log).toHaveBeenCalledExactlyOnceWith({
+      action: 'DELETE', entityType: 'ProgramIndicator', entityId: 'indicator',
+      userId: user.id, userName: user.name, oldValue: indicator,
+    });
+  });
+  it('does not record a successful deletion when deleting fails', async () => {
+    const { service, audit, prisma } = setup();
+    prisma.programIndicator.delete.mockRejectedValue(new Error('Database error'));
+    await expect(service.remove('program', 'indicator', user)).rejects.toThrow('Database error');
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+  it.each([false, true])('records realization create/update (existing=%s)', async existing => {
+    const { service, audit, prisma } = setup();
+    if (existing) prisma.programIndicatorRealization.findUnique.mockResolvedValue({ id: 'realization', realization: 1 } as any);
+    await service.upsertRealization('program', 'indicator', { month: 1, realization: 2 }, user);
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({
+      action: existing ? 'UPDATE' : 'CREATE', entityType: 'ProgramIndicatorRealization', entityId: 'realization', userId: user.id,
+    }));
+  });
+});

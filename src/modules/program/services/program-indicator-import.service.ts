@@ -3,6 +3,7 @@ import { PrismaService } from '@database/prisma/prisma.service';
 import { UnitService } from '../../unit/services/unit.service';
 import * as exceljs from 'exceljs';
 import { Response } from 'express';
+import { AuditLogService } from '../../audit-log/services/audit-log.service';
 import { IkuService } from '../../iku/services/iku.service';
 import { MasterUnitType, IndicatorCategory, ProgramStatus } from '@prisma/client';
 
@@ -45,6 +46,7 @@ export class ProgramIndicatorImportService {
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
     private readonly ikuService: IkuService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -296,7 +298,7 @@ export class ProgramIndicatorImportService {
 
       const { unitType, created: satuanCreated } = await this.getOrCreateMasterUnitType(satuan);
 
-      await this.prisma.programIndicator.create({
+      const createdIndicator = await this.prisma.programIndicator.create({
         data: {
           programId,
           unitId,
@@ -305,6 +307,10 @@ export class ProgramIndicatorImportService {
           category: this.parseCategory(kategori),
           status: ProgramStatus.ASSIGNED_TO_UNIT,
         },
+      });
+      await this.auditLogService.log({
+        action: 'CREATE', entityType: 'ProgramIndicator', entityId: createdIndicator.id,
+        userId, newValue: createdIndicator as unknown as Record<string, unknown>,
       });
       this.logger.log(`Indikator "${indicatorName}" untuk unit "${unitName}" pada program "${programName}" dibuat baru`);
 

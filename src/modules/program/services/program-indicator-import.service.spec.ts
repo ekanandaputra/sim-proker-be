@@ -13,7 +13,7 @@ describe('ProgramIndicatorImportService IKU mapping', () => {
       },
       programIndicator: {
         findFirst: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue({ id: 'indicator-1' }),
       },
       masterUnitType: { findFirst: vi.fn().mockResolvedValue({ id: 'type-1' }) },
     };
@@ -21,19 +21,21 @@ describe('ProgramIndicatorImportService IKU mapping', () => {
     const ikus = { getAllIkus: vi.fn()
       .mockResolvedValueOnce({ items: [], pagination: { totalPages: 2 } })
       .mockResolvedValueOnce({ items: [{ id: ikuId, code: 'IKU1.3' }], pagination: { totalPages: 2 } }) };
-    const service = new ProgramIndicatorImportService(prisma as any, units as any, ikus as any);
+    const audit = { log: vi.fn() };
+    const service = new ProgramIndicatorImportService(prisma as any, units as any, ikus as any, audit as any);
     const workbook = new exceljs.Workbook();
     const sheet = workbook.addWorksheet('Import');
     sheet.addRow(['IKU Code', 'Nama Program', 'Indikator Unit', 'Unit Pelaksana', 'Satuan', 'Kategori']);
     sheet.addRow([code, 'Program', 'Indicator', 'Unit', 'Dokumen', 'TUSI']);
     const file = { originalname: 'import.xlsx', buffer: Buffer.from(await workbook.xlsx.writeBuffer()) } as Express.Multer.File;
-    return { prisma, ikus, service, file };
+    return { prisma, ikus, service, file, audit };
   }
 
   it('converts the Excel code into a UUID before creating a program', async () => {
-    const { prisma, ikus, service, file } = await setup(' iku1.3 ');
+    const { prisma, ikus, service, file, audit } = await setup(' iku1.3 ');
     const result = await service.importFromExcel(file, 'token', 'user-1', 2026);
     expect(result.success).toBe(1);
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'CREATE', entityType: 'ProgramIndicator', entityId: 'indicator-1', userId: 'user-1' }));
     expect(prisma.program.create).toHaveBeenCalledWith({ data: expect.objectContaining({ ikuId, year: 2026 }) });
     expect(ikus.getAllIkus).toHaveBeenLastCalledWith('token', { page: 2, limit: 1000 });
   });

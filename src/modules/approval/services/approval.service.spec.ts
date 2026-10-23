@@ -66,16 +66,22 @@ describe('ApprovalService', () => {
       mockIkuService.getAllIkus.mockResolvedValue({
         items: [{ id: ikuUuid, code: 'IKU1.3' }], pagination: { totalPages: 1 },
       });
+      const audit = { log: vi.fn() };
       const approvalService = new ApprovalService(
         repository as any, mockPrisma, mockUnitService, reviewer as any,
-        {} as any, mockStorageService,
+        audit as any, mockStorageService,
       );
-      return { reviewer, repository, approvalService };
+      return { reviewer, repository, approvalService, audit };
     }
 
     it.each(['approve', 'reject', 'requestRevision'] as const)('accepts a matching UUID assignment for %s', async action => {
-      const { reviewer, approvalService } = await approveWithAssignments([ikuUuid]);
+      const { reviewer, approvalService, audit } = await approveWithAssignments([ikuUuid]);
       await approvalService[action]('ind-1', {}, 'user-1', 'Bearer token');
+      expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({
+        entityType: 'ProgramIndicator', entityId: 'ind-1', userId: 'user-1',
+        oldValue: { status: ProgramStatus.SUBMITTED },
+        action: action === 'approve' ? 'APPROVE' : action === 'reject' ? 'REJECT' : 'UPDATE',
+      }));
       expect(mockIkuService.getAllIkus).not.toHaveBeenCalled();
       expect(reviewer.isAuthorizedReviewer).toHaveBeenLastCalledWith(
         'user-1', ApprovalLevel.INDICATOR_VERIFICATION, ikuUuid,

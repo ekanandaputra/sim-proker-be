@@ -39,9 +39,10 @@ export class ProgramIndicatorController {
   async create(
     @Param('programId') programId: string,
     @Body(new ZodValidationPipe(createProgramIndicatorSchema)) dto: CreateProgramIndicatorDto,
-    @Req() req: any
+    @Req() req: Request,
+    @CurrentUser() currentUser: JwtPayload,
   ) {
-    const user = { id: req.user?.id, name: req.user?.name };
+    const user = { id: currentUser.userId, name: currentUser.name };
     const token = req.headers.authorization as string;
     return this.indicatorService.create(programId, dto, user, token);
   }
@@ -56,9 +57,10 @@ export class ProgramIndicatorController {
     @Param('programId') programId: string,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateProgramIndicatorSchema)) dto: UpdateProgramIndicatorDto,
-    @Req() req: any
+    @Req() req: Request,
+    @CurrentUser() currentUser: JwtPayload,
   ) {
-    const user = { id: req.user?.id, name: req.user?.name };
+    const user = { id: currentUser.userId, name: currentUser.name };
     const token = req.headers.authorization as string;
     return this.indicatorService.update(programId, id, dto, user, token);
   }
@@ -94,8 +96,8 @@ export class ProgramIndicatorController {
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
   @ApiResponse({ status: 200, description: 'Deleted successfully' })
-  async remove(@Param('programId') programId: string, @Param('id') id: string, @Req() req: any) {
-    const user = { id: req.user?.id, name: req.user?.name };
+  async remove(@Param('programId') programId: string, @Param('id') id: string, @CurrentUser() currentUser: JwtPayload) {
+    const user = { id: currentUser.userId, name: currentUser.name };
     await this.indicatorService.remove(programId, id, user);
     return { success: true };
   }
@@ -120,9 +122,10 @@ export class ProgramIndicatorController {
     @Param('programId') programId: string,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(submitIndicatorTargetSchema, true)) dto: SubmitIndicatorTargetDto,
-    @Req() req: any
+    @Req() req: Request,
+    @CurrentUser() currentUser: JwtPayload,
   ) {
-    const user = { id: req.user?.id, name: req.user?.name };
+    const user = { id: currentUser.userId, name: currentUser.name };
     return this.indicatorService.setTarget(programId, id, dto, user);
   }
 
@@ -148,9 +151,10 @@ export class ProgramIndicatorController {
     @Param('programId') programId: string,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(programIndicatorRealizationSchema)) dto: CreateProgramIndicatorRealizationDto,
-    @Req() req: any
+    @Req() req: Request,
+    @CurrentUser() currentUser: JwtPayload,
   ) {
-    const user = { id: req.user?.id, name: req.user?.name };
+    const user = { id: currentUser.userId, name: currentUser.name };
     return this.indicatorService.upsertRealization(programId, id, dto, user);
   }
 
