@@ -198,7 +198,11 @@ export class ProgramService {
     );
   }
 
-  async create(dto: CreateProgramDto, userId: string, token?: string): Promise<ProgramResponseDto> {
+  async create(
+    dto: Omit<CreateProgramDto, 'indicators'> & Partial<Pick<CreateProgramDto, 'indicators'>>,
+    userId: string,
+    token?: string,
+  ): Promise<ProgramResponseDto> {
     // Check for duplicate code
     const existing = await this.programRepository.findByCode(dto.code);
     if (existing) {

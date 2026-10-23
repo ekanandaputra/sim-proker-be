@@ -23,7 +23,7 @@ export const createProgramSchema = z.object({
     .int()
     .min(2000, 'Year must be at least 2000')
     .max(2100, 'Year must be at most 2100'),
-  indicators: z.array(createProgramIndicatorSchema).optional(),
+  indicators: z.array(createProgramIndicatorSchema).min(1, 'At least one indicator is required'),
 });
 
 export class CreateProgramDto {
@@ -45,9 +45,10 @@ export class CreateProgramDto {
   @ApiProperty({ example: 2025 })
   year!: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => [CreateProgramIndicatorDto],
-    description: 'Daftar indikator program yang dibuat bersamaan dengan program (opsional, bisa lebih dari satu)',
+    minItems: 1,
+    description: 'Daftar indikator program yang dibuat bersamaan dengan program (wajib, minimal satu indikator)',
   })
-  indicators?: CreateProgramIndicatorDto[];
+  indicators!: CreateProgramIndicatorDto[];
 }

@@ -281,7 +281,7 @@ export class ProgramController {
     description:
       'Membuat program kerja baru.\n\n' +
       '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. Backend akan mengonversinya dan menyimpan **kode IKU** (mis. `IKU1.1`). Kode IKU juga diterima langsung.\n' +
-      '- `indicators` bersifat opsional dan dapat berisi lebih dari satu indikator. ' +
+      '- `indicators` wajib diisi minimal satu indikator dan dapat berisi lebih dari satu indikator. ' +
       'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
       '- Status indikator yang dibuat otomatis bernilai `SUBMITTED`.',
   })
