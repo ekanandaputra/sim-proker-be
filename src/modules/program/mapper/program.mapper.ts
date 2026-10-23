@@ -19,6 +19,8 @@ export class ProgramMapper {
       year: program.year,
       indicators: program.indicators ? program.indicators.map((ind) => ({
         id: ind.id,
+        createdBy: ind.createdBy ?? null,
+        updatedBy: ind.updatedBy ?? null,
         programId: ind.programId,
         unitId: ind.unitId,
         name: ind.name,

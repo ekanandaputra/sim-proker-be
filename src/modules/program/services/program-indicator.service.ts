@@ -118,6 +118,7 @@ export class ProgramIndicatorService {
     const indicator = await this.prisma.programIndicator.create({
       data: {
         ...rest,
+        createdBy: user.id,
         programId,
         pics: picIds ? {
           create: picIds.map(userId => ({ userId }))
@@ -168,6 +169,7 @@ export class ProgramIndicatorService {
       where: { id },
       data: {
         ...rest,
+        updatedBy: user.id,
         pics: picIds ? {
           deleteMany: {},
           create: picIds.map(userId => ({ userId }))
@@ -216,7 +218,7 @@ export class ProgramIndicatorService {
 
     const updated = await this.prisma.programIndicator.update({
       where: { id },
-      data: { status: dto.status },
+      data: { status: dto.status, updatedBy: user.id },
       include: { pics: true, proposalDocument: true, rabDocument: true },
     });
 
@@ -298,6 +300,7 @@ export class ProgramIndicatorService {
       where: { id },
       data: {
         ...targets,
+        updatedBy: user.id,
         pics: {
           deleteMany: {},
           create: [...new Set(picIds ?? [])].map(userId => ({ userId })),
