@@ -353,6 +353,7 @@ export class ApprovalService {
           proposalDocument: true,
           rabDocument: true,
         },
+        orderBy: [{ program: { title: 'asc' } }, { id: 'asc' }],
         skip,
         take: limit,
       }),
