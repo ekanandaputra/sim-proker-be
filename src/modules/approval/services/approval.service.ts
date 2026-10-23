@@ -11,7 +11,6 @@ import { STORAGE_SERVICE, IStorageService } from '@common/storage';
 import { JwtPayload } from '@common/guards';
 import { Role } from '@common/constants';
 import { SetIndicatorTargetDto } from '../../program/dto/program-indicator.dto';
-import { IkuService } from '../../iku/services/iku.service';
 
 @Injectable()
 export class ApprovalService {
@@ -24,7 +23,6 @@ export class ApprovalService {
     private readonly reviewerService: ApprovalReviewerService,
     private readonly auditLogService: AuditLogService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
-    private readonly ikuService: IkuService,
   ) {}
 
   private getDocumentUrl(document?: Document | null): string | null {
@@ -87,21 +85,7 @@ export class ApprovalService {
       ikuId = resolvedIkuId;
     }
 
-    let isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, ikuId);
-    // Reviewer assignments can contain UUIDs while programs store IKU codes.
-    if (!isAuthorized && level === ApprovalLevel.INDICATOR_VERIFICATION && ikuId) {
-      let page = 1;
-      while (true) {
-        const response = await this.ikuService.getAllIkus(token, { page, limit: 1000 });
-        const matchingIku = response.items.find(iku => iku.code === ikuId);
-        if (matchingIku) {
-          isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, matchingIku.id);
-          break;
-        }
-        if (page >= response.pagination.totalPages) break;
-        page++;
-      }
-    }
+    const isAuthorized = await this.reviewerService.isAuthorizedReviewer(userId, level, ikuId);
     if (!isAuthorized) {
       throw new ForbiddenException(
         `User ${userId} is not authorized as a ${level} reviewer${ikuId ? ` for IKU ${ikuId}` : ''}`
@@ -246,22 +230,7 @@ export class ApprovalService {
     if (allowedIkuIds.length === 0) {
       return { items: [], pagination: { page, limit, totalItems: 0, totalPages: 0 } };
     }
-    // Programs store IKU codes, while reviewer assignments may store SIM IKU UUIDs.
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const unresolvedIds = new Set(allowedIkuIds.filter(id => uuidRegex.test(id)));
-    const allowedIkuCodes = new Set(allowedIkuIds.filter(id => !uuidRegex.test(id)));
-    let ikuPage = 1;
-    while (unresolvedIds.size > 0) {
-      const response = await this.ikuService.getAllIkus(token, { page: ikuPage, limit: 1000 });
-      for (const iku of response.items) {
-        if (unresolvedIds.delete(iku.id)) {
-          allowedIkuCodes.add(iku.code);
-        }
-      }
-      if (ikuPage >= response.pagination.totalPages) break;
-      ikuPage++;
-    }
-    where.program = { ikuId: { in: [...allowedIkuCodes] } };
+    where.program = { ikuId: { in: allowedIkuIds } };
 
 
     const [totalItems, indicators] = await Promise.all([

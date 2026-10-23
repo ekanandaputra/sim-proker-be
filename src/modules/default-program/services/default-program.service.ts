@@ -189,6 +189,7 @@ export class DefaultProgramService {
       where: {
         year: period,
         title: dp.title,
+        ikuId: dp.ikuId,
       }
     });
 
@@ -199,6 +200,7 @@ export class DefaultProgramService {
       program = await this.programService.create({
         code,
         title: dp.title,
+        ikuId: dp.ikuId,
         description: dp.description || undefined,
         objective: '',
         year: period,
@@ -278,6 +280,7 @@ export class DefaultProgramService {
       where: {
         year: period,
         title: dp.title,
+        ikuId: dp.ikuId,
       }
     });
 
@@ -289,6 +292,7 @@ export class DefaultProgramService {
       program = await this.programService.create({
         code,
         title: dp.title,
+        ikuId: dp.ikuId,
         description: dp.description || undefined,
         objective: '',
         year: period,

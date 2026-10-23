@@ -15,7 +15,6 @@ import { buildPaginationArgs, buildPaginatedResponse } from '@common/utils/pagin
 import {
   EntityNotFoundException,
   EntityConflictException,
-  InvalidStateException,
 } from '@common/exceptions';
 import { AuditLogService } from '@modules/audit-log/services/audit-log.service';
 import { PrismaService } from '@database/prisma/prisma.service';
@@ -23,10 +22,10 @@ import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
 import { STORAGE_SERVICE, IStorageService } from '@common/storage';
 import { UnitService } from '../../unit/services/unit.service';
-import { IkuService } from '../../iku/services/iku.service';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
+import { IkuService } from '../../iku/services/iku.service';
+import { z } from 'zod';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class ProgramService {
@@ -38,24 +37,53 @@ export class ProgramService {
     private readonly auditLogService: AuditLogService,
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
-    private readonly ikuService: IkuService,
     private readonly authIntegrationService: AuthIntegrationService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
+    private readonly ikuService: IkuService,
   ) {}
 
-  /**
-   * FE mengirim UUID IKU, sedangkan kolom programs.iku_id menyimpan kode IKU (mis. `IKU1.1`).
-   * Jika nilai berupa UUID, resolve ke kode IKU via SIM IKU; jika sudah berupa kode, simpan apa adanya.
-   */
-  private async resolveIkuCode(ikuId: string | null | undefined, token?: string): Promise<string | null | undefined> {
-    if (!ikuId || !UUID_REGEX.test(ikuId)) return ikuId;
+  async migrateIkuIds(token: string | undefined, userId: string) {
+    const programs = await this.prisma.program.findMany({ select: { id: true, ikuId: true } });
+    const legacyPrograms = programs.filter(program =>
+      program.ikuId !== null && !z.string().uuid().safeParse(program.ikuId).success,
+    );
+    const skippedCount = programs.length - legacyPrograms.length;
+    if (legacyPrograms.length === 0) return { updatedCount: 0, skippedCount };
 
-    const { items } = await this.ikuService.getAllIkus(token, { page: 1, limit: 1000 });
-    const iku = items.find((i) => i.id === ikuId);
-    if (!iku) {
-      throw new InvalidStateException(`IKU with id '${ikuId}' not found in SIM IKU`);
+    const idByCode = new Map<string, string>();
+    let page = 1;
+    while (true) {
+      const response = await this.ikuService.getAllIkus(token, { page, limit: 1000 });
+      for (const iku of response.items) {
+        const code = iku.code.trim().toLowerCase();
+        if (!z.string().uuid().safeParse(iku.id).success) {
+          throw new BadRequestException(`Invalid SIM IKU UUID for code '${iku.code}'`);
+        }
+        if (idByCode.has(code) && idByCode.get(code) !== iku.id) {
+          throw new BadRequestException(`Ambiguous IKU code '${iku.code}'`);
+        }
+        idByCode.set(code, iku.id);
+      }
+      if (page >= response.pagination.totalPages) break;
+      page++;
     }
-    return iku.code;
+
+    const missingCodes = [...new Set(legacyPrograms
+      .filter(program => !idByCode.has(program.ikuId!.trim().toLowerCase()))
+      .map(program => program.ikuId))];
+    if (missingCodes.length > 0) {
+      throw new BadRequestException({
+        message: 'IKU codes not found in SIM IKU; no changes applied',
+        missingCodes,
+      });
+    }
+    const results = await this.prisma.$transaction(legacyPrograms.map(program =>
+      this.prisma.program.updateMany({
+        where: { id: program.id, ikuId: program.ikuId },
+        data: { ikuId: idByCode.get(program.ikuId!.trim().toLowerCase())!, updatedBy: userId },
+      }),
+    ));
+    return { updatedCount: results.reduce((total, result) => total + result.count, 0), skippedCount };
   }
 
   async findAll(query: ProgramQueryDto, currentUser: JwtPayload, token?: string): Promise<PaginatedResponse<ProgramResponseDto>> {
@@ -225,11 +253,9 @@ export class ProgramService {
       throw new EntityConflictException(`Program with code '${dto.code}' already exists`);
     }
 
-    const ikuCode = await this.resolveIkuCode(dto.ikuId, token);
-
     const program = await this.programRepository.create({
       code: dto.code,
-      ikuId: ikuCode,
+      ikuId: dto.ikuId,
       title: dto.title,
       description: dto.description,
       objective: dto.objective,
@@ -339,7 +365,7 @@ export class ProgramService {
 
     const updateData: Prisma.ProgramUpdateInput = {
       ...dto,
-      ikuId: await this.resolveIkuCode(dto.ikuId, token),
+      ikuId: dto.ikuId,
       updatedBy: userId,
     };
 

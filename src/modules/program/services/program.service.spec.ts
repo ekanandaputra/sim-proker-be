@@ -7,6 +7,8 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 describe('ProgramService', () => {
   let service: ProgramService;
+  let prismaService: any;
+  let ikuService: any;
   let repository: IProgramRepository;
   let auditLogService: any;
   let unitService: { getUserUnits: ReturnType<typeof vi.fn>; getUnitById: ReturnType<typeof vi.fn> };
@@ -14,6 +16,7 @@ describe('ProgramService', () => {
 
   const mockProgram = {
     id: 'test-uuid-1',
+    ikuId: null,
     code: 'PRG-2025-001',
     title: 'Test Program',
     description: 'Test description',
@@ -46,16 +49,65 @@ describe('ProgramService', () => {
       log: vi.fn(),
     };
 
-    const prismaService = {
+    prismaService = {
       masterUnitType: {
         findFirst: vi.fn(),
         create: vi.fn(),
       }
     };
 
+    ikuService = { getAllIkus: vi.fn() };
     authIntegrationService = { getAllUsers: vi.fn() };
     unitService = { getUserUnits: vi.fn(), getUnitById: vi.fn() };
-    service = new ProgramService(repository, auditLogService, prismaService as any, unitService as any, {} as any, authIntegrationService as any, { getUrl: (path: string) => `https://files.example/${path}` } as any);
+    service = new ProgramService(repository, auditLogService, prismaService as any, unitService as any, authIntegrationService as any, { getUrl: (path: string) => `https://files.example/${path}` } as any, ikuService);
+  });
+
+  describe('migrateIkuIds', () => {
+    const ikuId = '550e8400-e29b-41d4-a716-446655440001';
+    beforeEach(() => {
+      prismaService.program = {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'legacy', ikuId: ' iku1.3 ' },
+          { id: 'current', ikuId },
+          { id: 'empty', ikuId: null },
+        ]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      };
+      prismaService.$transaction = vi.fn(async operations => Promise.all(operations));
+      ikuService.getAllIkus
+        .mockResolvedValueOnce({ items: [], pagination: { totalPages: 2 } })
+        .mockResolvedValueOnce({ items: [{ id: ikuId, code: 'IKU1.3' }], pagination: { totalPages: 2 } });
+    });
+
+    it('converts codes across SIM IKU pages and leaves UUID/null values unchanged', async () => {
+      expect(await service.migrateIkuIds('token', 'admin-1')).toEqual({ updatedCount: 1, skippedCount: 2 });
+      expect(ikuService.getAllIkus).toHaveBeenLastCalledWith('token', { page: 2, limit: 1000 });
+      expect(prismaService.program.updateMany).toHaveBeenCalledExactlyOnceWith({
+        where: { id: 'legacy', ikuId: ' iku1.3 ' }, data: { ikuId, updatedBy: 'admin-1' },
+      });
+    });
+
+    it('does nothing on repeated calls once every program has a UUID', async () => {
+      prismaService.program.findMany.mockResolvedValue([{ id: 'current', ikuId }]);
+      expect(await service.migrateIkuIds('token', 'admin-1')).toEqual({ updatedCount: 0, skippedCount: 1 });
+      expect(ikuService.getAllIkus).not.toHaveBeenCalled();
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects unknown codes before writing any data', async () => {
+      prismaService.program.findMany.mockResolvedValue([{ id: 'legacy', ikuId: 'UNKNOWN' }]);
+      await expect(service.migrateIkuIds('token', 'admin-1')).rejects.toThrow('IKU codes not found');
+      expect(prismaService.program.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects ambiguous mappings before writing any data', async () => {
+      ikuService.getAllIkus.mockReset().mockResolvedValue({ items: [
+        { id: ikuId, code: 'IKU1.3' },
+        { id: '550e8400-e29b-41d4-a716-446655440002', code: 'IKU1.3' },
+      ], pagination: { totalPages: 1 } });
+      await expect(service.migrateIkuIds('token', 'admin-1')).rejects.toThrow('Ambiguous IKU code');
+      expect(prismaService.program.updateMany).not.toHaveBeenCalled();
+    });
   });
 
   const mockAdminUser = {
@@ -98,7 +150,7 @@ describe('ProgramService', () => {
         .mockResolvedValueOnce({ items: [{ id: 'user-1', name: 'Budi' }], pagination: { totalPages: 2 } })
         .mockResolvedValueOnce({ items: [{ id: 'user-2', name: 'Siti' }], pagination: { totalPages: 2 } });
 
-      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser, 'Bearer token');
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser, 'Bearer token');
 
       expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
         include: { indicators: { include: { pics: true, proposalDocument: true, rabDocument: true } } },
@@ -109,7 +161,7 @@ describe('ProgramService', () => {
       ]);
       expect(result.items[0].indicators[1].pics).toEqual([]);
       expect(authIntegrationService.getAllUsers).toHaveBeenLastCalledWith('Bearer token', {
-        page: 2, limit: 100, sortOrder: 'desc',
+        page: 2, limit: 1000, sortOrder: 'desc',
       });
     });
 
@@ -119,7 +171,7 @@ describe('ProgramService', () => {
       ] } as any]);
       vi.mocked(repository.count).mockResolvedValue(1);
       authIntegrationService.getAllUsers.mockRejectedValue(new Error('Unavailable'));
-      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser);
       expect(result.items[0].indicators[0].pics).toEqual([{ id: 'user-1', name: 'user-1' }]);
     });
 
@@ -157,7 +209,7 @@ describe('ProgramService', () => {
       unitService.getUserUnits.mockResolvedValue(units);
 
       await service.findAll(
-        { page: 1, limit: 50, unitId },
+        { page: 1, limit: 50, unitId, sortOrder: 'desc' },
         { ...mockRegularUser, roles, unitId: '' },
         'Bearer token',
       );
@@ -176,7 +228,7 @@ describe('ProgramService', () => {
       ] } as any]);
       vi.mocked(repository.count).mockResolvedValue(1);
       unitService.getUnitById.mockResolvedValue({ id: 'unit-a', name: 'Program Studi A' });
-      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser, 'Bearer token');
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser, 'Bearer token');
       expect(result.items[0].indicators.map(indicator => indicator.unit)).toEqual([
         { id: 'unit-a', name: 'Program Studi A' }, { id: 'unit-a', name: 'Program Studi A' },
       ]);
@@ -189,7 +241,7 @@ describe('ProgramService', () => {
       ] } as any]);
       vi.mocked(repository.count).mockResolvedValue(1);
       unitService.getUnitById.mockRejectedValue(new Error('Unavailable'));
-      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser);
       expect(result.items[0].indicators[0].unit).toEqual({ id: 'unit-a', name: 'unit-a' });
     });
 
@@ -202,7 +254,7 @@ describe('ProgramService', () => {
         { id: 'indicator-2', pics: [] },
       ] } as any]);
       vi.mocked(repository.count).mockResolvedValue(1);
-      const result = await service.findAll({ page: 1, limit: 50 }, mockAdminUser);
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser);
       expect(result.items[0].indicators[0]).toMatchObject({
         proposalDocumentId: 'tor-id', rabDocumentId: 'rab-id',
         proposalDocument: { ...tor, filePath: 'https://files.example/documents/tor.pdf' },
@@ -279,6 +331,18 @@ describe('ProgramService', () => {
         indicators: [{ category, name: 'Indicator', unitId: 'unit-1', masterUnitTypeId: 'type-1', ...documents }],
       }, 'user-1', undefined, [...roles]);
       expect(repository.create).toHaveBeenCalledOnce();
+    });
+
+    it('stores the IKU UUID unchanged on create and update', async () => {
+      const ikuId = '550e8400-e29b-41d4-a716-446655440001';
+      vi.mocked(repository.findByCode).mockResolvedValue(null);
+      vi.mocked(repository.create).mockResolvedValue(mockProgram);
+      vi.mocked(repository.findById).mockResolvedValue(mockProgram);
+      vi.mocked(repository.update).mockResolvedValue(mockProgram);
+      await service.create({ code: 'TEST', title: 'Test', year: 2026, ikuId }, 'user-1');
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ ikuId }));
+      await service.update(mockProgram.id, { ikuId }, 'user-1');
+      expect(repository.update).toHaveBeenCalledWith(mockProgram.id, expect.objectContaining({ ikuId }));
     });
 
     it('should create a program successfully', async () => {

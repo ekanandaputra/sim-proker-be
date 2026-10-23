@@ -48,7 +48,6 @@ describe('ApprovalService', () => {
       {} as any,
       {} as any,
       mockStorageService as any,
-      mockIkuService as any,
     );
   });
 
@@ -61,7 +60,7 @@ describe('ApprovalService', () => {
       };
       const repository = { create: vi.fn().mockResolvedValue({ id: 'approval-1' }) };
       mockPrisma.programIndicator.findUnique = vi.fn().mockResolvedValue({
-        id: 'ind-1', status: ProgramStatus.SUBMITTED, program: { ikuId: 'IKU1.3' },
+        id: 'ind-1', status: ProgramStatus.SUBMITTED, program: { ikuId: ikuUuid },
       });
       mockPrisma.programIndicator.update = vi.fn().mockResolvedValue({});
       mockIkuService.getAllIkus.mockResolvedValue({
@@ -69,27 +68,21 @@ describe('ApprovalService', () => {
       });
       const approvalService = new ApprovalService(
         repository as any, mockPrisma, mockUnitService, reviewer as any,
-        {} as any, mockStorageService, mockIkuService,
+        {} as any, mockStorageService,
       );
       return { reviewer, repository, approvalService };
     }
 
-    it('accepts a UUID assignment for the program IKU code', async () => {
+    it.each(['approve', 'reject', 'requestRevision'] as const)('accepts a matching UUID assignment for %s', async action => {
       const { reviewer, approvalService } = await approveWithAssignments([ikuUuid]);
-      await approvalService.approve('ind-1', {}, 'user-1', 'Bearer token');
-      expect(mockIkuService.getAllIkus).toHaveBeenCalledWith('Bearer token', { page: 1, limit: 1000 });
+      await approvalService[action]('ind-1', {}, 'user-1', 'Bearer token');
+      expect(mockIkuService.getAllIkus).not.toHaveBeenCalled();
       expect(reviewer.isAuthorizedReviewer).toHaveBeenLastCalledWith(
         'user-1', ApprovalLevel.INDICATOR_VERIFICATION, ikuUuid,
       );
       expect(mockPrisma.programIndicator.update).toHaveBeenCalledWith({
-        where: { id: 'ind-1' }, data: { status: ProgramStatus.INDICATOR_APPROVED },
+        where: { id: 'ind-1' }, data: { status: action === 'approve' ? ProgramStatus.INDICATOR_APPROVED : action === 'reject' ? ProgramStatus.REJECTED : ProgramStatus.REVISION },
       });
-    });
-
-    it('continues to accept code assignments without fetching SIM IKU', async () => {
-      const { approvalService } = await approveWithAssignments(['IKU1.3']);
-      await approvalService.approve('ind-1', {}, 'user-1', 'Bearer token');
-      expect(mockIkuService.getAllIkus).not.toHaveBeenCalled();
     });
 
     it('rejects a reviewer assigned to another IKU without changing the indicator', async () => {
@@ -102,40 +95,15 @@ describe('ApprovalService', () => {
   });
 
   describe('getSubmittedIndicators', () => {
-    it('resolves assigned UUIDs across IKU pages and preserves code assignments', async () => {
+    it('filters directly by the reviewer IKU UUID without calling SIM IKU', async () => {
       const ikuId = '550e8400-e29b-41d4-a716-446655440001';
-      mockPrisma.approvalReviewer.findMany.mockResolvedValue([
-        { ikuId }, { ikuId: 'IKU2.1' },
-      ]);
-      mockIkuService.getAllIkus
-        .mockResolvedValueOnce({ items: [], pagination: { totalPages: 2 } })
-        .mockResolvedValueOnce({ items: [{ id: ikuId, code: 'IKU1.1' }], pagination: { totalPages: 2 } });
-
+      mockPrisma.approvalReviewer.findMany.mockResolvedValue([{ ikuId }]);
       await service.getSubmittedIndicators('mock-token', { page: 1, limit: 10 }, { userId: 'user-1' });
-
-      expect(mockIkuService.getAllIkus).toHaveBeenLastCalledWith('mock-token', { page: 2, limit: 1000 });
-      expect(mockPrisma.programIndicator.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: {
-          status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
-          program: { ikuId: { in: ['IKU2.1', 'IKU1.1'] } },
-        },
-        skip: 0,
-        take: 10,
-      }));
-    });
-
-    it('keeps the filter restricted when an assigned UUID cannot be resolved', async () => {
-      mockPrisma.approvalReviewer.findMany.mockResolvedValue([
-        { ikuId: '550e8400-e29b-41d4-a716-446655440001' },
-      ]);
-      mockIkuService.getAllIkus.mockResolvedValue({ items: [], pagination: { totalPages: 0 } });
-
-      await service.getSubmittedIndicators('mock-token', {}, { userId: 'user-1' });
-
       expect(mockPrisma.programIndicator.count).toHaveBeenCalledWith({ where: {
         status: { in: [ProgramStatus.SUBMITTED, ProgramStatus.REVISION] },
-        program: { ikuId: { in: [] } },
+        program: { ikuId: { in: [ikuId] } },
       } });
+      expect(mockIkuService.getAllIkus).not.toHaveBeenCalled();
     });
 
     it('should query without unitId when not provided', async () => {

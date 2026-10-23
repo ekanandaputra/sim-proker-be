@@ -9,7 +9,7 @@ export const createProgramSchema = z.object({
     .max(50, 'Code must be at most 50 characters'),
   ikuId: z
     .string()
-    .max(50, 'IKU ID must be at most 50 characters')
+    .uuid('IKU ID must be a valid UUID')
     .nullable()
     .optional(),
   title: z

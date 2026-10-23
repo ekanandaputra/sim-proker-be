@@ -3,6 +3,7 @@ import { PrismaService } from '@database/prisma/prisma.service';
 import { UnitService } from '../../unit/services/unit.service';
 import * as exceljs from 'exceljs';
 import { Response } from 'express';
+import { IkuService } from '../../iku/services/iku.service';
 import { MasterUnitType, IndicatorCategory, ProgramStatus } from '@prisma/client';
 
 export interface ImportRowDetail {
@@ -43,6 +44,7 @@ export class ProgramIndicatorImportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly unitService: UnitService,
+    private readonly ikuService: IkuService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -50,6 +52,9 @@ export class ProgramIndicatorImportService {
   // ─────────────────────────────────────────────────────────────────────────
   async exportTemplate(year: number, token: string, res: Response): Promise<void> {
     this.logger.log(`Exporting assign-indicator template for year ${year}`);
+
+    const ikus = await this.getIkus(token);
+    const ikuCodeById = new Map(ikus.map(iku => [iku.id, iku.code]));
 
     const indicators = await this.prisma.programIndicator.findMany({
       where: { program: { year } },
@@ -115,7 +120,7 @@ export class ProgramIndicatorImportService {
 
     indicators.forEach((ind, idx) => {
       const row = sheet.getRow(idx + 2);
-      row.getCell(this.COL_IKU).value = ind.program.ikuId ?? '';
+      row.getCell(this.COL_IKU).value = ikuCodeById.get(ind.program.ikuId ?? '') ?? '';
       row.getCell(this.COL_PROGRAM).value = ind.program.title;
       row.getCell(this.COL_INDICATOR).value = ind.name;
       row.getCell(this.COL_UNIT).value = unitNameMap.get(ind.unitId) ?? '';
@@ -164,7 +169,10 @@ export class ProgramIndicatorImportService {
 
     // Build (ikuId + program name) → id map. A single IKU code can cover many
     // distinct programs, so the pair — not the IKU code alone — identifies a Program.
+    const ikus = await this.getIkus(token);
+    const ikuIdByCode = new Map(ikus.map(iku => [iku.code.trim().toLowerCase(), iku.id]));
     const allPrograms = await this.prisma.program.findMany({
+      where: { year },
       select: { id: true, title: true, ikuId: true },
     });
     const programKeyToId = new Map<string, string>();
@@ -204,7 +212,16 @@ export class ProgramIndicatorImportService {
 
     for (const { rowNum, ikuId, programName, indicatorName, unitName, satuan, kategori } of dataRows) {
       // 1. Lookup program by (IKU Code + Nama Program) — auto-create it if it doesn't exist yet
-      const programKey = this.programKey(ikuId, programName);
+      const resolvedIkuId = ikuIdByCode.get(ikuId.toLowerCase());
+      if (!resolvedIkuId) {
+        result.skipped++;
+        result.details.push({
+          row: rowNum, ikuId, program: programName, indicator: indicatorName, unit: unitName, satuan, kategori,
+          status: 'skipped', reason: `IKU Code "${ikuId}" tidak ditemukan di SIM IKU`,
+        });
+        continue;
+      }
+      const programKey = this.programKey(resolvedIkuId, programName);
       let programId = programKeyToId.get(programKey);
       let programCreated = false;
 
@@ -222,7 +239,7 @@ export class ProgramIndicatorImportService {
         const newProgram = await this.prisma.program.create({
           data: {
             code: this.generateProgramCode(programName),
-            ikuId: ikuId || null,
+            ikuId: resolvedIkuId,
             title: programName,
             year,
             createdBy: userId,
@@ -317,6 +334,17 @@ export class ProgramIndicatorImportService {
       return normalized as IndicatorCategory;
     }
     return IndicatorCategory.TUSI;
+  }
+
+  private async getIkus(token: string) {
+    const items: { id: string; code: string }[] = [];
+    let page = 1;
+    while (true) {
+      const response = await this.ikuService.getAllIkus(token, { page, limit: 1000 });
+      items.push(...response.items);
+      if (page >= response.pagination.totalPages) return items;
+      page++;
+    }
   }
 
   private programKey(ikuId: string | null | undefined, programName: string): string {

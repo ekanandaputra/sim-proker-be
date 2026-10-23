@@ -4,7 +4,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export const updateProgramSchema = z.object({
   title: z.string().min(1).max(255).optional(),
-  ikuId: z.string().max(50).nullable().optional(),
+  ikuId: z.string().uuid('IKU ID must be a valid UUID').nullable().optional(),
   description: z.string().optional(),
   objective: z.string().optional(),
   year: z.number().int().min(2000).max(2100).optional(),

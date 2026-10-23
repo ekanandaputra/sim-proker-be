@@ -60,8 +60,8 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    // programs.iku_id menyimpan kode IKU
-    const ikuMap = new Map(ikuList.map(i => [i.code, i]));
+    // programs.iku_id menyimpan UUID IKU
+    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
 
     // Fetch Indicators matching the filter
     const indicators = await this.prisma.programIndicator.findMany({
@@ -253,8 +253,8 @@ export class ProgramExportService {
     } catch (err) {
       this.logger.warn(`Could not fetch IKUs`);
     }
-    // programs.iku_id menyimpan kode IKU
-    const ikuMap = new Map(ikuList.map(i => [i.code, i]));
+    // programs.iku_id menyimpan UUID IKU
+    const ikuMap = new Map(ikuList.map(i => [i.id, i]));
 
     // Fetch only APPROVED indicators
     const indicators = await this.prisma.programIndicator.findMany({

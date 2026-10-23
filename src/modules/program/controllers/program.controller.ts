@@ -62,6 +62,20 @@ export class ProgramController {
     private readonly indicatorImportService: ProgramIndicatorImportService,
   ) {}
 
+  @Patch('migrate-iku-ids')
+  @Roles(Role.ADMIN, 'admin_sim_proker')
+  @ApiOperation({
+    summary: 'Konversi kode IKU program lama menjadi UUID',
+    description: 'Mengambil mapping kode ke UUID dari SIM IKU dan memperbarui program lama dalam satu transaksi. Tidak memerlukan body. Program dengan UUID atau IKU kosong dilewati. Jika kode tidak ditemukan atau ambigu, tidak ada data yang diubah. Aman dipanggil ulang.',
+  })
+  @ApiResponse({ status: 200, description: 'Migrasi selesai', schema: {
+    example: { updatedCount: 10, skippedCount: 5 },
+  } })
+  @ApiResponse({ status: 400, description: 'Kode IKU tidak ditemukan atau ambigu; tidak ada data diubah' })
+  async migrateIkuIds(@Req() req: Request, @CurrentUser() user: JwtPayload) {
+    return this.programService.migrateIkuIds(req.headers.authorization, user.userId);
+  }
+
   @Get('export/proker')
   @ApiOperation({
     summary: 'Export program indicators to Excel',
@@ -135,8 +149,8 @@ export class ProgramController {
       'Upload file Excel (.xlsx) untuk melakukan bulk assign indikator ke unit pelaksana. ' +
       'Format kolom wajib: **IKU Code** | **Nama Program** | **Indikator Unit** | **Unit Pelaksana** | **Satuan** | **Kategori**. ' +
       'Endpoint ini murni melakukan import berdasarkan isi file — tidak ada pengecekan terhadap program/indikator default. ' +
-      'Program dicocokkan berdasarkan pasangan IKU Code + Nama Program (satu IKU Code bisa menaungi banyak program berbeda). ' +
-      'Jika program belum ada, program baru otomatis dibuat memakai IKU Code, nama, dan tahun (`year`) dari payload. ' +
+      'IKU Code dikonversi ke UUID melalui SIM IKU sebelum disimpan. Kode yang tidak ditemukan akan di-skip. Program dicocokkan berdasarkan UUID IKU + Nama Program + tahun. ' +
+      'Jika program belum ada, program baru otomatis dibuat memakai UUID IKU hasil konversi, nama, dan tahun (`year`) dari payload. ' +
       'Satu nama indikator BISA di-assign ke beberapa unit berbeda (satu ProgramIndicator per kombinasi program + nama indikator + unit) — ' +
       'baris tidak pernah meng-update record yang sudah ada. Jika kombinasi (program, nama indikator, unit) itu sudah ada, baris di-skip apa adanya. ' +
       'Jika belum ada, ProgramIndicator baru dibuat untuk unit tersebut, dengan Satuan (master unit type) diambil dari kolom Satuan — ' +
@@ -280,7 +294,7 @@ export class ProgramController {
     summary: 'Buat program kerja beserta indikatornya',
     description:
       'Membuat program kerja baru.\n\n' +
-      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. Backend akan mengonversinya dan menyimpan **kode IKU** (mis. `IKU1.1`). Kode IKU juga diterima langsung.\n' +
+      '- `ikuId` diisi dengan **UUID IKU** dari SIM IKU. UUID ini disimpan langsung sebagai `ikuId` di database.\n' +
       '- `indicators` wajib diisi minimal satu indikator dan dapat berisi lebih dari satu indikator. ' +
       'Program dan seluruh indikatornya disimpan dalam satu transaksi, sehingga jika salah satu gagal, tidak ada data yang tersimpan.\n' +
       '- Untuk kategori PENGEMBANGAN dan RUTIN, `proposalDocumentId` dan `rabDocumentId` wajib diisi, kecuali pengguna memiliki role `admin_sim_proker`.\n' +
