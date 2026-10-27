@@ -233,6 +233,30 @@ describe('ProgramService', () => {
       expect(repository.count).toHaveBeenCalledWith({ indicators: { some: expected } });
     });
 
+    it.each([mockAdminUser, { ...mockRegularUser, unitId: 'unit-a' }])(
+      'returns only the selected unit indicators for a program assigned to two units ($name)',
+      async (user) => {
+        vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
+          { id: 'indicator-a', unitId: 'unit-a', pics: [{ userId: 'pic-a' }] },
+          { id: 'indicator-b', unitId: 'unit-b', pics: [{ userId: 'pic-b' }] },
+        ] } as any]);
+        vi.mocked(repository.count).mockResolvedValue(1);
+        unitService.getUnitById.mockResolvedValue({ id: 'unit-a', name: 'Unit A' });
+        authIntegrationService.getAllUsers.mockResolvedValue({
+          items: [{ id: 'pic-a', name: 'PIC A' }], pagination: { totalPages: 1 },
+        });
+
+        const result = await service.findAll(
+          { page: 1, limit: 10, sortOrder: 'desc', unitId: 'unit-a' }, user,
+        );
+
+        expect(result.items[0].indicators.map((indicator) => indicator.id)).toEqual(['indicator-a']);
+        expect(result.items[0].indicators[0].pics).toEqual([{ id: 'pic-a', name: 'PIC A' }]);
+        expect(result.pagination.totalItems).toBe(1);
+        expect(unitService.getUnitById).toHaveBeenCalledExactlyOnceWith('unit-a', '');
+      },
+    );
+
     it('returns unit names and fetches each assigned unit once', async () => {
       vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
         { id: 'indicator-1', unitId: 'unit-a', pics: [] },

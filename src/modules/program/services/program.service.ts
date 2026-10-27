@@ -153,6 +153,12 @@ export class ProgramService {
       programs as Array<typeof programs[0] & { category?: { name: string } | null }>,
     );
 
+    if (query.unitId) {
+      for (const program of items) {
+        program.indicators = program.indicators.filter((indicator) => indicator.unitId === query.unitId);
+      }
+    }
+
     const unitIds = [...new Set(items.flatMap(program =>
       program.indicators.map(indicator => indicator.unitId).filter(Boolean),
     ))];

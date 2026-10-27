@@ -257,14 +257,14 @@ export class ProgramController {
   @Get()
   @ApiOperation({
     summary: 'List programs',
-    description: 'Get a paginated list of programs with filtering, search, and sorting support.',
+    description: 'Get a paginated list of programs with filtering, search, and sorting support. When unitId is provided, only programs assigned to that unit are returned, and each program contains only indicators assigned to that unit.',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ['ASSIGNED_TO_UNIT', 'DRAFT', 'SUBMITTED', 'REVISION', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
   @ApiQuery({ name: 'year', required: false, type: Number })
-  @ApiQuery({ name: 'unitId', required: false, type: String })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter both programs and their nested indicators by the assigned unit ID' })
   @ApiQuery({ name: 'categoryId', required: false, type: String })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })

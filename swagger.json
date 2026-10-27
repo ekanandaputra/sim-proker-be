@@ -459,7 +459,7 @@
     },
     "/api/v1/programs": {
       "get": {
-        "description": "Get a paginated list of programs with filtering, search, and sorting support.",
+        "description": "Get a paginated list of programs with filtering, search, and sorting support. When unitId is provided, only programs assigned to that unit are returned, and each program contains only indicators assigned to that unit.",
         "operationId": "ProgramController_findAll",
         "parameters": [
           {
@@ -494,6 +494,7 @@
             "name": "unitId",
             "required": false,
             "in": "query",
+            "description": "Filter both programs and their nested indicators by the assigned unit ID",
             "schema": {
               "type": "string"
             }

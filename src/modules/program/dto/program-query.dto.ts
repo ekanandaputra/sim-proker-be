@@ -29,6 +29,6 @@ export class ProgramQueryDto {
   @ApiPropertyOptional({ example: 2024, description: 'Filter by year' })
   year?: number;
 
-  @ApiPropertyOptional({ description: 'Filter by unit ID' })
+  @ApiPropertyOptional({ description: 'Filter programs and their nested indicators by assigned unit ID' })
   unitId?: string;
 }
