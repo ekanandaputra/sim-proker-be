@@ -5,6 +5,8 @@ import { CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerRe
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
+import { IkuIntegrationService } from '../../external/iku-integration/services/iku-integration.service';
+
 @Injectable()
 export class ApprovalReviewerService {
   private readonly logger = new Logger(ApprovalReviewerService.name);
@@ -13,6 +15,7 @@ export class ApprovalReviewerService {
     @Inject(APPROVAL_REVIEWER_REPOSITORY)
     private readonly reviewerRepository: IApprovalReviewerRepository,
     private readonly authIntegrationService: AuthIntegrationService,
+    private readonly ikuIntegrationService: IkuIntegrationService,
   ) {}
 
   /**
@@ -59,7 +62,7 @@ export class ApprovalReviewerService {
     }
 
     if (token) {
-      await this.populateUsers(results, token);
+      await Promise.all([this.populateUsers(results, token), this.populateIkus(results, token)]);
     }
 
     return results;
@@ -72,7 +75,7 @@ export class ApprovalReviewerService {
     const reviewers = await this.reviewerRepository.findAll(filters);
     const mapped = ApprovalReviewerMapper.toResponseList(reviewers);
     if (token) {
-      await this.populateUsers(mapped, token);
+      await Promise.all([this.populateUsers(mapped, token), this.populateIkus(mapped, token)]);
     }
     return mapped;
   }
@@ -85,7 +88,7 @@ export class ApprovalReviewerService {
     if (!reviewer) throw new EntityNotFoundException('ApprovalReviewer', id);
     const mapped = ApprovalReviewerMapper.toResponse(reviewer);
     if (token) {
-      await this.populateUsers([mapped], token);
+      await Promise.all([this.populateUsers([mapped], token), this.populateIkus([mapped], token)]);
     }
     return mapped;
   }
@@ -115,6 +118,31 @@ export class ApprovalReviewerService {
     // BUDGET_VERIFICATION: ikuId is not relevant
     const reviewer = await this.reviewerRepository.findByUserAndLevel(userId, level);
     return !!reviewer;
+  }
+
+  private async populateIkus(reviewers: ApprovalReviewerResponseDto[], token: string): Promise<void> {
+    const pendingIds = new Set(reviewers.map((reviewer) => reviewer.ikuId).filter((id): id is string => !!id));
+    if (pendingIds.size === 0) return;
+
+    try {
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await this.ikuIntegrationService.getAllIkus(token, { page, limit: 100 });
+        const ikus = new Map(response.items.map((iku) => [iku.id, iku]));
+        for (const reviewer of reviewers) {
+          const iku = reviewer.ikuId ? ikus.get(reviewer.ikuId) : undefined;
+          if (iku) {
+            reviewer.iku = iku;
+            pendingIds.delete(iku.id);
+          }
+        }
+        totalPages = response.pagination.totalPages;
+        page++;
+      } while (page <= totalPages && pendingIds.size > 0);
+    } catch (e) {
+      this.logger.warn(`Failed to fetch IKU details: ${(e as Error).message}`);
+    }
   }
 
   private async populateUsers(reviewers: ApprovalReviewerResponseDto[], token: string): Promise<void> {

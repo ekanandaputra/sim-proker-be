@@ -1,6 +1,9 @@
-import { Controller, Post, Get, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery, ApiExtraModels } from '@nestjs/swagger';
+import { Controller, Post, Get, Delete, Param, Body, UseGuards, Query, Req, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse, ApiBody, ApiQuery, ApiExtraModels, getSchemaPath, ApiConsumes, ApiProduces } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApprovalReviewerTransferService } from '../services/approval-reviewer-transfer.service';
+import { ApprovalReviewerImportResultDto } from '../dto/approval-reviewer-import.dto';
 import { ApprovalReviewerService } from '../services/approval-reviewer.service';
 import { createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto } from '../dto/approval-reviewer.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -13,10 +16,43 @@ import { ApprovalLevel } from '@prisma/client';
 @ApiTags('Approval Reviewers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiExtraModels(CreateApprovalReviewerDto, ApprovalReviewerResponseDto)
+@ApiExtraModels(CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerImportResultDto)
 @Controller('approval-reviewers')
 export class ApprovalReviewerController {
-  constructor(private readonly reviewerService: ApprovalReviewerService) {}
+  constructor(
+    private readonly reviewerService: ApprovalReviewerService,
+    private readonly transferService: ApprovalReviewerTransferService,
+  ) {}
+
+  @Get('export')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Export reviewer indikator ke Excel', description: 'Kolom: IKU Code | NIP. NIP disimpan sebagai teks. Berisi semua reviewer INDICATOR_VERIFICATION; jika belum ada reviewer, file hanya berisi header dan dapat digunakan sebagai template import.' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({ status: 200, description: 'File Excel reviewer', schema: { type: 'string', format: 'binary' } })
+  @ApiResponse({ status: 400, description: 'IKU Code atau NIP reviewer tidak tersedia' })
+  async exportExcel(@Req() req: Request, @Res() res: Response) {
+    const buffer = await this.transferService.exportExcel(req.headers.authorization as string);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="approval_reviewers.xlsx"');
+    res.send(buffer);
+  }
+
+  @Post('import')
+  @Roles(Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Import reviewer indikator dari Excel', description: 'Upload .xlsx (maksimal 5 MB), sheet pertama, header baris pertama: IKU Code | NIP. Setiap baris membuat penugasan INDICATOR_VERIFICATION. NIP wajib berupa teks dan dicocokkan dengan field nip di Auth Service. IKU Code dicocokkan tanpa membedakan huruf besar/kecil. Baris tidak valid dan duplikat dilewati dengan alasan; baris kosong diabaikan. Penugasan lama tetap tersimpan.' })
+  @ApiBody({ schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiResponse({ status: 201, description: 'Ringkasan dan hasil per baris', schema: { properties: {
+    isSuccess: { type: 'boolean', example: true },
+    message: { type: 'string', example: 'Success' },
+    data: { $ref: getSchemaPath(ApprovalReviewerImportResultDto) },
+  } } })
+  @ApiResponse({ status: 400, description: 'File atau header Excel tidak valid' })
+  @ApiResponse({ status: 413, description: 'Ukuran file melebihi 5 MB' })
+  async importExcel(@UploadedFile() file: Express.Multer.File | undefined, @Req() req: Request) {
+    return this.transferService.importExcel(file, req.headers.authorization as string);
+  }
 
   @Post()
   @Roles(Role.ADMIN)
@@ -56,16 +92,7 @@ export class ApprovalReviewerController {
         message: { type: 'string', example: 'Success' },
         data: {
           type: 'array',
-          items: {
-            properties: {
-              id: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440000' },
-              userId: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440001' },
-              level: { type: 'string', enum: ['INDICATOR_VERIFICATION', 'BUDGET_VERIFICATION'], example: 'INDICATOR_VERIFICATION' },
-              ikuId: { type: 'string', nullable: true, example: 'iku-uuid-001' },
-              createdAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-              updatedAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-            },
-          },
+          items: { $ref: getSchemaPath(ApprovalReviewerResponseDto) },
         },
       },
     },
@@ -109,16 +136,7 @@ export class ApprovalReviewerController {
         message: { type: 'string', example: 'Success' },
         data: {
           type: 'array',
-          items: {
-            properties: {
-              id: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440000' },
-              userId: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440001' },
-              level: { type: 'string', enum: ['INDICATOR_VERIFICATION', 'BUDGET_VERIFICATION'], example: 'INDICATOR_VERIFICATION' },
-              ikuId: { type: 'string', nullable: true, example: 'iku-uuid-001' },
-              createdAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-              updatedAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-            },
-          },
+          items: { $ref: getSchemaPath(ApprovalReviewerResponseDto) },
         },
       },
     },
@@ -143,16 +161,7 @@ export class ApprovalReviewerController {
       properties: {
         isSuccess: { type: 'boolean', example: true },
         message: { type: 'string', example: 'Success' },
-        data: {
-          properties: {
-            id: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440000' },
-            userId: { type: 'string', example: '550e8400-e29b-41d4-a716-446655440001' },
-            level: { type: 'string', enum: ['INDICATOR_VERIFICATION', 'BUDGET_VERIFICATION'], example: 'INDICATOR_VERIFICATION' },
-            ikuId: { type: 'string', nullable: true, example: 'iku-uuid-001' },
-            createdAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-            updatedAt: { type: 'string', format: 'date-time', example: '2026-01-01T00:00:00.000Z' },
-          },
-        },
+        data: { $ref: getSchemaPath(ApprovalReviewerResponseDto) },
       },
     },
   })

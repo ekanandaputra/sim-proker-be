@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApprovalLevel } from '@prisma/client';
+import { IkuDto } from '../../external/iku-integration/dto/iku-integration.dto';
 
 // ---------- Zod Schemas ----------
 
@@ -51,6 +52,13 @@ export class ApprovalReviewerResponseDto {
   @ApiPropertyOptional({ example: 'iku-uuid-001', description: 'IKU ID (only for INDICATOR_VERIFICATION)' })
   ikuId!: string | null;
 
+  @ApiProperty({
+    type: () => IkuDto,
+    nullable: true,
+    description: 'IKU details for the reviewer table; null for budget reviewers or when IKU data is unavailable',
+  })
+  iku!: IkuDto | null;
+
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Record creation timestamp' })
   createdAt!: Date;
 
@@ -74,6 +82,7 @@ export class ApprovalReviewerMapper {
       userId: r.userId,
       level: r.level,
       ikuId: r.ikuId,
+      iku: r.iku ?? null,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       user: r.user,

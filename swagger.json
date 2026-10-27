@@ -4655,6 +4655,103 @@
         ]
       }
     },
+    "/api/v1/approval-reviewers/export": {
+      "get": {
+        "description": "Kolom: IKU Code | NIP. NIP disimpan sebagai teks. Berisi semua reviewer INDICATOR_VERIFICATION; jika belum ada reviewer, file hanya berisi header dan dapat digunakan sebagai template import.",
+        "operationId": "ApprovalReviewerController_exportExcel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "File Excel reviewer",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "IKU Code atau NIP reviewer tidak tersedia"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export reviewer indikator ke Excel",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      }
+    },
+    "/api/v1/approval-reviewers/import": {
+      "post": {
+        "description": "Upload .xlsx (maksimal 5 MB), sheet pertama, header baris pertama: IKU Code | NIP. Setiap baris membuat penugasan INDICATOR_VERIFICATION. NIP wajib berupa teks dan dicocokkan dengan field nip di Auth Service. IKU Code dicocokkan tanpa membedakan huruf besar/kecil. Baris tidak valid dan duplikat dilewati dengan alasan; baris kosong diabaikan. Penugasan lama tetap tersimpan.",
+        "operationId": "ApprovalReviewerController_importExcel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ringkasan dan hasil per baris",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalReviewerImportResultDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File atau header Excel tidak valid"
+          },
+          "413": {
+            "description": "Ukuran file melebihi 5 MB"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import reviewer indikator dari Excel",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      }
+    },
     "/api/v1/approval-reviewers": {
       "post": {
         "description": "Assign a user as a reviewer for a specific verification level.\n\n- **INDICATOR_VERIFICATION**: Provide `ikuIds` array to assign the user as indicator reviewer for one or more IKUs.\n- **BUDGET_VERIFICATION**: No `ikuIds` needed. The user becomes a global budget reviewer.",
@@ -4709,39 +4806,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "550e8400-e29b-41d4-a716-446655440000"
-                          },
-                          "userId": {
-                            "type": "string",
-                            "example": "550e8400-e29b-41d4-a716-446655440001"
-                          },
-                          "level": {
-                            "type": "string",
-                            "enum": [
-                              "INDICATOR_VERIFICATION",
-                              "BUDGET_VERIFICATION"
-                            ],
-                            "example": "INDICATOR_VERIFICATION"
-                          },
-                          "ikuId": {
-                            "type": "string",
-                            "nullable": true,
-                            "example": "iku-uuid-001"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2026-01-01T00:00:00.000Z"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2026-01-01T00:00:00.000Z"
-                          }
-                        }
+                        "$ref": "#/components/schemas/ApprovalReviewerResponseDto"
                       }
                     }
                   }
@@ -4840,39 +4905,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "550e8400-e29b-41d4-a716-446655440000"
-                          },
-                          "userId": {
-                            "type": "string",
-                            "example": "550e8400-e29b-41d4-a716-446655440001"
-                          },
-                          "level": {
-                            "type": "string",
-                            "enum": [
-                              "INDICATOR_VERIFICATION",
-                              "BUDGET_VERIFICATION"
-                            ],
-                            "example": "INDICATOR_VERIFICATION"
-                          },
-                          "ikuId": {
-                            "type": "string",
-                            "nullable": true,
-                            "example": "iku-uuid-001"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2026-01-01T00:00:00.000Z"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2026-01-01T00:00:00.000Z"
-                          }
-                        }
+                        "$ref": "#/components/schemas/ApprovalReviewerResponseDto"
                       }
                     }
                   }
@@ -4924,39 +4957,7 @@
                       "example": "Success"
                     },
                     "data": {
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "550e8400-e29b-41d4-a716-446655440000"
-                        },
-                        "userId": {
-                          "type": "string",
-                          "example": "550e8400-e29b-41d4-a716-446655440001"
-                        },
-                        "level": {
-                          "type": "string",
-                          "enum": [
-                            "INDICATOR_VERIFICATION",
-                            "BUDGET_VERIFICATION"
-                          ],
-                          "example": "INDICATOR_VERIFICATION"
-                        },
-                        "ikuId": {
-                          "type": "string",
-                          "nullable": true,
-                          "example": "iku-uuid-001"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2026-01-01T00:00:00.000Z"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2026-01-01T00:00:00.000Z"
-                        }
-                      }
+                      "$ref": "#/components/schemas/ApprovalReviewerResponseDto"
                     }
                   }
                 }
@@ -7233,6 +7234,16 @@
             "example": "http://localhost:3000/uploads/documents/def456.pdf",
             "description": "Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend"
           },
+          "createdBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "ID of the user who created the indicator; null for legacy data"
+          },
+          "updatedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "ID of the user who last updated the indicator"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -7261,6 +7272,8 @@
           "order",
           "proposalURL",
           "rabURL",
+          "createdBy",
+          "updatedBy",
           "createdAt",
           "updatedAt"
         ]
@@ -7809,6 +7822,12 @@
       "AuthUserDto": {
         "type": "object",
         "properties": {
+          "nip": {
+            "type": "string",
+            "nullable": true,
+            "example": "198001012005011001",
+            "description": "Employee NIP, preserved as text"
+          },
           "id": {
             "type": "string",
             "example": "550e8400-e29b-41d4-a716-446655440000",
@@ -9595,6 +9614,68 @@
           "level"
         ]
       },
+      "IkuDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "IKU UUID"
+          },
+          "code": {
+            "type": "string",
+            "example": "IKU-01",
+            "description": "IKU Code"
+          },
+          "name": {
+            "type": "string",
+            "example": "Indikator Kinerja Utama 1",
+            "description": "IKU Name"
+          },
+          "description": {
+            "type": "object",
+            "nullable": true,
+            "example": "Deskripsi indikator",
+            "description": "Detailed description of the IKU"
+          },
+          "type": {
+            "type": "string",
+            "example": "STRATEGIS",
+            "description": "Type of IKU"
+          },
+          "isDirectInput": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the IKU requires direct input"
+          },
+          "unit": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Unit UUID related to this IKU"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "type",
+          "isDirectInput",
+          "unit",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "ApprovalReviewerResponseDto": {
         "type": "object",
         "properties": {
@@ -9622,6 +9703,16 @@
             "example": "iku-uuid-001",
             "description": "IKU ID (only for INDICATOR_VERIFICATION)"
           },
+          "iku": {
+            "nullable": true,
+            "description": "IKU details for the reviewer table; null for budget reviewers or when IKU data is unavailable",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IkuDto"
+              }
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -9647,8 +9738,73 @@
           "id",
           "userId",
           "level",
+          "iku",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "ApprovalReviewerImportRowDto": {
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "number",
+            "example": 2
+          },
+          "ikuCode": {
+            "type": "string",
+            "example": "IKU-01"
+          },
+          "nip": {
+            "type": "string",
+            "example": "198001012005011001"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "skipped"
+            ],
+            "example": "success"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Reviewer sudah terdaftar"
+          }
+        },
+        "required": [
+          "row",
+          "ikuCode",
+          "nip",
+          "status"
+        ]
+      },
+      "ApprovalReviewerImportResultDto": {
+        "type": "object",
+        "properties": {
+          "totalRows": {
+            "type": "number",
+            "example": 2
+          },
+          "success": {
+            "type": "number",
+            "example": 1
+          },
+          "skipped": {
+            "type": "number",
+            "example": 1
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalReviewerImportRowDto"
+            }
+          }
+        },
+        "required": [
+          "totalRows",
+          "success",
+          "skipped",
+          "details"
         ]
       },
       "MasterBudgetDto": {
