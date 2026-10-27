@@ -253,7 +253,6 @@ export class DefaultProgramService {
       if (!existingIndicatorNames.has(dp.title)) {
         const createdIndicator = await this.prisma.programIndicator.create({
           data: {
-            createdBy: userId,
             programId: program.id,
             unitId,
             name: dp.title, // Default name based on program title or default program title
@@ -327,7 +326,6 @@ export class DefaultProgramService {
 
     const createdIndicator = await this.prisma.programIndicator.create({
       data: {
-        createdBy: userId,
         programId: program.id,
         unitId,
         name: ind.name,

@@ -120,8 +120,6 @@ model ProgramIndicator {
   order                     Int               @default(0)
   proposalDocumentId        String?           @map("proposal_document_id")
   rabDocumentId             String?           @map("rab_document_id")
-  createdBy                 String?           @map("created_by")
-  updatedBy                 String?           @map("updated_by")
   createdAt                 DateTime          @default(now()) @map("created_at")
   updatedAt                 DateTime          @updatedAt @map("updated_at")
 

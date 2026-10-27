@@ -127,7 +127,7 @@ export class ApprovalService {
     // Update indicator status
     await this.prisma.programIndicator.update({
       where: { id: indicatorId },
-      data: { status: newStatus, updatedBy: userId },
+      data: { status: newStatus },
     });
 
     await this.auditLogService.log({
@@ -171,7 +171,7 @@ export class ApprovalService {
     // Update indicator status
     await this.prisma.programIndicator.update({
       where: { id: indicatorId },
-      data: { status: ProgramStatus.REJECTED, updatedBy: userId },
+      data: { status: ProgramStatus.REJECTED },
     });
 
     await this.auditLogService.log({
@@ -214,7 +214,7 @@ export class ApprovalService {
     // Update indicator status back to REVISION
     await this.prisma.programIndicator.update({
       where: { id: indicatorId },
-      data: { status: ProgramStatus.REVISION, updatedBy: userId },
+      data: { status: ProgramStatus.REVISION },
     });
 
     await this.auditLogService.log({
@@ -322,7 +322,6 @@ export class ApprovalService {
       },
       data: {
         status: ProgramStatus.IN_PROGRESS,
-        updatedBy: userId,
       },
     });
 
@@ -598,7 +597,6 @@ export class ApprovalService {
         proposalDocumentId: propsal,
         rabDocumentId: rab,
         status: newStatus,
-        updatedBy: currentUser.userId,
       },
       include: {
         pics: true,

@@ -7331,16 +7331,6 @@
             "example": "http://localhost:3000/uploads/documents/def456.pdf",
             "description": "Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend"
           },
-          "createdBy": {
-            "type": "string",
-            "nullable": true,
-            "description": "ID of the user who created the indicator; null for legacy data"
-          },
-          "updatedBy": {
-            "type": "string",
-            "nullable": true,
-            "description": "ID of the user who last updated the indicator"
-          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -7369,8 +7359,6 @@
           "order",
           "proposalURL",
           "rabURL",
-          "createdBy",
-          "updatedBy",
           "createdAt",
           "updatedAt"
         ]

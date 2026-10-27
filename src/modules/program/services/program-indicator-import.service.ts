@@ -301,7 +301,6 @@ export class ProgramIndicatorImportService {
       const createdIndicator = await this.prisma.programIndicator.create({
         data: {
           programId,
-          createdBy: userId,
           unitId,
           name: indicatorName,
           masterUnitTypeId: unitType.id,

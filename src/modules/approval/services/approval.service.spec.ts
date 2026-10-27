@@ -87,7 +87,7 @@ describe('ApprovalService', () => {
         'user-1', ApprovalLevel.INDICATOR_VERIFICATION, ikuUuid,
       );
       expect(mockPrisma.programIndicator.update).toHaveBeenCalledWith({
-        where: { id: 'ind-1' }, data: { updatedBy: 'user-1', status: action === 'approve' ? ProgramStatus.INDICATOR_APPROVED : action === 'reject' ? ProgramStatus.REJECTED : ProgramStatus.REVISION },
+        where: { id: 'ind-1' }, data: { status: action === 'approve' ? ProgramStatus.INDICATOR_APPROVED : action === 'reject' ? ProgramStatus.REJECTED : ProgramStatus.REVISION },
       });
     });
 

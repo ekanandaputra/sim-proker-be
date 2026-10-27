@@ -187,12 +187,6 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ nullable: true, example: 'http://localhost:3000/uploads/documents/def456.pdf', description: 'Full URL of the RAB (budget plan) document, ready to be opened/displayed by the frontend' })
   rabURL!: string | null;
 
-  @ApiProperty({ type: String, nullable: true, description: 'ID of the user who created the indicator; null for legacy data' })
-  createdBy!: string | null;
-
-  @ApiProperty({ type: String, nullable: true, description: 'ID of the user who last updated the indicator' })
-  updatedBy!: string | null;
-
   @ApiProperty({ example: '2026-07-22T00:00:00.000Z' })
   createdAt!: Date;
 

@@ -39,7 +39,6 @@ describe('ProgramIndicatorService.setTarget PICs', () => {
         proposalDocumentId: picIds[0],
         rabDocumentId: picIds[1],
         status: 'SUBMITTED',
-        updatedBy: 'user',
       },
       include: { pics: true, proposalDocument: true, rabDocument: true },
     });
@@ -71,7 +70,7 @@ describe('ProgramIndicatorService.updateStatus', () => {
     expect(prisma.programIndicator.findFirst).toHaveBeenCalledWith({ where: { id: 'indicator', programId: 'program' } });
     expect(prisma.programIndicator.update).toHaveBeenCalledWith({
       where: { id: 'indicator' },
-      data: { status: ProgramStatus.APPROVED, updatedBy: user.id },
+      data: { status: ProgramStatus.APPROVED },
       include: { pics: true, proposalDocument: true, rabDocument: true },
     });
     expect(result.status).toBe(ProgramStatus.APPROVED);
@@ -180,9 +179,7 @@ describe('ProgramIndicatorService audit logging', () => {
       action: 'CREATE', entityType: 'ProgramIndicator', entityId: 'indicator', userId: user.id, userName: user.name,
       newValue: expect.objectContaining({ name: 'Before' }),
     }));
-    expect(prisma.programIndicator.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ createdBy: user.id }) }));
     await service.update('program', 'indicator', { name: 'After' }, user);
-    expect(prisma.programIndicator.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ updatedBy: user.id }) }));
     expect(audit.log).toHaveBeenLastCalledWith(expect.objectContaining({
       action: 'UPDATE', userId: user.id,
       oldValue: expect.objectContaining({ name: 'Before' }), newValue: expect.objectContaining({ name: 'After' }),
