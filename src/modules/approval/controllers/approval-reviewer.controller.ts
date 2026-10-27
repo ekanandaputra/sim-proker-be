@@ -5,7 +5,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApprovalReviewerTransferService } from '../services/approval-reviewer-transfer.service';
 import { ApprovalReviewerImportResultDto } from '../dto/approval-reviewer-import.dto';
 import { ApprovalReviewerService } from '../services/approval-reviewer.service';
-import { createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto } from '../dto/approval-reviewer.dto';
+import { createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -16,13 +16,38 @@ import { ApprovalLevel } from '@prisma/client';
 @ApiTags('Approval Reviewers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiExtraModels(CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerImportResultDto)
+@ApiExtraModels(CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerImportResultDto, ApprovalReviewerUserResponseDto)
 @Controller('approval-reviewers')
 export class ApprovalReviewerController {
   constructor(
     private readonly reviewerService: ApprovalReviewerService,
     private readonly transferService: ApprovalReviewerTransferService,
   ) {}
+
+  @Get('users')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'List pengguna yang ditetapkan sebagai approval reviewer',
+    description: 'Mengembalikan pengguna unik yang memiliki penugasan reviewer. Mendukung filter level, ikuId, dan pencarian sebagian nama pengguna tanpa membedakan huruf besar/kecil. Jika detail pengguna tidak tersedia, id tetap dikembalikan dengan nama Unknown User.',
+  })
+  @ApiQuery({ name: 'level', required: false, enum: ApprovalLevel, description: 'Filter by verification level' })
+  @ApiQuery({ name: 'ikuId', required: false, type: String, description: 'Filter by assigned IKU ID' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by user name (partial match, case-insensitive)', example: 'budi' })
+  @ApiResponse({ status: 200, description: 'Daftar pengguna reviewer tanpa duplikasi', schema: {
+    properties: {
+      isSuccess: { type: 'boolean', example: true },
+      message: { type: 'string', example: 'Success' },
+      data: { type: 'array', items: { $ref: getSchemaPath(ApprovalReviewerUserResponseDto) } },
+    },
+  } })
+  async findUsers(
+    @Req() req: Request,
+    @Query('level') level?: ApprovalLevel,
+    @Query('ikuId') ikuId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.reviewerService.findUsers({ level, ikuId, search }, req.headers.authorization as string);
+  }
 
   @Get('export')
   @Roles(Role.ADMIN)
@@ -123,8 +148,10 @@ export class ApprovalReviewerController {
   @Roles(Role.ADMIN)
   @ApiOperation({
     summary: 'List all reviewers',
-    description: 'Returns all reviewer assignments, optionally filtered by verification level and/or IKU ID.',
+    description: 'Returns all reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, within the filtered assignments.',
   })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by user name or IKU name (partial match, case-insensitive)', example: 'kinerja' })
+  @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by reviewer user ID', example: 'user-uuid-001' })
   @ApiQuery({ name: 'level', required: false, enum: ApprovalLevel, description: 'Filter by verification level' })
   @ApiQuery({ name: 'ikuId', required: false, type: String, description: 'Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)' })
   @ApiResponse({
@@ -145,9 +172,11 @@ export class ApprovalReviewerController {
     @Req() req: Request,
     @Query('level') level?: ApprovalLevel,
     @Query('ikuId') ikuId?: string,
+    @Query('userId') userId?: string,
+    @Query('search') search?: string,
   ) {
     const token = req.headers.authorization as string;
-    return this.reviewerService.findAll({ level, ikuId }, token);
+    return this.reviewerService.findAll({ level, ikuId, userId, search }, token);
   }
 
   @Get(':id')

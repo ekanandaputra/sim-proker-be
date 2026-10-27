@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ApprovalLevel } from '@prisma/client';
 import { APPROVAL_REVIEWER_REPOSITORY, IApprovalReviewerRepository } from '../repositories/approval-reviewer.repository.interface';
-import { CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerResponseDto } from '../dto/approval-reviewer.dto';
+import { CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
@@ -71,13 +71,38 @@ export class ApprovalReviewerService {
   /**
    * List all reviewers with optional filters.
    */
-  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string }, token?: string): Promise<ApprovalReviewerResponseDto[]> {
-    const reviewers = await this.reviewerRepository.findAll(filters);
+  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string; userId?: string; search?: string }, token?: string): Promise<ApprovalReviewerResponseDto[]> {
+    const { search, ...repositoryFilters } = filters ?? {};
+    const reviewers = await this.reviewerRepository.findAll(repositoryFilters);
     const mapped = ApprovalReviewerMapper.toResponseList(reviewers);
     if (token) {
       await Promise.all([this.populateUsers(mapped, token), this.populateIkus(mapped, token)]);
     }
-    return mapped;
+    const term = search?.trim().toLowerCase();
+    if (!term) return mapped;
+    return mapped.filter((reviewer) =>
+      reviewer.user?.name?.toLowerCase().includes(term) || reviewer.iku?.name.toLowerCase().includes(term),
+    );
+  }
+
+  async findUsers(
+    filters?: { level?: ApprovalLevel; ikuId?: string; search?: string },
+    token?: string,
+  ): Promise<ApprovalReviewerUserResponseDto[]> {
+    const { search, ...repositoryFilters } = filters ?? {};
+    const reviewers = await this.reviewerRepository.findAll(repositoryFilters);
+    const uniqueReviewers = [...new Map(reviewers.map((reviewer) => [reviewer.userId, reviewer])).values()];
+    const mapped = ApprovalReviewerMapper.toResponseList(uniqueReviewers);
+    if (token) await this.populateUsers(mapped, token);
+    const users: ApprovalReviewerUserResponseDto[] = mapped.map((reviewer) => ({
+      id: reviewer.userId,
+      name: reviewer.user?.name ?? 'Unknown User',
+      nip: reviewer.user?.nip,
+      email: reviewer.user?.email,
+      roles: reviewer.user?.roles,
+    }));
+    const term = search?.trim().toLowerCase();
+    return term ? users.filter((user) => user.name.toLowerCase().includes(term)) : users;
   }
 
   /**
@@ -148,17 +173,24 @@ export class ApprovalReviewerService {
   private async populateUsers(reviewers: ApprovalReviewerResponseDto[], token: string): Promise<void> {
     if (reviewers.length === 0) return;
     try {
-      const response = await this.authIntegrationService.getAllUsers(token, { page: 1, limit: 10000, sortOrder: 'desc' });
-      const users = response.items || [];
-      const userMap = new Map(users.map(u => [u.id, u]));
-
-      for (const r of reviewers) {
-        const u = userMap.get(r.userId);
-        if (u) {
-          r.user = { id: u.id, name: u.name, email: u.email, roles: u.roles };
-        } else {
-          r.user = { id: r.userId, name: 'Unknown User' };
+      const pendingIds = new Set(reviewers.map((reviewer) => reviewer.userId));
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await this.authIntegrationService.getAllUsers(token, { page, limit: 100, sortOrder: 'desc' });
+        const userMap = new Map((response.items || []).map((user) => [user.id, user]));
+        for (const reviewer of reviewers) {
+          const user = userMap.get(reviewer.userId);
+          if (user) {
+            reviewer.user = { id: user.id, name: user.name, nip: user.nip, email: user.email, roles: user.roles };
+            pendingIds.delete(user.id);
+          }
         }
+        totalPages = response.pagination?.totalPages ?? 1;
+        page++;
+      } while (page <= totalPages && pendingIds.size > 0);
+      for (const reviewer of reviewers) {
+        if (!reviewer.user) reviewer.user = { id: reviewer.userId, name: 'Unknown User' };
       }
     } catch (e) {
       this.logger.warn(`Failed to fetch user names: ${(e as Error).message}`);

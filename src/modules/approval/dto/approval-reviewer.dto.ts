@@ -39,6 +39,23 @@ export class CreateApprovalReviewerDto {
 
 // ---------- Response DTO ----------
 
+export class ApprovalReviewerUserResponseDto {
+  @ApiProperty({ example: 'user-uuid-001', description: 'User ID of the assigned reviewer' })
+  id!: string;
+
+  @ApiProperty({ example: 'Budi Santoso', description: 'User name; Unknown User when user details are unavailable' })
+  name!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, example: '198001012005011001' })
+  nip?: string | null;
+
+  @ApiPropertyOptional({ example: 'budi@example.com' })
+  email?: string;
+
+  @ApiPropertyOptional({ type: [String], example: ['ADMIN'] })
+  roles?: string[];
+}
+
 export class ApprovalReviewerResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Reviewer assignment UUID' })
   id!: string;

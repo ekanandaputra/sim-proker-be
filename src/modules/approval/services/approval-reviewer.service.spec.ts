@@ -39,6 +39,64 @@ describe('ApprovalReviewerService IKU details', () => {
     expect(integration.getAllIkus).toHaveBeenNthCalledWith(2, 'Bearer token', { page: 2, limit: 100 });
   });
 
+  it('searches partial user names case-insensitively across user pages', async () => {
+    repository.findAll.mockResolvedValue([assignment, { ...assignment, id: 'reviewer-2', userId: 'user-2' }]);
+    auth.getAllUsers
+      .mockResolvedValueOnce({ items: [{ id: 'user-2', name: 'Siti' }], pagination: { totalPages: 2 } })
+      .mockResolvedValueOnce({ items: [{ id: 'user-1', name: 'Budi Santoso' }], pagination: { totalPages: 2 } });
+    const result = await service.findAll({ search: '  SANTOS  ' }, 'Bearer token');
+    expect(result.map((reviewer) => reviewer.id)).toEqual(['reviewer-1']);
+    expect(auth.getAllUsers).toHaveBeenNthCalledWith(2, 'Bearer token', { page: 2, limit: 100, sortOrder: 'desc' });
+  });
+
+  it('matches either user name or IKU name', async () => {
+    repository.findAll.mockResolvedValue([assignment, { ...assignment, id: 'reviewer-2', userId: 'user-2', ikuId: null }]);
+    auth.getAllUsers.mockResolvedValue({ items: [{ id: 'user-2', name: 'Kinerja Reviewer' }] });
+    expect((await service.findAll({ search: 'KINERJA' }, 'Bearer token')).map((reviewer) => reviewer.id))
+      .toEqual(['reviewer-1', 'reviewer-2']);
+  });
+
+  it('combines search with existing filters without passing search to the repository', async () => {
+    const filters = { userId: 'user-1', ikuId: 'iku-1', level: ApprovalLevel.INDICATOR_VERIFICATION };
+    expect(await service.findAll({ ...filters, search: 'not found' }, 'Bearer token')).toEqual([]);
+    expect(repository.findAll).toHaveBeenCalledWith(filters);
+  });
+
+  it('treats whitespace-only search as unfiltered', async () => {
+    expect(await service.findAll({ search: '   ' }, 'Bearer token')).toHaveLength(1);
+  });
+
+  it('lists only assigned users, without duplicate users across assignments', async () => {
+    repository.findAll.mockResolvedValue([assignment, { ...assignment, id: 'reviewer-2', ikuId: 'iku-2' }]);
+    auth.getAllUsers.mockResolvedValue({ items: [
+      { id: 'user-1', name: 'Budi', nip: '001234', email: 'budi@example.com', roles: ['ADMIN'] },
+      { id: 'unassigned', name: 'Other User' },
+    ] });
+    expect(await service.findUsers(undefined, 'Bearer token')).toEqual([
+      { id: 'user-1', name: 'Budi', nip: '001234', email: 'budi@example.com', roles: ['ADMIN'] },
+    ]);
+    expect(integration.getAllIkus).not.toHaveBeenCalled();
+  });
+
+  it('filters reviewer users by level, IKU and partial user name', async () => {
+    auth.getAllUsers.mockResolvedValue({ items: [{ id: 'user-1', name: 'Budi Santoso' }] });
+    const filters = { level: ApprovalLevel.INDICATOR_VERIFICATION, ikuId: 'iku-1' };
+    expect(await service.findUsers({ ...filters, search: ' SANTO ' }, 'Bearer token')).toMatchObject([{ id: 'user-1', name: 'Budi Santoso' }]);
+    expect(repository.findAll).toHaveBeenCalledWith(filters);
+    expect(await service.findUsers({ search: 'missing' }, 'Bearer token')).toEqual([]);
+  });
+
+  it('returns an empty user list without calling integrations if no assignments exist', async () => {
+    repository.findAll.mockResolvedValue([]);
+    expect(await service.findUsers(undefined, 'Bearer token')).toEqual([]);
+    expect(auth.getAllUsers).not.toHaveBeenCalled();
+  });
+
+  it('keeps assigned user IDs when Auth Service is unavailable', async () => {
+    auth.getAllUsers.mockRejectedValue(new Error('Unavailable'));
+    expect(await service.findUsers(undefined, 'Bearer token')).toMatchObject([{ id: 'user-1', name: 'Unknown User' }]);
+  });
+
   it('includes IKU details in the detail response', async () => {
     expect((await service.findById(assignment.id, 'Bearer token')).iku).toEqual(iku);
   });

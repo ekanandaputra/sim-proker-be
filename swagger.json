@@ -4655,6 +4655,82 @@
         ]
       }
     },
+    "/api/v1/approval-reviewers/users": {
+      "get": {
+        "description": "Mengembalikan pengguna unik yang memiliki penugasan reviewer. Mendukung filter level, ikuId, dan pencarian sebagian nama pengguna tanpa membedakan huruf besar/kecil. Jika detail pengguna tidak tersedia, id tetap dikembalikan dengan nama Unknown User.",
+        "operationId": "ApprovalReviewerController_findUsers",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "Filter by verification level",
+            "schema": {
+              "enum": [
+                "INDICATOR_VERIFICATION",
+                "BUDGET_VERIFICATION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "ikuId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by assigned IKU ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search by user name (partial match, case-insensitive)",
+            "schema": {
+              "example": "budi",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar pengguna reviewer tanpa duplikasi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApprovalReviewerUserResponseDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List pengguna yang ditetapkan sebagai approval reviewer",
+        "tags": [
+          "Approval Reviewers"
+        ]
+      }
+    },
     "/api/v1/approval-reviewers/export": {
       "get": {
         "description": "Kolom: IKU Code | NIP. NIP disimpan sebagai teks. Berisi semua reviewer INDICATOR_VERIFICATION; jika belum ada reviewer, file hanya berisi header dan dapat digunakan sebagai template import.",
@@ -4861,7 +4937,7 @@
         ]
       },
       "get": {
-        "description": "Returns all reviewer assignments, optionally filtered by verification level and/or IKU ID.",
+        "description": "Returns all reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, within the filtered assignments.",
         "operationId": "ApprovalReviewerController_findAll",
         "parameters": [
           {
@@ -4883,6 +4959,26 @@
             "in": "query",
             "description": "Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by reviewer user ID",
+            "schema": {
+              "example": "user-uuid-001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search by user name or IKU name (partial match, case-insensitive)",
+            "schema": {
+              "example": "kinerja",
               "type": "string"
             }
           }
@@ -9805,6 +9901,43 @@
           "success",
           "skipped",
           "details"
+        ]
+      },
+      "ApprovalReviewerUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "user-uuid-001",
+            "description": "User ID of the assigned reviewer"
+          },
+          "name": {
+            "type": "string",
+            "example": "Budi Santoso",
+            "description": "User name; Unknown User when user details are unavailable"
+          },
+          "nip": {
+            "type": "string",
+            "nullable": true,
+            "example": "198001012005011001"
+          },
+          "email": {
+            "type": "string",
+            "example": "budi@example.com"
+          },
+          "roles": {
+            "example": [
+              "ADMIN"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name"
         ]
       },
       "MasterBudgetDto": {

@@ -2,7 +2,7 @@ import { ApprovalReviewer, ApprovalLevel, Prisma } from '@prisma/client';
 
 export interface IApprovalReviewerRepository {
   create(data: Prisma.ApprovalReviewerCreateInput): Promise<ApprovalReviewer>;
-  findAll(filters?: { level?: ApprovalLevel; ikuId?: string }): Promise<ApprovalReviewer[]>;
+  findAll(filters?: { level?: ApprovalLevel; ikuId?: string; userId?: string }): Promise<ApprovalReviewer[]>;
   findById(id: string): Promise<ApprovalReviewer | null>;
   findByUserAndLevel(userId: string, level: ApprovalLevel, ikuId?: string): Promise<ApprovalReviewer | null>;
   findByUserId(userId: string): Promise<ApprovalReviewer[]>;

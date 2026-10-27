@@ -11,10 +11,11 @@ export class ApprovalReviewerRepository implements IApprovalReviewerRepository {
     return this.prisma.approvalReviewer.create({ data });
   }
 
-  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string }): Promise<ApprovalReviewer[]> {
+  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string; userId?: string }): Promise<ApprovalReviewer[]> {
     const where: Prisma.ApprovalReviewerWhereInput = {};
     if (filters?.level) where.level = filters.level;
     if (filters?.ikuId) where.ikuId = filters.ikuId;
+    if (filters?.userId) where.userId = filters.userId;
 
     return this.prisma.approvalReviewer.findMany({
       where,
