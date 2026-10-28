@@ -177,7 +177,7 @@ export class ApprovalReviewerService {
       let page = 1;
       let totalPages = 1;
       do {
-        const response = await this.authIntegrationService.getAllUsers(token, { page, limit: 100, sortOrder: 'desc' });
+        const response = await this.authIntegrationService.getAllUsers(token, { page, limit: 1000, sortOrder: 'desc' });
         const userMap = new Map((response.items || []).map((user) => [user.id, user]));
         for (const reviewer of reviewers) {
           const user = userMap.get(reviewer.userId);
