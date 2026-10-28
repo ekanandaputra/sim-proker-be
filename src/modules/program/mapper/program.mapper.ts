@@ -30,6 +30,7 @@ export class ProgramMapper {
         targetQ2: ind.targetQ2 ? Number(ind.targetQ2) : null,
         targetQ3: ind.targetQ3 ? Number(ind.targetQ3) : null,
         targetQ4: ind.targetQ4 ? Number(ind.targetQ4) : null,
+        budget: ind.budget != null ? Number(ind.budget) : null,
         status: ind.status,
         order: ind.order,
         proposalDocumentId: ind.proposalDocumentId ?? null,

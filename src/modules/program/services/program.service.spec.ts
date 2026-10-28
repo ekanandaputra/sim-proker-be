@@ -152,6 +152,21 @@ describe('ProgramService', () => {
       expect(repository.findAll).toHaveBeenCalledOnce();
     });
 
+    it('includes indicator budgets in the paginated program list', async () => {
+      const program = { ...mockProgram, indicators: [
+        { id: 'indicator-1', budget: new Decimal('15000000.25') },
+        { id: 'indicator-2', budget: new Decimal(0) },
+        { id: 'indicator-3', budget: null },
+      ] };
+      vi.mocked(repository.findAll).mockResolvedValue([program]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser);
+
+      expect(result.items[0].indicators.map(indicator => indicator.budget)).toEqual([15000000.25, 0, null]);
+      expect(result.pagination).toEqual({ page: 1, limit: 50, totalItems: 1, totalPages: 1 });
+    });
+
     it('includes PIC names across user pages and preserves unassigned indicators', async () => {
       vi.mocked(repository.findAll).mockResolvedValue([{ ...mockProgram, indicators: [
         { id: 'indicator-1', pics: [{ userId: 'user-1' }, { userId: 'user-2' }] },
@@ -333,6 +348,19 @@ describe('ProgramService', () => {
 
       expect(result.id).toBe('test-uuid-1');
       expect(result.title).toBe('Test Program');
+    });
+
+    it.each([
+      { stored: new Decimal('15000000.25'), expected: 15000000.25 },
+      { stored: new Decimal(0), expected: 0 },
+      { stored: null, expected: null },
+    ])('includes indicator budget in program details: $expected', async ({ stored, expected }) => {
+      const program = { ...mockProgram, indicators: [{ id: 'indicator-1', budget: stored }] };
+      vi.mocked(repository.findById).mockResolvedValue(program);
+
+      const result = await service.findById(mockProgram.id);
+
+      expect(result.indicators[0].budget).toBe(expected);
     });
 
     it('should throw EntityNotFoundException when not found', async () => {
