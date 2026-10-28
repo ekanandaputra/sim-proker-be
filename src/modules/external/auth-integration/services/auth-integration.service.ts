@@ -5,17 +5,20 @@ import { getAppConfig } from '@common/config';
 import { AuthUserDto, AuthUnitDto } from '../dto/auth-integration.dto';
 import { PaginatedResponse, PaginationQuery } from '@common/dto/pagination.dto';
 
+interface AuthUsersPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 interface AuthUsersApiResponse {
   success?: boolean;
-  data: {
+  data: AuthUserDto[] | {
     data: AuthUserDto[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
+    pagination?: AuthUsersPagination;
   };
+  pagination?: AuthUsersPagination;
 }
 @Injectable()
 export class AuthIntegrationService {
@@ -39,7 +42,7 @@ export class AuthIntegrationService {
     } : undefined;
 
     const { data } = await firstValueFrom(
-      this.httpService.get<AuthUsersApiResponse>(`${this.authUrl}/api/users`, { headers, params }).pipe(
+      this.httpService.get<AuthUsersApiResponse | AuthUserDto[]>(`${this.authUrl}/api/users`, { headers, params }).pipe(
         catchError((error) => {
           this.logger.error(`Failed to fetch users from Auth Service: ${error.message}`);
           throw new HttpException(
@@ -50,24 +53,23 @@ export class AuthIntegrationService {
       ),
     );
 
-    const resData = data?.data;
-    if (!resData || !resData.data) {
-      // Fallback if the response is just an array or lacks pagination metadata
-      const items = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-      return {
-        items,
-        pagination: { page: query?.page || 1, limit: query?.limit || 10, totalItems: items.length, totalPages: 1 }
-      };
-    }
+    const payload = Array.isArray(data) ? undefined : data?.data;
+    const items = Array.isArray(data) ? data : Array.isArray(payload) ? payload : payload?.data ?? [];
+    // Auth Service returns pagination beside data; retain support for nested responses.
+    const pagination = Array.isArray(data)
+      ? undefined
+      : data?.pagination ?? (payload && !Array.isArray(payload) ? payload.pagination : undefined);
+    const limit = pagination?.limit ?? query?.limit ?? 10;
+    const totalItems = pagination?.total ?? items.length;
 
     return {
-      items: resData.data,
+      items,
       pagination: {
-        page: resData.pagination?.page || 1,
-        limit: resData.pagination?.limit || 10,
-        totalItems: resData.pagination?.total || resData.data.length,
-        totalPages: resData.pagination?.totalPages || 1,
-      }
+        page: pagination?.page ?? query?.page ?? 1,
+        limit,
+        totalItems,
+        totalPages: pagination?.totalPages ?? (pagination ? Math.ceil(totalItems / limit) : 1),
+      },
     };
   }
 

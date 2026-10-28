@@ -2,10 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApprovalLevel } from '@prisma/client';
 import { Workbook } from 'exceljs';
 import { Readable } from 'stream';
+import { HttpService } from '@nestjs/axios';
+import { of } from 'rxjs';
 import { ApprovalReviewerTransferService } from './approval-reviewer-transfer.service';
 import { IApprovalReviewerRepository } from '../repositories/approval-reviewer.repository.interface';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 import { IkuIntegrationService } from '../../external/iku-integration/services/iku-integration.service';
+
+vi.mock('@common/config', () => ({
+  getAppConfig: () => ({ AUTH_SERVICE_URL: 'http://auth.test' }),
+}));
 
 const nip = '00198001012005011001';
 async function file(rows: (string | number)[][], headers = ['IKU Code', 'NIP']) {
@@ -43,6 +49,35 @@ describe('ApprovalReviewerTransferService', () => {
     expect(repository.create).toHaveBeenCalledWith({ userId: 'user-1', ikuId: 'iku-1', level: ApprovalLevel.INDICATOR_VERIFICATION });
     expect(auth.getAllUsers).toHaveBeenNthCalledWith(2, 'Bearer token', { page: 2, limit: 100, sortOrder: 'asc' });
     expect(iku.getAllIkus).toHaveBeenNthCalledWith(2, 'Bearer token', { page: 2, limit: 100 });
+  });
+
+  it('imports a NIP on a later Auth Service page using the actual response format', async () => {
+    const http = { get: vi.fn()
+      .mockReturnValueOnce(of({ data: {
+        success: true,
+        data: [{ id: 'other-user', nip: 'other-nip' }],
+        pagination: { page: 1, limit: 100, total: 101, totalPages: 2 },
+      } }))
+      .mockReturnValueOnce(of({ data: {
+        success: true,
+        data: [{ id: 'user-1', nip }],
+        pagination: { page: 2, limit: 100, total: 101, totalPages: 2 },
+      } })),
+    };
+    const realAuth = new AuthIntegrationService(http as unknown as HttpService);
+    service = new ApprovalReviewerTransferService(
+      repository as unknown as IApprovalReviewerRepository,
+      realAuth,
+      iku as unknown as IkuIntegrationService,
+    );
+    const result = await service.importExcel(await file([['IKU-01', nip]]), 'Bearer token');
+    expect(result).toMatchObject({ totalRows: 1, success: 1, skipped: 0 });
+    expect(repository.create).toHaveBeenCalledWith({ userId: 'user-1', ikuId: 'iku-1', level: ApprovalLevel.INDICATOR_VERIFICATION });
+    expect(http.get).toHaveBeenCalledTimes(2);
+    expect(http.get).toHaveBeenLastCalledWith('http://auth.test/api/users', expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer token' }),
+      params: expect.objectContaining({ page: 2, limit: 100 }),
+    }));
   });
 
   it('skips existing assignments and duplicate rows within the file', async () => {
