@@ -1,7 +1,9 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import { PaginatedResponse } from '@common/dto/pagination.dto';
+import { buildPaginationArgs, buildPaginatedResponse } from '@common/utils/pagination.util';
 import { ApprovalLevel } from '@prisma/client';
 import { APPROVAL_REVIEWER_REPOSITORY, IApprovalReviewerRepository } from '../repositories/approval-reviewer.repository.interface';
-import { CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
+import { ApprovalReviewerQuery, CreateApprovalReviewerInput, ApprovalReviewerMapper, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
 import { EntityNotFoundException, InvalidStateException } from '@common/exceptions';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 
@@ -69,20 +71,28 @@ export class ApprovalReviewerService {
   }
 
   /**
-   * List all reviewers with optional filters.
+   * Paginate assignments after applying filters and external user/IKU name search.
    */
-  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string; userId?: string; search?: string }, token?: string): Promise<ApprovalReviewerResponseDto[]> {
-    const { search, ...repositoryFilters } = filters ?? {};
-    const reviewers = await this.reviewerRepository.findAll(repositoryFilters);
+  async findAll(query: ApprovalReviewerQuery, token?: string): Promise<PaginatedResponse<ApprovalReviewerResponseDto>> {
+    const { level, ikuId, userId } = query;
+    const filters = { level, ikuId, userId };
+    const term = query.search?.trim().toLowerCase();
+    const { skip, take, orderBy } = buildPaginationArgs(query);
+    const options = { orderBy: [{ ...(orderBy ?? { createdAt: query.sortOrder }) }, { id: 'asc' as const }] };
+    // Names live in external services, so search must run before slicing the page.
+    const [reviewers, totalItems] = await Promise.all([
+      this.reviewerRepository.findAll(filters, term ? options : { ...options, skip, take }),
+      term ? Promise.resolve(0) : this.reviewerRepository.count(filters),
+    ]);
     const mapped = ApprovalReviewerMapper.toResponseList(reviewers);
     if (token) {
       await Promise.all([this.populateUsers(mapped, token), this.populateIkus(mapped, token)]);
     }
-    const term = search?.trim().toLowerCase();
-    if (!term) return mapped;
-    return mapped.filter((reviewer) =>
+    if (!term) return buildPaginatedResponse(mapped, totalItems, query);
+    const filtered = mapped.filter((reviewer) =>
       reviewer.user?.name?.toLowerCase().includes(term) || reviewer.iku?.name.toLowerCase().includes(term),
     );
+    return buildPaginatedResponse(filtered.slice(skip, skip + take), filtered.length, query);
   }
 
   async findUsers(

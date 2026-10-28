@@ -4938,9 +4938,18 @@
         ]
       },
       "get": {
-        "description": "Returns all reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, within the filtered assignments.",
+        "description": "Returns paginated reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, before pagination.",
         "operationId": "ApprovalReviewerController_findAll",
         "parameters": [
+          {
+            "name": "ikuId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "level",
             "required": false,
@@ -4951,15 +4960,6 @@
                 "INDICATOR_VERIFICATION",
                 "BUDGET_VERIFICATION"
               ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "ikuId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)",
-            "schema": {
               "type": "string"
             }
           },
@@ -4982,30 +4982,106 @@
               "example": "kinerja",
               "type": "string"
             }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (default: desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by (default: createdAt)",
+            "schema": {
+              "enum": [
+                "id",
+                "userId",
+                "level",
+                "ikuId",
+                "createdAt",
+                "updatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10, maximum: 100)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1, minimum: 1)",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of reviewer assignments",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "isSuccess": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Success"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ApprovalReviewerResponseDto"
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/ApprovalReviewerResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -5016,7 +5092,7 @@
             "bearer": []
           }
         ],
-        "summary": "List all reviewers",
+        "summary": "List reviewers with pagination",
         "tags": [
           "Approval Reviewers"
         ]

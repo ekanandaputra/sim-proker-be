@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ApprovalReviewer, ApprovalLevel, Prisma } from '@prisma/client';
 import { PrismaService } from '@database/prisma/prisma.service';
-import { IApprovalReviewerRepository } from './approval-reviewer.repository.interface';
+import { IApprovalReviewerRepository, ApprovalReviewerFilters, ApprovalReviewerListOptions } from './approval-reviewer.repository.interface';
 
 @Injectable()
 export class ApprovalReviewerRepository implements IApprovalReviewerRepository {
@@ -11,16 +11,24 @@ export class ApprovalReviewerRepository implements IApprovalReviewerRepository {
     return this.prisma.approvalReviewer.create({ data });
   }
 
-  async findAll(filters?: { level?: ApprovalLevel; ikuId?: string; userId?: string }): Promise<ApprovalReviewer[]> {
+  async findAll(filters?: ApprovalReviewerFilters, options?: ApprovalReviewerListOptions): Promise<ApprovalReviewer[]> {
+    return this.prisma.approvalReviewer.findMany({
+      where: this.buildWhere(filters),
+      ...options,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
+    });
+  }
+
+  async count(filters?: ApprovalReviewerFilters): Promise<number> {
+    return this.prisma.approvalReviewer.count({ where: this.buildWhere(filters) });
+  }
+
+  private buildWhere(filters?: ApprovalReviewerFilters): Prisma.ApprovalReviewerWhereInput {
     const where: Prisma.ApprovalReviewerWhereInput = {};
     if (filters?.level) where.level = filters.level;
     if (filters?.ikuId) where.ikuId = filters.ikuId;
     if (filters?.userId) where.userId = filters.userId;
-
-    return this.prisma.approvalReviewer.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    return where;
   }
 
   async findById(id: string): Promise<ApprovalReviewer | null> {

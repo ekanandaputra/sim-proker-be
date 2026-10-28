@@ -1,9 +1,19 @@
 import { z } from 'zod';
+import { paginationQuerySchema } from '@common/dto/pagination.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApprovalLevel } from '@prisma/client';
 import { IkuDto } from '../../external/iku-integration/dto/iku-integration.dto';
 
 // ---------- Zod Schemas ----------
+
+export const approvalReviewerQuerySchema = paginationQuerySchema.extend({
+  level: z.nativeEnum(ApprovalLevel).optional(),
+  ikuId: z.string().optional(),
+  userId: z.string().optional(),
+  sortBy: z.enum(['id', 'userId', 'level', 'ikuId', 'createdAt', 'updatedAt']).optional(),
+});
+
+export type ApprovalReviewerQuery = z.infer<typeof approvalReviewerQuerySchema>;
 
 export const createApprovalReviewerSchema = z.object({
   userId: z.string().min(1, 'userId is required'),

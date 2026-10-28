@@ -5,12 +5,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApprovalReviewerTransferService } from '../services/approval-reviewer-transfer.service';
 import { ApprovalReviewerImportResultDto } from '../dto/approval-reviewer-import.dto';
 import { ApprovalReviewerService } from '../services/approval-reviewer.service';
-import { createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
+import { approvalReviewerQuerySchema, ApprovalReviewerQuery, createApprovalReviewerSchema, CreateApprovalReviewerDto, ApprovalReviewerResponseDto, ApprovalReviewerUserResponseDto } from '../dto/approval-reviewer.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { Role } from '@common/constants';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { ApprovalLevel } from '@prisma/client';
 
 @ApiTags('Approval Reviewers')
@@ -147,36 +148,24 @@ export class ApprovalReviewerController {
   @Get()
   @Roles(Role.ADMIN)
   @ApiOperation({
-    summary: 'List all reviewers',
-    description: 'Returns all reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, within the filtered assignments.',
+    summary: 'List reviewers with pagination',
+    description: 'Returns paginated reviewer assignments, optionally filtered by verification level, IKU ID, and/or user ID. Search matches part of the user name OR IKU name, case-insensitively, before pagination.',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1, minimum: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page (default: 10, maximum: 100)' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['id', 'userId', 'level', 'ikuId', 'createdAt', 'updatedAt'], description: 'Field to sort by (default: createdAt)' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by user name or IKU name (partial match, case-insensitive)', example: 'kinerja' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by reviewer user ID', example: 'user-uuid-001' })
   @ApiQuery({ name: 'level', required: false, enum: ApprovalLevel, description: 'Filter by verification level' })
   @ApiQuery({ name: 'ikuId', required: false, type: String, description: 'Filter by IKU ID (only relevant for INDICATOR_VERIFICATION)' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of reviewer assignments',
-    schema: {
-      properties: {
-        isSuccess: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Success' },
-        data: {
-          type: 'array',
-          items: { $ref: getSchemaPath(ApprovalReviewerResponseDto) },
-        },
-      },
-    },
-  })
+  @ApiPaginatedResponse(ApprovalReviewerResponseDto)
   async findAll(
     @Req() req: Request,
-    @Query('level') level?: ApprovalLevel,
-    @Query('ikuId') ikuId?: string,
-    @Query('userId') userId?: string,
-    @Query('search') search?: string,
+    @Query(new ZodValidationPipe(approvalReviewerQuerySchema)) query: ApprovalReviewerQuery,
   ) {
     const token = req.headers.authorization as string;
-    return this.reviewerService.findAll({ level, ikuId, userId, search }, token);
+    return this.reviewerService.findAll(query, token);
   }
 
   @Get(':id')
