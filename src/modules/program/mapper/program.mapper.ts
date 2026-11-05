@@ -21,6 +21,8 @@ export class ProgramMapper {
         id: ind.id,
         programId: ind.programId,
         unitId: ind.unitId,
+        masterUnitTypeId: ind.masterUnitTypeId,
+        masterUnitType: ind.masterUnitType,
         name: ind.name,
         category: ind.category,
         isDefaultProgramIndicator: ind.isDefaultProgramIndicator,

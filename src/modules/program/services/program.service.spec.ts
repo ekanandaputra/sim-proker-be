@@ -152,6 +152,35 @@ describe('ProgramService', () => {
       expect(repository.findAll).toHaveBeenCalledOnce();
     });
 
+    it('includes each indicator master unit type ID and details in the paginated list', async () => {
+      const masterUnitTypes = [
+        { id: 'type-number', name: 'Jumlah', type: 'NUMBER', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'type-file', name: 'Dokumen', type: 'FILE', createdAt: new Date(), updatedAt: new Date() },
+      ];
+      const program = {
+        ...mockProgram,
+        indicators: masterUnitTypes.map((masterUnitType, index) => ({
+          id: `indicator-${index}`, masterUnitTypeId: masterUnitType.id, masterUnitType,
+        })),
+      };
+      vi.mocked(repository.findAll).mockResolvedValue([program]);
+      vi.mocked(repository.count).mockResolvedValue(1);
+
+      const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser);
+
+      expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
+        include: { indicators: { include: {
+          pics: true, masterUnitType: true, proposalDocument: true, rabDocument: true,
+        } } },
+      }));
+      expect(result.items[0].indicators.map(indicator => ({
+        masterUnitTypeId: indicator.masterUnitTypeId,
+        masterUnitType: indicator.masterUnitType,
+      }))).toEqual(masterUnitTypes.map(masterUnitType => ({
+        masterUnitTypeId: masterUnitType.id, masterUnitType,
+      })));
+    });
+
     it('includes indicator budgets in the paginated program list', async () => {
       const program = { ...mockProgram, indicators: [
         { id: 'indicator-1', budget: new Decimal('15000000.25') },
@@ -180,7 +209,7 @@ describe('ProgramService', () => {
       const result = await service.findAll({ page: 1, limit: 50, sortOrder: 'desc' }, mockAdminUser, 'Bearer token');
 
       expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
-        include: { indicators: { include: { pics: true, proposalDocument: true, rabDocument: true } } },
+        include: { indicators: { include: { pics: true, masterUnitType: true, proposalDocument: true, rabDocument: true } } },
       }));
       expect(result.items[0].indicators[0].picIds).toEqual(['user-1', 'user-2']);
       expect(result.items[0].indicators[0].pics).toEqual([
@@ -243,7 +272,7 @@ describe('ProgramService', () => {
 
       expect(repository.findAll).toHaveBeenCalledWith(expect.objectContaining({
         where: { indicators: { some: expected } },
-        include: { indicators: { where: expected, include: { pics: true, proposalDocument: true, rabDocument: true } } },
+        include: { indicators: { where: expected, include: { pics: true, masterUnitType: true, proposalDocument: true, rabDocument: true } } },
       }));
       expect(repository.count).toHaveBeenCalledWith({ indicators: { some: expected } });
     });

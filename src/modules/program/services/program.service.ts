@@ -142,7 +142,7 @@ export class ProgramService {
         include: {
           indicators: {
             ...(where.indicators?.some ? { where: where.indicators.some } : {}),
-            include: { pics: true, proposalDocument: true, rabDocument: true },
+            include: { pics: true, masterUnitType: true, proposalDocument: true, rabDocument: true },
           },
         },
       }),

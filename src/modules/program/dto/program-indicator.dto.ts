@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProgramStatus, IndicatorCategory } from '@prisma/client';
 import { DocumentResponseDto } from '../../document/dto/document.dto';
+import { MasterUnitTypeDto } from '../../master-unit-type/dto/master-unit-type.dto';
 
 const budgetSchema = z
   .union([z.number(), z.string().refine((val) => val.trim() !== '' && !isNaN(Number(val)), 'Budget must be a valid number')])
@@ -143,8 +144,11 @@ export class ProgramIndicatorResponseDto {
   @ApiProperty({ description: 'Unit detail object assigned to this indicator', type: Object })
   unit!: any;
 
-  @ApiProperty({ description: 'Master Unit Type object for unit of measurement', required: false, type: Object })
-  masterUnitType?: any;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003', description: 'Master Unit Type UUID for unit of measurement' })
+  masterUnitTypeId!: string;
+
+  @ApiProperty({ description: 'Master Unit Type object for unit of measurement', required: false, type: () => MasterUnitTypeDto })
+  masterUnitType?: MasterUnitTypeDto;
 
   @ApiProperty({ enum: IndicatorCategory, example: IndicatorCategory.TUSI, description: 'Category of the indicator' })
   category!: IndicatorCategory;
