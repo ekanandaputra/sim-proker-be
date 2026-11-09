@@ -6,8 +6,9 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Role } from '@common/constants/roles.constant';
+import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { UnitService } from '../services/unit.service';
-import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto, UnitDetailDataDto, UnitProgramResponseDto, AssignIkusToUnitDto, UnassignIkusFromUnitDto } from '../dto/unit.dto';
+import { CreateUnitDto, UpdateUnitDto, AssignUnitPayloadDto, UnitDetailsResponseDto, UnitDetailDataDto, UnitUserDetailDto, UnitProgramResponseDto, AssignIkusToUnitDto, UnassignIkusFromUnitDto } from '../dto/unit.dto';
 import { IkuIntegrationService } from '../../external/iku-integration/services/iku-integration.service';
 
 @ApiTags('Unit Management')
@@ -28,6 +29,7 @@ export class UnitController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
+  @ApiPaginatedResponse(UnitDetailDataDto)
   @Get()
   async getUnits(@Req() req: Request, @Query() query: any) {
     return this.unitService.getUnits(this.extractToken(req), query);
@@ -128,6 +130,7 @@ export class UnitController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
+  @ApiPaginatedResponse(UnitUserDetailDto)
   @Get(':id/users')
   async getUnitUsers(@Req() req: Request, @Param('id') id: string, @Query() query: any) {
     return this.unitService.getUnitUsers(id, this.extractToken(req), query);

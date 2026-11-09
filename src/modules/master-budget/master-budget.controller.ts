@@ -17,6 +17,7 @@ import { paginationQuerySchema, PaginationQuery } from '@common/dto/pagination.d
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Role } from '@common/constants';
+import { ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Master Budget')
 @ApiBearerAuth()
@@ -85,7 +86,7 @@ export class MasterBudgetController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete master budget' })
   @ApiParam({ name: 'year', type: Number, description: 'Tahun budget yang akan dihapus (e.g. 2024)' })
-  @ApiResponse({ status: 200, description: 'Master budget successfully deleted' })
+  @ApiMessageResponse('Master budget successfully deleted')
   async remove(@Param('year') year: string) {
     await this.masterBudgetService.remove(Number(year));
     return { message: 'Master budget successfully deleted' };

@@ -15,6 +15,7 @@ import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.
 import { JwtPayload } from '@common/guards';
 import { getAppConfig } from '@common/config';
 import { DocumentType } from '@prisma/client';
+import { ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
@@ -96,7 +97,7 @@ export class DocumentController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete document' })
   @ApiParam({ name: 'id', description: 'Document UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Document deleted successfully' })
+  @ApiMessageResponse('Document deleted successfully')
   @ApiResponse({ status: 404, description: 'Document not found' })
   async remove(@Param('id') id: string) {
     await this.documentService.remove(id);

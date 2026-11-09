@@ -5,7 +5,11 @@ import { IndicatorCategory, ProgramStatus } from '@prisma/client';
 // --- Query ---
 
 export const budgetRecapQuerySchema = z.object({
-  year: z.coerce.number().int().min(2000).default(() => new Date().getFullYear()),
+  year: z.coerce
+    .number()
+    .int()
+    .min(2000)
+    .default(() => new Date().getFullYear()),
   unitId: z.string().min(1).optional(),
   category: z.nativeEnum(IndicatorCategory).optional(),
   status: z.nativeEnum(ProgramStatus).optional(),
@@ -16,13 +20,19 @@ export type BudgetRecapQuery = z.infer<typeof budgetRecapQuerySchema>;
 // --- Response ---
 
 export class BudgetRecapSummaryDto {
-  @ApiProperty({ example: 4140000000, description: 'Sum of indicator budgets matching the filter (Rp)' })
+  @ApiProperty({
+    example: 4140000000,
+    description: 'Sum of indicator budgets matching the filter (Rp)',
+  })
   totalBudget!: number;
 
   @ApiProperty({ example: 12, description: 'Number of indicators (pengajuan) matching the filter' })
   totalIndicators!: number;
 
-  @ApiProperty({ example: 7, description: 'Number of distinct units that have at least one indicator' })
+  @ApiProperty({
+    example: 7,
+    description: 'Number of distinct units that have at least one indicator',
+  })
   totalUnits!: number;
 
   @ApiProperty({ example: 9, description: 'Number of distinct programs' })
@@ -44,7 +54,10 @@ export class BudgetRecapUnitDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
   unitId!: string;
 
-  @ApiProperty({ example: 'Jurusan Teknik Permesinan Kapal', description: 'Falls back to unitId when unknown' })
+  @ApiProperty({
+    example: 'Jurusan Teknik Permesinan Kapal',
+    description: 'Falls back to unitId when unknown',
+  })
   unitName!: string;
 
   @ApiProperty({ type: String, nullable: true, example: 'JTPK' })
@@ -129,13 +142,15 @@ export class BudgetRecapResponseDto {
 
   @ApiProperty({
     type: [BudgetRecapUnitDto],
-    description: 'One row per unit, sorted by totalBudget desc ("Per Unit" table and distribution chart)',
+    description:
+      'One row per unit, sorted by totalBudget desc ("Per Unit" table and distribution chart)',
   })
   units!: BudgetRecapUnitDto[];
 
   @ApiProperty({
     type: [BudgetRecapIndicatorDto],
-    description: 'Every indicator matching the filter, sorted by budget desc ("Semua Pengajuan" table / unit detail)',
+    description:
+      'Every indicator matching the filter, sorted by budget desc ("Semua Pengajuan" table / unit detail)',
   })
   indicators!: BudgetRecapIndicatorDto[];
 }

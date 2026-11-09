@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
+import { ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Outputs')
 @ApiBearerAuth()
@@ -56,7 +57,7 @@ export class OutputController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete output' })
   @ApiParam({ name: 'id', description: 'Output UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Output deleted successfully' })
+  @ApiMessageResponse('Output deleted successfully')
   @ApiResponse({ status: 404, description: 'Output not found' })
   async remove(@Param('id') id: string) {
     await this.outputService.remove(id);

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse, ApiProduces, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse, ApiProduces, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 import { MasterUnitTypeService } from './master-unit-type.service';
 import { 
   CreateMasterUnitTypeDto, 
@@ -15,6 +15,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { paginationQuerySchema, PaginationQuery } from '@common/dto/pagination.dto';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
+import { ApiImportResultResponse, ApiWrappedResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Master Unit Type')
 @ApiBearerAuth()
@@ -73,7 +74,7 @@ export class MasterUnitTypeController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @ApiImportResultResponse()
   @UseInterceptors(FileInterceptor('file'))
   async importExcel(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
@@ -110,7 +111,11 @@ export class MasterUnitTypeController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete master unit type' })
-  @ApiResponse({ status: 200, description: 'Master unit type successfully deleted' })
+  @ApiParam({ name: 'id', description: 'Master Unit Type UUID', type: 'string' })
+  @ApiWrappedResponse({
+    description: 'Master unit type successfully deleted',
+    data: { type: 'object', nullable: true, example: null },
+  })
   async remove(@Param('id') id: string) {
     return this.masterUnitTypeService.remove(id);
   }

@@ -1,5 +1,5 @@
-import { Controller, Get, UseGuards, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, UseGuards, Query, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from '../services/dashboard.service';
 import { AdminDashboardResponseDto, UnitDashboardResponseDto } from '../dto/dashboard-response.dto';
@@ -10,11 +10,13 @@ import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { IndicatorCategory, ProgramStatus } from '@prisma/client';
 import { BudgetRecapService } from '../services/budget-recap.service';
+import { BudgetRecapExportService } from '../services/budget-recap-export.service';
 import {
   BudgetRecapQuery,
   BudgetRecapResponseDto,
   budgetRecapQuerySchema,
 } from '../dto/budget-recap.dto';
+import { ApiFileResponse, XLSX_MIME_TYPE } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -24,6 +26,7 @@ export class DashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly budgetRecapService: BudgetRecapService,
+    private readonly budgetRecapExportService: BudgetRecapExportService,
   ) {}
 
   @Get()
@@ -73,5 +76,40 @@ export class DashboardController {
     @Req() req: Request,
   ) {
     return this.budgetRecapService.getRecap(query, user, req.headers.authorization || '');
+  }
+
+  @Get('budget-recap/export')
+  @ApiOperation({
+    summary: 'Export budget recap per unit to Excel',
+    description:
+      'Downloads one .xlsx file with the same filters and access rules as GET /dashboard/budget-recap. ' +
+      'Sheet "Ringkasan" contains the totals, the indicator count per status and a recap per unit; ' +
+      'it is followed by one sheet per unit (named by unit code) listing its indicators with program, category, PIC, status and budget.',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Tahun anggaran (program year). Defaults to the current year.', example: 2026 })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter by unit ID' })
+  @ApiQuery({ name: 'category', required: false, enum: IndicatorCategory, description: 'Filter by indicator category' })
+  @ApiQuery({ name: 'status', required: false, enum: ProgramStatus, description: 'Filter by indicator status' })
+  @ApiFileResponse({
+    fileName: 'Rekap_Anggaran_Unit_Kerja_<year>.xlsx',
+    description: 'File Excel (.xlsx) siap diunduh',
+  })
+  async exportBudgetRecap(
+    @Query(new ZodValidationPipe(budgetRecapQuerySchema)) query: BudgetRecapQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.budgetRecapExportService.exportExcel(
+      query,
+      user,
+      req.headers.authorization || '',
+    );
+    res.setHeader('Content-Type', XLSX_MIME_TYPE);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Rekap_Anggaran_Unit_Kerja_${query.year}.xlsx"`,
+    );
+    res.send(buffer);
   }
 }

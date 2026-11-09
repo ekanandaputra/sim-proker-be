@@ -16,6 +16,7 @@ import { Role } from '@common/constants/roles.constant';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { JwtPayload } from '@common/guards';
 import { getAppConfig } from '@common/config';
+import { ApiFileResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Templates')
 @ApiBearerAuth()
@@ -66,8 +67,11 @@ export class TemplateController {
     description: 'Downloads the current template file for the given type, as stored in the database.',
   })
   @ApiParam({ name: 'type', enum: TemplateType, description: 'Template type to download' })
-  @ApiProduces('application/octet-stream')
-  @ApiResponse({ status: 200, description: 'Template file downloaded' })
+  @ApiFileResponse({
+    mimeType: 'application/octet-stream',
+    fileName: '<nama file template>',
+    description: 'File template; Content-Type mengikuti tipe file yang diunggah',
+  })
   @ApiResponse({ status: 404, description: 'Template not found' })
   async download(
     @Param('type', new ParseEnumPipe(TemplateType)) type: TemplateType,

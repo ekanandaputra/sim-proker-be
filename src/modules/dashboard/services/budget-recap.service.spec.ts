@@ -78,15 +78,33 @@ describe('BudgetRecapService', () => {
     expect(result.statusBreakdown[0]).toEqual({ status: 'APPROVED', count: 2, percentage: 50 });
     expect(result.statusBreakdown).toHaveLength(3);
     expect(result.units).toEqual([
-      { unitId: 'unit-b', unitName: 'Bengkel', unitCode: 'BKL', indicatorCount: 1, programCount: 1, totalBudget: 2000 },
-      { unitId: 'unit-a', unitName: 'Akademik', unitCode: 'AKD', indicatorCount: 3, programCount: 2, totalBudget: 1500 },
+      {
+        unitId: 'unit-b',
+        unitName: 'Bengkel',
+        unitCode: 'BKL',
+        indicatorCount: 1,
+        programCount: 1,
+        totalBudget: 2000,
+      },
+      {
+        unitId: 'unit-a',
+        unitName: 'Akademik',
+        unitCode: 'AKD',
+        indicatorCount: 3,
+        programCount: 2,
+        totalBudget: 1500,
+      },
     ]);
   });
 
   it('resolves PIC names and falls back to IDs', async () => {
     const result = await service.getRecap({ year: 2026 }, user, 'Bearer t');
-    expect(result.indicators.find((i) => i.id === 'i1')!.pics).toEqual([{ id: 'pic-1', name: 'Budi' }]);
-    expect(result.indicators.find((i) => i.id === 'i3')!.pics).toEqual([{ id: 'pic-2', name: 'pic-2' }]);
+    expect(result.indicators.find((i) => i.id === 'i1')!.pics).toEqual([
+      { id: 'pic-1', name: 'Budi' },
+    ]);
+    expect(result.indicators.find((i) => i.id === 'i3')!.pics).toEqual([
+      { id: 'pic-2', name: 'pic-2' },
+    ]);
     expect(result.indicators.find((i) => i.id === 'i4')!.budget).toBe(0);
   });
 
@@ -113,7 +131,12 @@ describe('BudgetRecapService', () => {
 
     prisma.programIndicator.findMany.mockResolvedValue([]);
     const empty = await service.getRecap({ year: 2026 }, user, 'Bearer t');
-    expect(empty.summary).toEqual({ totalBudget: 0, totalIndicators: 0, totalUnits: 0, totalPrograms: 0 });
+    expect(empty.summary).toEqual({
+      totalBudget: 0,
+      totalIndicators: 0,
+      totalUnits: 0,
+      totalPrograms: 0,
+    });
     expect(empty.statusBreakdown).toEqual([]);
   });
 });

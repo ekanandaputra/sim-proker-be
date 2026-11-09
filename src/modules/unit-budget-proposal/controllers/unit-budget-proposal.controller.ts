@@ -43,6 +43,8 @@ import {
   unitBudgetProposalQuerySchema,
   upsertUnitBudgetProposalSchema,
 } from '../dto/unit-budget-proposal.dto';
+import { ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
+import { ApiFileResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Proposed Unit Budget')
 @ApiBearerAuth()
@@ -98,16 +100,9 @@ export class UnitBudgetProposalController {
     description: 'Tahun usulan',
     example: 2026,
   })
-  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-  @ApiResponse({
-    status: 200,
+  @ApiFileResponse({
+    fileName: 'Usulan_Anggaran_Unit_<year>.xlsx',
     description: 'File Excel (.xlsx) siap diunduh',
-    headers: {
-      'Content-Disposition': {
-        description: 'attachment; filename="Usulan_Anggaran_Unit_<year>.xlsx"',
-        schema: { type: 'string' },
-      },
-    },
   })
   async export(
     @Query(new ZodValidationPipe(exportUnitBudgetProposalQuerySchema))
@@ -210,7 +205,7 @@ export class UnitBudgetProposalController {
   @ApiOperation({ summary: 'Delete proposed unit budget' })
   @ApiParam({ name: 'unitId', type: String, description: 'Unit ID' })
   @ApiParam({ name: 'year', type: Number, description: 'Tahun usulan (e.g. 2026)' })
-  @ApiResponse({ status: 200, description: 'Proposed unit budget successfully deleted' })
+  @ApiMessageResponse('Proposed unit budget successfully deleted')
   async remove(
     @Param('unitId') unitId: string,
     @Param('year', ParseIntPipe) year: number,

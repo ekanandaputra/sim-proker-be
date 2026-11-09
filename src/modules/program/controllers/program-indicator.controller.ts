@@ -10,6 +10,7 @@ import { CreateProgramIndicatorRealizationDto, ProgramIndicatorRealizationRespon
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { AuthUserDto } from '../../external/auth-integration/dto/auth-integration.dto';
+import { ApiSuccessFlagResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Program Indicators')
 @ApiBearerAuth()
@@ -95,7 +96,7 @@ export class ProgramIndicatorController {
   @ApiOperation({ summary: 'Delete an indicator' })
   @ApiParam({ name: 'programId', description: 'Program UUID', type: 'string' })
   @ApiParam({ name: 'id', description: 'Indicator UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  @ApiSuccessFlagResponse('Indicator deleted successfully')
   async remove(@Param('programId') programId: string, @Param('id') id: string, @CurrentUser() currentUser: JwtPayload) {
     const user = { id: currentUser.userId, name: currentUser.name };
     await this.indicatorService.remove(programId, id, user);

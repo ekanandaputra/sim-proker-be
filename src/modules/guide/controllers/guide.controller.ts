@@ -49,6 +49,7 @@ import { JwtPayload } from '@common/guards';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { getAppConfig } from '@common/config';
+import { ApiFileResponse, ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Guides')
 @ApiBearerAuth()
@@ -168,7 +169,7 @@ export class GuideController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a guide (ADMIN only)' })
   @ApiParam({ name: 'id', description: 'Guide UUID' })
-  @ApiResponse({ status: 200, description: 'Guide deleted successfully' })
+  @ApiMessageResponse('Guide deleted successfully')
   @ApiResponse({ status: 404, description: 'Guide not found' })
   async remove(@Param('id') id: string) {
     await this.guideService.remove(id);
@@ -181,8 +182,11 @@ export class GuideController {
     description: 'Downloads the uploaded material file for the given guide, if one exists.',
   })
   @ApiParam({ name: 'id', description: 'Guide UUID' })
-  @ApiProduces('application/octet-stream')
-  @ApiResponse({ status: 200, description: 'File downloaded' })
+  @ApiFileResponse({
+    mimeType: 'application/octet-stream',
+    fileName: '<nama file materi>',
+    description: 'File materi; Content-Type mengikuti tipe file yang diunggah',
+  })
   @ApiResponse({ status: 404, description: 'Guide or file not found' })
   async download(@Param('id') id: string, @Res() res: Response) {
     const { buffer, fileName, mimeType } = await this.guideService.download(id);

@@ -294,7 +294,23 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "File Excel (.xlsx) siap diunduh; nama file mengikuti jenis export",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"Usulan_Program_Kerja_<unit>_<year>.xlsx | Program_Kerja_<unit>_<year>.xlsx | Berita_Acara_<unit>_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -332,6 +348,14 @@
                 "description": "attachment; filename=\"assign_indikator_<year>.xlsx\"",
                 "schema": {
                   "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -822,7 +846,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Program deleted"
+            "description": "Program deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Program deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Program not found"
@@ -1054,7 +1104,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Deleted successfully"
+            "description": "Indicator deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1475,7 +1551,57 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/UnitDetailDataDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1860,7 +1986,57 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/UnitUserDetailDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2497,7 +2673,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Activity deleted successfully"
+            "description": "Activity deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Activity deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Activity not found"
@@ -2712,7 +2914,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Output deleted successfully"
+            "description": "Output deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Output deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Output not found"
@@ -3091,7 +3319,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Document deleted successfully"
+            "description": "Document deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Document deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Document not found"
@@ -3230,7 +3484,23 @@
         ],
         "responses": {
           "200": {
-            "description": "Template file downloaded"
+            "description": "File template; Content-Type mengikuti tipe file yang diunggah",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"<nama file template>\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           },
           "404": {
             "description": "Template not found"
@@ -3545,7 +3815,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Guide deleted successfully"
+            "description": "Guide deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Guide deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Guide not found"
@@ -3579,7 +3875,23 @@
         ],
         "responses": {
           "200": {
-            "description": "File downloaded"
+            "description": "File materi; Content-Type mengikuti tipe file yang diunggah",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"<nama file materi>\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           },
           "404": {
             "description": "Guide or file not found"
@@ -5400,6 +5712,98 @@
         ]
       }
     },
+    "/api/v1/dashboard/budget-recap/export": {
+      "get": {
+        "description": "Downloads one .xlsx file with the same filters and access rules as GET /dashboard/budget-recap. Sheet \"Ringkasan\" contains the totals, the indicator count per status and a recap per unit; it is followed by one sheet per unit (named by unit code) listing its indicators with program, category, PIC, status and budget.",
+        "operationId": "DashboardController_exportBudgetRecap",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by indicator status",
+            "schema": {
+              "enum": [
+                "ASSIGNED_TO_UNIT",
+                "DRAFT",
+                "SUBMITTED",
+                "REVISION",
+                "INDICATOR_APPROVED",
+                "APPROVED",
+                "REJECTED",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Filter by indicator category",
+            "schema": {
+              "enum": [
+                "TUSI",
+                "RUTIN",
+                "PENGEMBANGAN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Tahun anggaran (program year). Defaults to the current year.",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel (.xlsx) siap diunduh",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"Rekap_Anggaran_Unit_Kerja_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export budget recap per unit to Excel",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
     "/api/v1/unit-budget-proposals": {
       "get": {
         "description": "ADMIN sees all units; other roles only see the units they belong to.",
@@ -5532,6 +5936,14 @@
                 "description": "attachment; filename=\"Usulan_Anggaran_Unit_<year>.xlsx\"",
                 "schema": {
                   "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -5716,7 +6128,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Proposed unit budget successfully deleted"
+            "description": "Proposed unit budget successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Proposed unit budget successfully deleted"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -5938,7 +6376,39 @@
         },
         "responses": {
           "201": {
-            "description": "Excel file imported successfully"
+            "description": "Excel file imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdCount": {
+                          "type": "number",
+                          "example": 10,
+                          "description": "Rows created"
+                        },
+                        "skippedCount": {
+                          "type": "number",
+                          "example": 2,
+                          "description": "Rows skipped (duplicate or invalid)"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6002,7 +6472,39 @@
         },
         "responses": {
           "201": {
-            "description": "Excel file imported successfully"
+            "description": "Excel file imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdCount": {
+                          "type": "number",
+                          "example": 10,
+                          "description": "Rows created"
+                        },
+                        "skippedCount": {
+                          "type": "number",
+                          "example": 2,
+                          "description": "Rows skipped (duplicate or invalid)"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6228,7 +6730,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Deleted successfully"
+            "description": "Default program deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Default program not found"
@@ -6314,7 +6842,34 @@
         },
         "responses": {
           "201": {
-            "description": "Default programs assigned successfully"
+            "description": "Default programs assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdCount": {
+                          "type": "number",
+                          "example": 3,
+                          "description": "Indicators created"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failed"
@@ -6347,7 +6902,34 @@
         },
         "responses": {
           "201": {
-            "description": "Default program indicator assigned successfully"
+            "description": "Default program indicator assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdCount": {
+                          "type": "number",
+                          "example": 3,
+                          "description": "Indicators created"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failed"
@@ -6723,7 +7305,39 @@
         },
         "responses": {
           "201": {
-            "description": "Excel file imported successfully"
+            "description": "Excel file imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "createdCount": {
+                          "type": "number",
+                          "example": 10,
+                          "description": "Rows created"
+                        },
+                        "skippedCount": {
+                          "type": "number",
+                          "example": 2,
+                          "description": "Rows skipped (duplicate or invalid)"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6823,6 +7437,7 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Master Unit Type UUID",
             "schema": {
               "type": "string"
             }
@@ -6830,7 +7445,29 @@
         ],
         "responses": {
           "200": {
-            "description": "Master unit type successfully deleted"
+            "description": "Master unit type successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7050,7 +7687,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Master budget successfully deleted"
+            "description": "Master budget successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Master budget successfully deleted"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [

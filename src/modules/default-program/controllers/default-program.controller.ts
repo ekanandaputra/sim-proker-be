@@ -10,6 +10,7 @@ import { RolesGuard } from '@common/guards/roles.guard';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { paginationQuerySchema, PaginationQuery } from '@common/dto/pagination.dto';
+import { ApiImportResultResponse, ApiSuccessFlagResponse, ApiWrappedResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Default Program')
 @ApiBearerAuth()
@@ -67,7 +68,7 @@ export class DefaultProgramController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @ApiImportResultResponse()
   @UseInterceptors(FileInterceptor('file'))
   async importExcel(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     if (!file) {
@@ -113,7 +114,7 @@ export class DefaultProgramController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Excel file imported successfully' })
+  @ApiImportResultResponse()
   @UseInterceptors(FileInterceptor('file'))
   async importIndicatorsExcel(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
@@ -198,7 +199,14 @@ export class DefaultProgramController {
   @Post('assign-to-unit')
   @ApiOperation({ summary: 'Assign a default program to a unit for a specific period' })
   @ApiBody({ type: AssignDefaultProgramDto })
-  @ApiResponse({ status: 201, description: 'Default programs assigned successfully' })
+  @ApiWrappedResponse({
+    status: 201,
+    description: 'Default programs assigned successfully',
+    data: {
+      type: 'object',
+      properties: { createdCount: { type: 'number', example: 3, description: 'Indicators created' } },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   async assignToUnit(
     @Body(new ZodValidationPipe(assignDefaultProgramSchema)) dto: AssignDefaultProgramDto,
@@ -212,7 +220,14 @@ export class DefaultProgramController {
   @Post('indicators/assign')
   @ApiOperation({ summary: 'Assign a default program indicator to a unit manually' })
   @ApiBody({ type: AssignDefaultProgramIndicatorDto })
-  @ApiResponse({ status: 201, description: 'Default program indicator assigned successfully' })
+  @ApiWrappedResponse({
+    status: 201,
+    description: 'Default program indicator assigned successfully',
+    data: {
+      type: 'object',
+      properties: { createdCount: { type: 'number', example: 3, description: 'Indicators created' } },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   async assignIndicatorToUnit(
     @Body(new ZodValidationPipe(assignDefaultProgramIndicatorSchema)) dto: AssignDefaultProgramIndicatorDto,
@@ -242,7 +257,7 @@ export class DefaultProgramController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete default program' })
   @ApiParam({ name: 'id', description: 'Default Program UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  @ApiSuccessFlagResponse('Default program deleted successfully')
   @ApiResponse({ status: 404, description: 'Default program not found' })
   async remove(@Param('id') id: string, @Req() req: any) {
     const user = { id: req.user?.id, name: req.user?.name };

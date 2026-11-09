@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
+import { ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Activities')
 @ApiBearerAuth()
@@ -65,7 +66,7 @@ export class ActivityController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete activity', description: 'Deletes an activity permanently' })
   @ApiParam({ name: 'id', description: 'Activity UUID', type: 'string' })
-  @ApiResponse({ status: 200, description: 'Activity deleted successfully' })
+  @ApiMessageResponse('Activity deleted successfully')
   @ApiResponse({ status: 404, description: 'Activity not found' })
   async remove(@Param('id') id: string) {
     await this.activityService.remove(id);

@@ -50,6 +50,7 @@ import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
 import { Role } from '@common/constants';
 import { PaginatedResponse } from '@common/dto';
+import { ApiFileResponse, ApiMessageResponse } from '@common/decorators/api-response-schema.decorator';
 
 @ApiTags('Programs')
 @ApiBearerAuth()
@@ -90,6 +91,10 @@ export class ProgramController {
     enum: ['USULAN', 'FINAL', 'BERITA_ACARA'],
     description: 'Jenis export: USULAN (default) = semua indikator, FINAL = hanya indikator APPROVED dengan target per triwulan, BERITA_ACARA = belum diimplementasikan.',
   })
+  @ApiFileResponse({
+    fileName: 'Usulan_Program_Kerja_<unit>_<year>.xlsx | Program_Kerja_<unit>_<year>.xlsx | Berita_Acara_<unit>_<year>.xlsx',
+    description: 'File Excel (.xlsx) siap diunduh; nama file mengikuti jenis export',
+  })
   async exportProker(
     @Query('unitId') unitId: string,
     @Query('year') year: number,
@@ -119,15 +124,9 @@ export class ProgramController {
     description: 'Tahun program kerja yang akan diekspor',
     example: 2026,
   })
-  @ApiResponse({
-    status: 200,
+  @ApiFileResponse({
+    fileName: 'assign_indikator_<year>.xlsx',
     description: 'File Excel (.xlsx) siap diunduh',
-    headers: {
-      'Content-Disposition': {
-        description: 'attachment; filename="assign_indikator_<year>.xlsx"',
-        schema: { type: 'string' },
-      },
-    },
   })
   async exportIndicatorAssignTemplate(
     @Query('year') year: string,
@@ -413,7 +412,7 @@ export class ProgramController {
     description: 'Delete a program. Requires Admin or Unit Admin role.',
   })
   @ApiParam({ name: 'id', type: String, description: 'Program UUID' })
-  @ApiResponse({ status: 200, description: 'Program deleted' })
+  @ApiMessageResponse('Program deleted successfully')
   @ApiResponse({ status: 404, description: 'Program not found' })
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.programService.remove(id, user.userId);
