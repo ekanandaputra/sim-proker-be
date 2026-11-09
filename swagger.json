@@ -5317,6 +5317,419 @@
         ]
       }
     },
+    "/api/v1/dashboard/budget-recap": {
+      "get": {
+        "description": "Aggregates program indicator budgets for one year: summary totals, indicator count per status, one row per unit (sorted by total budget) and the full indicator list with program, unit and PIC names. ADMIN sees every unit; other roles only the units they belong to. Unit and PIC names fall back to their IDs when the Auth Service is unavailable.",
+        "operationId": "DashboardController_getBudgetRecap",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by indicator status",
+            "schema": {
+              "enum": [
+                "ASSIGNED_TO_UNIT",
+                "DRAFT",
+                "SUBMITTED",
+                "REVISION",
+                "INDICATOR_APPROVED",
+                "APPROVED",
+                "REJECTED",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Filter by indicator category",
+            "schema": {
+              "enum": [
+                "TUSI",
+                "RUTIN",
+                "PENGEMBANGAN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Tahun anggaran (program year). Defaults to the current year.",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRecapResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get budget recap per unit (Rekap Anggaran Unit Kerja)",
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/api/v1/unit-budget-proposals": {
+      "get": {
+        "description": "ADMIN sees all units; other roles only see the units they belong to.",
+        "operationId": "UnitBudgetProposalController_findAll",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Filter by year",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "isSuccess": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Success"
+                        },
+                        "data": {
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                              }
+                            },
+                            "pagination": {
+                              "properties": {
+                                "page": {
+                                  "type": "number",
+                                  "example": 1
+                                },
+                                "limit": {
+                                  "type": "number",
+                                  "example": 10
+                                },
+                                "totalItems": {
+                                  "type": "number",
+                                  "example": 100
+                                },
+                                "totalPages": {
+                                  "type": "number",
+                                  "example": 10
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all proposed unit budgets",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
+    "/api/v1/unit-budget-proposals/export": {
+      "get": {
+        "description": "Downloads one .xlsx file for the given year. Sheet \"Ringkasan\" contains the grand total of all proposals, totals grouped by category (Perbaikan, Bahan Habis, Peralatan, Pelatihan, Meubelair) and a recap per unit; it is followed by one sheet per unit with its proposal detail. ADMIN exports all units; other roles only the units they belong to.",
+        "operationId": "UnitBudgetProposalController_export",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "Tahun usulan",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel (.xlsx) siap diunduh",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"Usulan_Anggaran_Unit_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export proposed unit budgets to Excel",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
+    "/api/v1/unit-budget-proposals/my-units": {
+      "get": {
+        "description": "Returns entries for every unit assigned to the current user (same units as GET /units/my-units). With `year`: one entry per unit for that year, `proposal` is null when the unit has not filled it yet. Without `year`: one entry per unit per year that has a proposal (newest year first); units without any proposal get a single entry for the current year with `proposal` null.",
+        "operationId": "UnitBudgetProposalController_findMyUnits",
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Tahun usulan. Kosongkan untuk mengambil semua tahun.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyUnitBudgetProposalResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get proposed budgets for all units of the current user",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
+    "/api/v1/unit-budget-proposals/{unitId}/{year}": {
+      "get": {
+        "operationId": "UnitBudgetProposalController_findOne",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No proposal yet for this unit and year"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get proposed unit budget by unit and year",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      },
+      "put": {
+        "description": "Creates the record for the unit/year if it does not exist yet, otherwise updates it. Only fields present in the body are changed; pass null to clear a field. Upload documents first via POST /documents/upload.",
+        "operationId": "UnitBudgetProposalController_upsert",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertUnitBudgetProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create or update proposed unit budget",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      },
+      "delete": {
+        "operationId": "UnitBudgetProposalController_remove",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": true,
+            "in": "path",
+            "description": "Unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "description": "Tahun usulan (e.g. 2026)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposed unit budget successfully deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete proposed unit budget",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
     "/api/v1/default-programs": {
       "get": {
         "operationId": "DefaultProgramController_findAll",
@@ -6742,336 +7155,6 @@
         "summary": "Update master budget realization amount",
         "tags": [
           "Master Budget"
-        ]
-      }
-    },
-    "/api/v1/unit-budget-proposals": {
-      "get": {
-        "description": "ADMIN sees all units; other roles only see the units they belong to.",
-        "operationId": "UnitBudgetProposalController_findAll",
-        "parameters": [
-          {
-            "name": "unitId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by Unit ID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": false,
-            "in": "query",
-            "description": "Filter by year",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page (default: 10)",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (default: 1)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "properties": {
-                        "isSuccess": {
-                          "type": "boolean",
-                          "example": true
-                        },
-                        "message": {
-                          "type": "string",
-                          "example": "Success"
-                        },
-                        "data": {
-                          "properties": {
-                            "items": {
-                              "type": "array",
-                              "items": {
-                                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
-                              }
-                            },
-                            "pagination": {
-                              "properties": {
-                                "page": {
-                                  "type": "number",
-                                  "example": 1
-                                },
-                                "limit": {
-                                  "type": "number",
-                                  "example": 10
-                                },
-                                "totalItems": {
-                                  "type": "number",
-                                  "example": 100
-                                },
-                                "totalPages": {
-                                  "type": "number",
-                                  "example": 10
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all proposed unit budgets",
-        "tags": [
-          "Proposed Unit Budget"
-        ]
-      }
-    },
-    "/api/v1/unit-budget-proposals/export": {
-      "get": {
-        "description": "Downloads one .xlsx file for the given year. Sheet \"Ringkasan\" contains the grand total of all proposals, totals grouped by category (Perbaikan, Bahan Habis, Peralatan, Pelatihan, Meubelair) and a recap per unit; it is followed by one sheet per unit with its proposal detail. ADMIN exports all units; other roles only the units they belong to.",
-        "operationId": "UnitBudgetProposalController_export",
-        "parameters": [
-          {
-            "name": "year",
-            "required": true,
-            "in": "query",
-            "description": "Tahun usulan",
-            "schema": {
-              "example": 2026,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "File Excel (.xlsx) siap diunduh",
-            "headers": {
-              "Content-Disposition": {
-                "description": "attachment; filename=\"Usulan_Anggaran_Unit_<year>.xlsx\"",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Export proposed unit budgets to Excel",
-        "tags": [
-          "Proposed Unit Budget"
-        ]
-      }
-    },
-    "/api/v1/unit-budget-proposals/my-units": {
-      "get": {
-        "description": "Returns entries for every unit assigned to the current user (same units as GET /units/my-units). With `year`: one entry per unit for that year, `proposal` is null when the unit has not filled it yet. Without `year`: one entry per unit per year that has a proposal (newest year first); units without any proposal get a single entry for the current year with `proposal` null.",
-        "operationId": "UnitBudgetProposalController_findMyUnits",
-        "parameters": [
-          {
-            "name": "year",
-            "required": false,
-            "in": "query",
-            "description": "Tahun usulan. Kosongkan untuk mengambil semua tahun.",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MyUnitBudgetProposalResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get proposed budgets for all units of the current user",
-        "tags": [
-          "Proposed Unit Budget"
-        ]
-      }
-    },
-    "/api/v1/unit-budget-proposals/{unitId}/{year}": {
-      "get": {
-        "operationId": "UnitBudgetProposalController_findOne",
-        "parameters": [
-          {
-            "name": "unitId",
-            "required": true,
-            "in": "path",
-            "description": "Unit ID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": true,
-            "in": "path",
-            "description": "Tahun usulan (e.g. 2026)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No proposal yet for this unit and year"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get proposed unit budget by unit and year",
-        "tags": [
-          "Proposed Unit Budget"
-        ]
-      },
-      "put": {
-        "description": "Creates the record for the unit/year if it does not exist yet, otherwise updates it. Only fields present in the body are changed; pass null to clear a field. Upload documents first via POST /documents/upload.",
-        "operationId": "UnitBudgetProposalController_upsert",
-        "parameters": [
-          {
-            "name": "unitId",
-            "required": true,
-            "in": "path",
-            "description": "Unit ID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": true,
-            "in": "path",
-            "description": "Tahun usulan (e.g. 2026)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertUnitBudgetProposalDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create or update proposed unit budget",
-        "tags": [
-          "Proposed Unit Budget"
-        ]
-      },
-      "delete": {
-        "operationId": "UnitBudgetProposalController_remove",
-        "parameters": [
-          {
-            "name": "unitId",
-            "required": true,
-            "in": "path",
-            "description": "Unit ID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": true,
-            "in": "path",
-            "description": "Tahun usulan (e.g. 2026)",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Proposed unit budget successfully deleted"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete proposed unit budget",
-        "tags": [
-          "Proposed Unit Budget"
         ]
       }
     }
@@ -10196,6 +10279,530 @@
           "indicatorsByStatus"
         ]
       },
+      "BudgetRecapSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalBudget": {
+            "type": "number",
+            "example": 4140000000,
+            "description": "Sum of indicator budgets matching the filter (Rp)"
+          },
+          "totalIndicators": {
+            "type": "number",
+            "example": 12,
+            "description": "Number of indicators (pengajuan) matching the filter"
+          },
+          "totalUnits": {
+            "type": "number",
+            "example": 7,
+            "description": "Number of distinct units that have at least one indicator"
+          },
+          "totalPrograms": {
+            "type": "number",
+            "example": 9,
+            "description": "Number of distinct programs"
+          }
+        },
+        "required": [
+          "totalBudget",
+          "totalIndicators",
+          "totalUnits",
+          "totalPrograms"
+        ]
+      },
+      "BudgetRecapStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED_TO_UNIT",
+              "DRAFT",
+              "SUBMITTED",
+              "REVISION",
+              "INDICATOR_APPROVED",
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "APPROVED"
+          },
+          "count": {
+            "type": "number",
+            "example": 5
+          },
+          "percentage": {
+            "type": "number",
+            "example": 41.67,
+            "description": "Share of totalIndicators in percent (2 decimals)"
+          }
+        },
+        "required": [
+          "status",
+          "count",
+          "percentage"
+        ]
+      },
+      "BudgetRecapUnitDto": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "unitName": {
+            "type": "string",
+            "example": "Jurusan Teknik Permesinan Kapal",
+            "description": "Falls back to unitId when unknown"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "JTPK"
+          },
+          "indicatorCount": {
+            "type": "number",
+            "example": 2
+          },
+          "programCount": {
+            "type": "number",
+            "example": 1
+          },
+          "totalBudget": {
+            "type": "number",
+            "example": 1595000000
+          }
+        },
+        "required": [
+          "unitId",
+          "unitName",
+          "unitCode",
+          "indicatorCount",
+          "programCount",
+          "totalBudget"
+        ]
+      },
+      "BudgetRecapProgramDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440020"
+          },
+          "code": {
+            "type": "string",
+            "example": "PRG-2026-001"
+          },
+          "title": {
+            "type": "string",
+            "example": "Peningkatan Fasilitas Laboratorium"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "title"
+        ]
+      },
+      "BudgetRecapPicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440010"
+          },
+          "name": {
+            "type": "string",
+            "example": "Budi Santoso",
+            "description": "Falls back to the user ID when unknown"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "BudgetRecapIndicatorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440030"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jumlah alat praktikum yang diperbarui"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TUSI",
+              "RUTIN",
+              "PENGEMBANGAN"
+            ],
+            "example": "PENGEMBANGAN"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED_TO_UNIT",
+              "DRAFT",
+              "SUBMITTED",
+              "REVISION",
+              "INDICATOR_APPROVED",
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "SUBMITTED"
+          },
+          "budget": {
+            "type": "number",
+            "example": 750000000,
+            "description": "Indicator budget (Rp); 0 when not filled"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "unitName": {
+            "type": "string",
+            "example": "Jurusan Teknik Permesinan Kapal"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "JTPK"
+          },
+          "program": {
+            "$ref": "#/components/schemas/BudgetRecapProgramDto"
+          },
+          "pics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetRecapPicDto"
+            }
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-03-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "status",
+          "budget",
+          "unitId",
+          "unitName",
+          "unitCode",
+          "program",
+          "pics",
+          "updatedAt"
+        ]
+      },
+      "BudgetRecapResponseDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BudgetRecapSummaryDto"
+          },
+          "statusBreakdown": {
+            "description": "Indicator count per status (only statuses that occur), sorted by count desc",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetRecapStatusDto"
+            }
+          },
+          "units": {
+            "description": "One row per unit, sorted by totalBudget desc (\"Per Unit\" table and distribution chart)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetRecapUnitDto"
+            }
+          },
+          "indicators": {
+            "description": "Every indicator matching the filter, sorted by budget desc (\"Semua Pengajuan\" table / unit detail)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetRecapIndicatorDto"
+            }
+          }
+        },
+        "required": [
+          "year",
+          "summary",
+          "statusBreakdown",
+          "units",
+          "indicators"
+        ]
+      },
+      "UnitBudgetProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "unitId": {
+            "type": "string",
+            "example": "unit-uuid"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "perbaikanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "perbaikanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
+            "description": "Full URL of the Usulan Perbaikan document"
+          },
+          "perbaikanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 15000000
+          },
+          "bahanHabisDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440002"
+          },
+          "bahanHabisURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/def456.pdf",
+            "description": "Full URL of the Usulan Bahan Habis document"
+          },
+          "bahanHabisValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 5000000
+          },
+          "peralatanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440003"
+          },
+          "peralatanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
+            "description": "Full URL of the Usulan Peralatan document"
+          },
+          "peralatanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 25000000
+          },
+          "pelatihanDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440004"
+          },
+          "pelatihanURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
+            "description": "Full URL of the Usulan Pelatihan document"
+          },
+          "pelatihanValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 10000000
+          },
+          "meubelairDocumentId": {
+            "type": "object",
+            "nullable": true,
+            "example": "550e8400-e29b-41d4-a716-446655440005"
+          },
+          "meubelairURL": {
+            "type": "object",
+            "nullable": true,
+            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
+            "description": "Full URL of the Usulan Meubelair document"
+          },
+          "meubelairValue": {
+            "type": "object",
+            "nullable": true,
+            "example": 8000000
+          },
+          "totalValue": {
+            "type": "number",
+            "example": 63000000,
+            "description": "Total of all five proposal values"
+          },
+          "createdBy": {
+            "type": "string",
+            "example": "user-uuid"
+          },
+          "updatedBy": {
+            "type": "object",
+            "nullable": true,
+            "example": "user-uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-25T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-25T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "unitId",
+          "year",
+          "perbaikanDocumentId",
+          "perbaikanURL",
+          "perbaikanValue",
+          "bahanHabisDocumentId",
+          "bahanHabisURL",
+          "bahanHabisValue",
+          "peralatanDocumentId",
+          "peralatanURL",
+          "peralatanValue",
+          "pelatihanDocumentId",
+          "pelatihanURL",
+          "pelatihanValue",
+          "meubelairDocumentId",
+          "meubelairURL",
+          "meubelairValue",
+          "totalValue",
+          "createdBy",
+          "updatedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MyUnitBudgetProposalUnitDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "name": {
+            "type": "object",
+            "nullable": true,
+            "example": "Unit Teknik Informatika"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MyUnitBudgetProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/MyUnitBudgetProposalUnitDto"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "proposal": {
+            "nullable": true,
+            "description": "Proposed budget of this unit for the year, or null if it has not been filled yet",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "unit",
+          "year",
+          "proposal"
+        ]
+      },
+      "UpsertUnitBudgetProposalDto": {
+        "type": "object",
+        "properties": {
+          "perbaikanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Perbaikan. Pass null to remove it.",
+            "nullable": true
+          },
+          "perbaikanValue": {
+            "type": "object",
+            "example": 15000000,
+            "description": "Nilai Usulan Perbaikan. Pass null to clear it.",
+            "nullable": true
+          },
+          "bahanHabisDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440002",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Bahan Habis. Pass null to remove it.",
+            "nullable": true
+          },
+          "bahanHabisValue": {
+            "type": "object",
+            "example": 5000000,
+            "description": "Nilai Usulan Bahan Habis. Pass null to clear it.",
+            "nullable": true
+          },
+          "peralatanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440003",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Peralatan. Pass null to remove it.",
+            "nullable": true
+          },
+          "peralatanValue": {
+            "type": "object",
+            "example": 25000000,
+            "description": "Nilai Usulan Peralatan. Pass null to clear it.",
+            "nullable": true
+          },
+          "pelatihanDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440004",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Pelatihan. Pass null to remove it.",
+            "nullable": true
+          },
+          "pelatihanValue": {
+            "type": "object",
+            "example": 10000000,
+            "description": "Nilai Usulan Pelatihan. Pass null to clear it.",
+            "nullable": true
+          },
+          "meubelairDocumentId": {
+            "type": "object",
+            "example": "550e8400-e29b-41d4-a716-446655440005",
+            "description": "Document UUID (from POST /documents/upload) for Usulan Meubelair. Pass null to remove it.",
+            "nullable": true
+          },
+          "meubelairValue": {
+            "type": "object",
+            "example": 8000000,
+            "description": "Nilai Usulan Meubelair. Pass null to clear it.",
+            "nullable": true
+          }
+        }
+      },
       "AssignmentIkuDto": {
         "type": "object",
         "properties": {
@@ -10755,262 +11362,6 @@
         "required": [
           "realization"
         ]
-      },
-      "UnitBudgetProposalResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
-          },
-          "unitId": {
-            "type": "string",
-            "example": "unit-uuid"
-          },
-          "year": {
-            "type": "number",
-            "example": 2026
-          },
-          "perbaikanDocumentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440001"
-          },
-          "perbaikanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/abc123.pdf",
-            "description": "Full URL of the Usulan Perbaikan document"
-          },
-          "perbaikanValue": {
-            "type": "object",
-            "nullable": true,
-            "example": 15000000
-          },
-          "bahanHabisDocumentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440002"
-          },
-          "bahanHabisURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/def456.pdf",
-            "description": "Full URL of the Usulan Bahan Habis document"
-          },
-          "bahanHabisValue": {
-            "type": "object",
-            "nullable": true,
-            "example": 5000000
-          },
-          "peralatanDocumentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440003"
-          },
-          "peralatanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/ghi789.pdf",
-            "description": "Full URL of the Usulan Peralatan document"
-          },
-          "peralatanValue": {
-            "type": "object",
-            "nullable": true,
-            "example": 25000000
-          },
-          "pelatihanDocumentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440004"
-          },
-          "pelatihanURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/jkl012.pdf",
-            "description": "Full URL of the Usulan Pelatihan document"
-          },
-          "pelatihanValue": {
-            "type": "object",
-            "nullable": true,
-            "example": 10000000
-          },
-          "meubelairDocumentId": {
-            "type": "object",
-            "nullable": true,
-            "example": "550e8400-e29b-41d4-a716-446655440005"
-          },
-          "meubelairURL": {
-            "type": "object",
-            "nullable": true,
-            "example": "http://localhost:3000/uploads/documents/mno345.pdf",
-            "description": "Full URL of the Usulan Meubelair document"
-          },
-          "meubelairValue": {
-            "type": "object",
-            "nullable": true,
-            "example": 8000000
-          },
-          "totalValue": {
-            "type": "number",
-            "example": 63000000,
-            "description": "Total of all five proposal values"
-          },
-          "createdBy": {
-            "type": "string",
-            "example": "user-uuid"
-          },
-          "updatedBy": {
-            "type": "object",
-            "nullable": true,
-            "example": "user-uuid"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-09-25T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-09-25T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "unitId",
-          "year",
-          "perbaikanDocumentId",
-          "perbaikanURL",
-          "perbaikanValue",
-          "bahanHabisDocumentId",
-          "bahanHabisURL",
-          "bahanHabisValue",
-          "peralatanDocumentId",
-          "peralatanURL",
-          "peralatanValue",
-          "pelatihanDocumentId",
-          "pelatihanURL",
-          "pelatihanValue",
-          "meubelairDocumentId",
-          "meubelairURL",
-          "meubelairValue",
-          "totalValue",
-          "createdBy",
-          "updatedBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "MyUnitBudgetProposalUnitDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
-          },
-          "name": {
-            "type": "object",
-            "nullable": true,
-            "example": "Unit Teknik Informatika"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ]
-      },
-      "MyUnitBudgetProposalResponseDto": {
-        "type": "object",
-        "properties": {
-          "unit": {
-            "$ref": "#/components/schemas/MyUnitBudgetProposalUnitDto"
-          },
-          "year": {
-            "type": "number",
-            "example": 2026
-          },
-          "proposal": {
-            "nullable": true,
-            "description": "Proposed budget of this unit for the year, or null if it has not been filled yet",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UnitBudgetProposalResponseDto"
-              }
-            ]
-          }
-        },
-        "required": [
-          "unit",
-          "year",
-          "proposal"
-        ]
-      },
-      "UpsertUnitBudgetProposalDto": {
-        "type": "object",
-        "properties": {
-          "perbaikanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440001",
-            "description": "Document UUID (from POST /documents/upload) for Usulan Perbaikan. Pass null to remove it.",
-            "nullable": true
-          },
-          "perbaikanValue": {
-            "type": "object",
-            "example": 15000000,
-            "description": "Nilai Usulan Perbaikan. Pass null to clear it.",
-            "nullable": true
-          },
-          "bahanHabisDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440002",
-            "description": "Document UUID (from POST /documents/upload) for Usulan Bahan Habis. Pass null to remove it.",
-            "nullable": true
-          },
-          "bahanHabisValue": {
-            "type": "object",
-            "example": 5000000,
-            "description": "Nilai Usulan Bahan Habis. Pass null to clear it.",
-            "nullable": true
-          },
-          "peralatanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440003",
-            "description": "Document UUID (from POST /documents/upload) for Usulan Peralatan. Pass null to remove it.",
-            "nullable": true
-          },
-          "peralatanValue": {
-            "type": "object",
-            "example": 25000000,
-            "description": "Nilai Usulan Peralatan. Pass null to clear it.",
-            "nullable": true
-          },
-          "pelatihanDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440004",
-            "description": "Document UUID (from POST /documents/upload) for Usulan Pelatihan. Pass null to remove it.",
-            "nullable": true
-          },
-          "pelatihanValue": {
-            "type": "object",
-            "example": 10000000,
-            "description": "Nilai Usulan Pelatihan. Pass null to clear it.",
-            "nullable": true
-          },
-          "meubelairDocumentId": {
-            "type": "object",
-            "example": "550e8400-e29b-41d4-a716-446655440005",
-            "description": "Document UUID (from POST /documents/upload) for Usulan Meubelair. Pass null to remove it.",
-            "nullable": true
-          },
-          "meubelairValue": {
-            "type": "object",
-            "example": 8000000,
-            "description": "Nilai Usulan Meubelair. Pass null to clear it.",
-            "nullable": true
-          }
-        }
       }
     }
   }

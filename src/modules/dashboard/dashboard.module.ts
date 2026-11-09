@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 
 import { DashboardController } from './controllers/dashboard.controller';
 import { DashboardService } from './services/dashboard.service';
-import { getAppConfig } from '@common/config';
+import { BudgetRecapService } from './services/budget-recap.service';
+import { UnitModule } from '../unit/unit.module';
+import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
+import { UnitBudgetProposalModule } from '../unit-budget-proposal/unit-budget-proposal.module';
 
 @Module({
-  imports: [],
+  imports: [UnitModule, AuthIntegrationModule, UnitBudgetProposalModule],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, BudgetRecapService],
 })
 export class DashboardModule {}
