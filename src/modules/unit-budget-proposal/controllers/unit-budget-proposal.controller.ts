@@ -7,10 +7,11 @@ import {
   Param,
   Query,
   Req,
+  Res,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +20,7 @@ import {
   ApiQuery,
   ApiBody,
   ApiResponse,
+  ApiProduces,
 } from '@nestjs/swagger';
 import { JwtAuthGuard, JwtPayload } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -28,7 +30,10 @@ import { Role } from '@common/constants';
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe';
 import { ApiPaginatedResponse } from '@common/decorators/api-paginated-response.decorator';
 import { UnitBudgetProposalService } from '../services/unit-budget-proposal.service';
+import { UnitBudgetProposalExportService } from '../services/unit-budget-proposal-export.service';
 import {
+  ExportUnitBudgetProposalQuery,
+  exportUnitBudgetProposalQuerySchema,
   MyUnitBudgetProposalQuery,
   MyUnitBudgetProposalResponseDto,
   myUnitBudgetProposalQuerySchema,
@@ -44,7 +49,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('unit-budget-proposals')
 export class UnitBudgetProposalController {
-  constructor(private readonly unitBudgetProposalService: UnitBudgetProposalService) {}
+  constructor(
+    private readonly unitBudgetProposalService: UnitBudgetProposalService,
+    private readonly unitBudgetProposalExportService: UnitBudgetProposalExportService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -72,6 +80,56 @@ export class UnitBudgetProposalController {
     @Req() req: Request,
   ) {
     return this.unitBudgetProposalService.findAll(query, user, req.headers.authorization);
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export proposed unit budgets to Excel',
+    description:
+      'Downloads one .xlsx file for the given year. Sheet "Ringkasan" contains the grand total of all ' +
+      'proposals, totals grouped by category (Perbaikan, Bahan Habis, Peralatan, Pelatihan, Meubelair) ' +
+      'and a recap per unit; it is followed by one sheet per unit with its proposal detail. ' +
+      'ADMIN exports all units; other roles only the units they belong to.',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    type: Number,
+    description: 'Tahun usulan',
+    example: 2026,
+  })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({
+    status: 200,
+    description: 'File Excel (.xlsx) siap diunduh',
+    headers: {
+      'Content-Disposition': {
+        description: 'attachment; filename="Usulan_Anggaran_Unit_<year>.xlsx"',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  async export(
+    @Query(new ZodValidationPipe(exportUnitBudgetProposalQuerySchema))
+    query: ExportUnitBudgetProposalQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.unitBudgetProposalExportService.exportExcel(
+      query.year,
+      user,
+      req.headers.authorization || '',
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Usulan_Anggaran_Unit_${query.year}.xlsx"`,
+    );
+    res.send(buffer);
   }
 
   @Get('my-units')

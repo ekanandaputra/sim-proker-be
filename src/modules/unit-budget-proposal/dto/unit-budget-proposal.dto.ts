@@ -10,6 +10,14 @@ export const UNIT_BUDGET_PROPOSAL_KINDS = [
 ] as const;
 export type UnitBudgetProposalKind = (typeof UNIT_BUDGET_PROPOSAL_KINDS)[number];
 
+export const UNIT_BUDGET_PROPOSAL_KIND_LABELS: Record<UnitBudgetProposalKind, string> = {
+  perbaikan: 'Usulan Perbaikan',
+  bahanHabis: 'Usulan Bahan Habis',
+  peralatan: 'Usulan Peralatan',
+  pelatihan: 'Usulan Pelatihan',
+  meubelair: 'Usulan Meubelair',
+};
+
 // --- Query ---
 
 export const unitBudgetProposalQuerySchema = z.object({
@@ -20,6 +28,14 @@ export const unitBudgetProposalQuerySchema = z.object({
 });
 
 export type UnitBudgetProposalQuery = z.infer<typeof unitBudgetProposalQuerySchema>;
+
+// --- Export ---
+
+export const exportUnitBudgetProposalQuerySchema = z.object({
+  year: z.coerce.number().int().min(2000),
+});
+
+export type ExportUnitBudgetProposalQuery = z.infer<typeof exportUnitBudgetProposalQuerySchema>;
 
 // --- Upsert ---
 

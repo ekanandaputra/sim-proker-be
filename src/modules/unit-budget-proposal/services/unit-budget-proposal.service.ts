@@ -84,10 +84,7 @@ export class UnitBudgetProposalService {
   }
 
   /** Returns null for ADMIN (all units allowed), otherwise the unit IDs the user belongs to. */
-  private async getAllowedUnitIds(
-    currentUser: JwtPayload,
-    token?: string,
-  ): Promise<string[] | null> {
+  async getAllowedUnitIds(currentUser: JwtPayload, token?: string): Promise<string[] | null> {
     if (currentUser.roles?.includes(Role.ADMIN)) return null;
 
     let allowedUnitIds = [currentUser.unitId].filter(Boolean);
@@ -173,6 +170,21 @@ export class UnitBudgetProposalService {
         totalPages: Math.ceil(totalItems / limit),
       },
     };
+  }
+
+  /** All proposals of a year the current user may see (ADMIN: every unit), unpaginated. */
+  async findAllForExport(
+    year: number,
+    currentUser: JwtPayload,
+    token?: string,
+  ): Promise<UnitBudgetProposalResponseDto[]> {
+    const allowedUnitIds = await this.getAllowedUnitIds(currentUser, token);
+    const proposals = await this.prisma.unitBudgetProposal.findMany({
+      where: { year, ...(allowedUnitIds ? { unitId: { in: allowedUnitIds } } : {}) },
+      include: DOCUMENT_INCLUDE,
+      orderBy: { unitId: 'asc' },
+    });
+    return proposals.map((proposal) => this.mapToDto(proposal));
   }
 
   /**
