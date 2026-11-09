@@ -6853,6 +6853,46 @@
         ]
       }
     },
+    "/api/v1/unit-budget-proposals/export": {
+      "get": {
+        "description": "Downloads one .xlsx file for the given year. Sheet \"Ringkasan\" contains the grand total of all proposals, totals grouped by category (Perbaikan, Bahan Habis, Peralatan, Pelatihan, Meubelair) and a recap per unit; it is followed by one sheet per unit with its proposal detail. ADMIN exports all units; other roles only the units they belong to.",
+        "operationId": "UnitBudgetProposalController_export",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "Tahun usulan",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel (.xlsx) siap diunduh",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"Usulan_Anggaran_Unit_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export proposed unit budgets to Excel",
+        "tags": [
+          "Proposed Unit Budget"
+        ]
+      }
+    },
     "/api/v1/unit-budget-proposals/my-units": {
       "get": {
         "description": "Returns entries for every unit assigned to the current user (same units as GET /units/my-units). With `year`: one entry per unit for that year, `proposal` is null when the unit has not filled it yet. Without `year`: one entry per unit per year that has a proposal (newest year first); units without any proposal get a single entry for the current year with `proposal` null.",
@@ -7177,6 +7217,50 @@
           "createdAt"
         ]
       },
+      "MasterUnitTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "Master Unit Type UUID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dokumen",
+            "description": "Name of the unit type"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NUMBER",
+              "FILE",
+              "TEXT"
+            ],
+            "example": "FILE",
+            "description": "Type of the unit (NUMBER, FILE, TEXT)"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z",
+            "description": "Update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "DocumentResponseDto": {
         "type": "object",
         "properties": {
@@ -7273,9 +7357,18 @@
             "type": "object",
             "description": "Unit detail object assigned to this indicator"
           },
+          "masterUnitTypeId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440003",
+            "description": "Master Unit Type UUID for unit of measurement"
+          },
           "masterUnitType": {
-            "type": "object",
-            "description": "Master Unit Type object for unit of measurement"
+            "description": "Master Unit Type object for unit of measurement",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MasterUnitTypeDto"
+              }
+            ]
           },
           "category": {
             "type": "string",
@@ -7424,6 +7517,7 @@
           "unitId",
           "name",
           "unit",
+          "masterUnitTypeId",
           "category",
           "isDefaultProgramIndicator",
           "targetQ1",
@@ -8492,50 +8586,6 @@
           "title",
           "year",
           "createdBy",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "MasterUnitTypeDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "550e8400-e29b-41d4-a716-446655440000",
-            "description": "Master Unit Type UUID"
-          },
-          "name": {
-            "type": "string",
-            "example": "Dokumen",
-            "description": "Name of the unit type"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "NUMBER",
-              "FILE",
-              "TEXT"
-            ],
-            "example": "FILE",
-            "description": "Type of the unit (NUMBER, FILE, TEXT)"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z",
-            "description": "Update timestamp"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "type",
           "createdAt",
           "updatedAt"
         ]
