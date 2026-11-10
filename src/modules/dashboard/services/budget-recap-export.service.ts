@@ -179,8 +179,8 @@ export class BudgetRecapExportService {
     indicators: BudgetRecapIndicatorDto[],
   ) {
     const sheet = workbook.addWorksheet(sheetName);
-    const lastCol = 7; // No | Program | Indikator | Kategori | PIC | Status | Anggaran
-    [6, 40, 45, 16, 30, 20, 22].forEach((width, i) => (sheet.getColumn(i + 1).width = width));
+    const lastCol = 7; // No | Program | Indikator | Kategori | Status | Anggaran | Dokumen RAB
+    [6, 40, 45, 16, 20, 22, 50].forEach((width, i) => (sheet.getColumn(i + 1).width = width));
 
     addSheetTitle(sheet, `RINCIAN ANGGARAN UNIT KERJA TAHUN ${year}`, lastCol);
 
@@ -195,26 +195,32 @@ export class BudgetRecapExportService {
       'Program',
       'Indikator',
       'Kategori',
-      'PIC',
       'Status',
       'Anggaran',
+      'Dokumen RAB',
     ]);
     indicators.forEach((ind, i) => {
       writeDataRow(
         sheet,
-        r++,
+        r,
         [
           i + 1,
           `${ind.program.code} - ${ind.program.title}`,
           ind.name,
           INDICATOR_CATEGORY_LABELS[ind.category],
-          ind.pics.map((p) => p.name).join(', ') || '-',
           PROGRAM_STATUS_LABELS[ind.status],
           ind.budget,
+          ind.rabURL ?? '-',
         ],
-        [7],
+        [6],
       );
+      if (ind.rabURL) {
+        const cell = sheet.getCell(r, 7);
+        cell.value = { text: ind.rabURL, hyperlink: ind.rabURL };
+        cell.font = { color: { argb: 'FF0563C1' }, underline: true };
+      }
+      r++;
     });
-    writeTotalRow(sheet, r, 'TOTAL', lastCol, [unit.totalBudget]);
+    writeTotalRow(sheet, r, 'TOTAL', 6, [unit.totalBudget], lastCol);
   }
 }

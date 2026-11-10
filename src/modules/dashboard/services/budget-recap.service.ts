@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Prisma, ProgramStatus } from '@prisma/client';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
+import { STORAGE_SERVICE, IStorageService } from '@common/storage';
 import { UnitService } from '../../unit/services/unit.service';
 import { AuthIntegrationService } from '../../external/auth-integration/services/auth-integration.service';
 import { UnitBudgetProposalService } from '../../unit-budget-proposal/services/unit-budget-proposal.service';
@@ -29,10 +30,11 @@ export class BudgetRecapService {
     private readonly unitService: UnitService,
     private readonly authIntegrationService: AuthIntegrationService,
     private readonly unitBudgetProposalService: UnitBudgetProposalService,
+    @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 
   /**
-   * Budget recap of program indicators for one year. ADMIN sees every unit; other roles only the
+   * Budget recap of program indicators (only those with a budget > 0) for one year. ADMIN sees every unit; other roles only the
    * units they belong to. Unit and PIC names come from the Auth Service and fall back to IDs.
    */
   async getRecap(
@@ -46,7 +48,8 @@ export class BudgetRecapService {
       token,
     );
 
-    const where: Prisma.ProgramIndicatorWhereInput = { program: { year } };
+    // Only indicators with a filled, non-zero budget are part of the recap.
+    const where: Prisma.ProgramIndicatorWhereInput = { program: { year }, budget: { gt: 0 } };
     if (category) where.category = category;
     if (status) where.status = status;
     if (allowedUnitIds) {
@@ -73,6 +76,7 @@ export class BudgetRecapService {
         updatedAt: true,
         program: { select: { id: true, code: true, title: true } },
         pics: { select: { userId: true } },
+        rabDocument: { select: { filePath: true } },
       },
       orderBy: [{ budget: 'desc' }, { name: 'asc' }],
     });
@@ -96,6 +100,7 @@ export class BudgetRecapService {
         unitCode: unit.code,
         program: ind.program,
         pics: ind.pics.map((p) => ({ id: p.userId, name: picNames.get(p.userId) ?? p.userId })),
+        rabURL: ind.rabDocument ? this.storageService.getUrl(ind.rabDocument.filePath) : null,
         updatedAt: ind.updatedAt,
       };
     });

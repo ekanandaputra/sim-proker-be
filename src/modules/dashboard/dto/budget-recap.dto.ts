@@ -105,7 +105,7 @@ export class BudgetRecapIndicatorDto {
   @ApiProperty({ enum: ProgramStatus, example: ProgramStatus.SUBMITTED })
   status!: ProgramStatus;
 
-  @ApiProperty({ example: 750000000, description: 'Indicator budget (Rp); 0 when not filled' })
+  @ApiProperty({ example: 750000000, description: 'Indicator budget (Rp); always > 0' })
   budget!: number;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
@@ -122,6 +122,14 @@ export class BudgetRecapIndicatorDto {
 
   @ApiProperty({ type: [BudgetRecapPicDto] })
   pics!: BudgetRecapPicDto[];
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'https://sim-proker-be.ntech.my.id/uploads/rab.pdf',
+    description: 'Public URL of the RAB document; null when not uploaded',
+  })
+  rabURL!: string | null;
 
   @ApiProperty({ example: '2026-03-01T00:00:00.000Z' })
   updatedAt!: Date;
@@ -150,7 +158,7 @@ export class BudgetRecapResponseDto {
   @ApiProperty({
     type: [BudgetRecapIndicatorDto],
     description:
-      'Every indicator matching the filter, sorted by budget desc ("Semua Pengajuan" table / unit detail)',
+      'Every indicator with a budget > 0 matching the filter, sorted by budget desc ("Semua Pengajuan" table / unit detail)',
   })
   indicators!: BudgetRecapIndicatorDto[];
 }

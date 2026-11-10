@@ -11126,7 +11126,7 @@
           "budget": {
             "type": "number",
             "example": 750000000,
-            "description": "Indicator budget (Rp); 0 when not filled"
+            "description": "Indicator budget (Rp); always > 0"
           },
           "unitId": {
             "type": "string",
@@ -11150,6 +11150,12 @@
               "$ref": "#/components/schemas/BudgetRecapPicDto"
             }
           },
+          "rabURL": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://sim-proker-be.ntech.my.id/uploads/rab.pdf",
+            "description": "Public URL of the RAB document; null when not uploaded"
+          },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
@@ -11167,6 +11173,7 @@
           "unitCode",
           "program",
           "pics",
+          "rabURL",
           "updatedAt"
         ]
       },
@@ -11195,7 +11202,7 @@
             }
           },
           "indicators": {
-            "description": "Every indicator matching the filter, sorted by budget desc (\"Semua Pengajuan\" table / unit detail)",
+            "description": "Every indicator with a budget > 0 matching the filter, sorted by budget desc (\"Semua Pengajuan\" table / unit detail)",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BudgetRecapIndicatorDto"

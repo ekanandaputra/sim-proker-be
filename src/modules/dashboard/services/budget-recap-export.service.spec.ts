@@ -27,6 +27,7 @@ const indicator = (
           { id: 'u2', name: 'Siti' },
         ]
       : [],
+  rabURL: id === 'i1' ? 'https://files.test/rab-i1.pdf' : null,
   updatedAt: new Date('2026-01-01'),
 });
 
@@ -110,7 +111,7 @@ describe('BudgetRecapExportService', () => {
     expect(summary).toContainEqual(['TOTAL', 1, 3, 3500]);
   });
 
-  it('lists each unit indicators with PIC, status and total', async () => {
+  it('lists each unit indicators with status, budget, RAB document and total', async () => {
     const workbook = await load(await service.exportExcel({ year: 2026 }, user, 'Bearer t'));
     const unitSheet = values(workbook, 'AKD');
 
@@ -120,18 +121,18 @@ describe('BudgetRecapExportService', () => {
       'PRG-1 - Program Satu',
       'Indikator i1',
       'Tusi',
-      'Budi, Siti',
       'Disetujui',
       1000,
+      { text: 'https://files.test/rab-i1.pdf', hyperlink: 'https://files.test/rab-i1.pdf' },
     ]);
     expect(unitSheet).toContainEqual([
       2,
       'PRG-1 - Program Satu',
       'Indikator i2',
       'Tusi',
-      '-',
       'Diajukan',
       500,
+      '-',
     ]);
     expect(unitSheet).toContainEqual(['TOTAL', 1500]);
   });
