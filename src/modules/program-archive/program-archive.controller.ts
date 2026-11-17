@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  ParseIntPipe,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -50,13 +49,13 @@ export class ProgramArchiveController {
     return this.programArchiveService.findAll();
   }
 
-  @Get(':year')
-  @ApiOperation({ summary: 'Get arsip proker by tahun' })
-  @ApiParam({ name: 'year', type: Number, example: 2025 })
+  @Get(':id')
+  @ApiOperation({ summary: 'Get arsip proker by ID' })
+  @ApiParam({ name: 'id', description: 'Archive UUID' })
   @ApiResponse({ status: 200, type: ProgramArchiveResponseDto })
   @ApiResponse({ status: 404, description: 'Program archive not found' })
-  async findByYear(@Param('year', ParseIntPipe) year: number) {
-    return this.programArchiveService.findByYear(year);
+  async findById(@Param('id') id: string) {
+    return this.programArchiveService.findById(id);
   }
 
   @Post()
@@ -71,29 +70,30 @@ export class ProgramArchiveController {
     return this.programArchiveService.create(dto);
   }
 
-  @Patch(':year')
+  @Patch(':id')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Update link Google Drive arsip proker (ADMIN only)' })
+  @ApiOperation({ summary: 'Update tahun / link Google Drive arsip proker (ADMIN only)' })
   @ApiBody({ type: UpdateProgramArchiveDto })
-  @ApiParam({ name: 'year', type: Number, example: 2025 })
+  @ApiParam({ name: 'id', description: 'Archive UUID' })
   @ApiResponse({ status: 200, type: ProgramArchiveResponseDto })
   @ApiResponse({ status: 404, description: 'Program archive not found' })
+  @ApiResponse({ status: 409, description: 'Archive for the year already exists' })
   async update(
-    @Param('year', ParseIntPipe) year: number,
+    @Param('id') id: string,
     @Body(new ZodValidationPipe(updateProgramArchiveSchema)) dto: UpdateProgramArchiveBodyDto,
   ) {
-    return this.programArchiveService.update(year, dto);
+    return this.programArchiveService.update(id, dto);
   }
 
-  @Delete(':year')
+  @Delete(':id')
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete arsip proker (ADMIN only)' })
-  @ApiParam({ name: 'year', type: Number, example: 2025 })
+  @ApiParam({ name: 'id', description: 'Archive UUID' })
   @ApiMessageResponse('Program archive deleted successfully')
   @ApiResponse({ status: 404, description: 'Program archive not found' })
-  async remove(@Param('year', ParseIntPipe) year: number) {
-    await this.programArchiveService.remove(year);
+  async remove(@Param('id') id: string) {
+    await this.programArchiveService.remove(id);
     return { message: 'Program archive deleted successfully' };
   }
 }

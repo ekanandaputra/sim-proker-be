@@ -1,4 +1,5 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { ProgramArchive } from '@prisma/client';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { EntityNotFoundException } from '@common/exceptions';
 import {
@@ -19,37 +20,48 @@ export class ProgramArchiveService {
     return items.map(ProgramArchiveMapper.toResponse);
   }
 
-  async findByYear(year: number): Promise<ProgramArchiveResponseDto> {
-    const archive = await this.prisma.programArchive.findUnique({ where: { year } });
-    if (!archive) {
-      throw new EntityNotFoundException('ProgramArchive', year.toString());
-    }
-    return ProgramArchiveMapper.toResponse(archive);
+  async findById(id: string): Promise<ProgramArchiveResponseDto> {
+    return ProgramArchiveMapper.toResponse(await this.getOrThrow(id));
   }
 
   async create(dto: CreateProgramArchiveBodyDto): Promise<ProgramArchiveResponseDto> {
-    const existing = await this.prisma.programArchive.findUnique({ where: { year: dto.year } });
-    if (existing) {
-      throw new ConflictException(`Program archive for year ${dto.year} already exists.`);
-    }
+    await this.ensureYearAvailable(dto.year);
     const archive = await this.prisma.programArchive.create({ data: dto });
-    this.logger.log(`Program archive created: ${archive.year}`);
+    this.logger.log(`Program archive created: ${archive.id} (${archive.year})`);
     return ProgramArchiveMapper.toResponse(archive);
   }
 
-  async update(year: number, dto: UpdateProgramArchiveBodyDto): Promise<ProgramArchiveResponseDto> {
-    await this.findByYear(year);
+  async update(id: string, dto: UpdateProgramArchiveBodyDto): Promise<ProgramArchiveResponseDto> {
+    const existing = await this.getOrThrow(id);
+    if (dto.year !== undefined && dto.year !== existing.year) {
+      await this.ensureYearAvailable(dto.year);
+    }
     const archive = await this.prisma.programArchive.update({
-      where: { year },
-      data: { gdriveUrl: dto.gdriveUrl },
+      where: { id },
+      data: { year: dto.year, gdriveUrl: dto.gdriveUrl },
     });
-    this.logger.log(`Program archive updated: ${year}`);
+    this.logger.log(`Program archive updated: ${id}`);
     return ProgramArchiveMapper.toResponse(archive);
   }
 
-  async remove(year: number): Promise<void> {
-    await this.findByYear(year);
-    await this.prisma.programArchive.delete({ where: { year } });
-    this.logger.log(`Program archive deleted: ${year}`);
+  async remove(id: string): Promise<void> {
+    await this.getOrThrow(id);
+    await this.prisma.programArchive.delete({ where: { id } });
+    this.logger.log(`Program archive deleted: ${id}`);
+  }
+
+  private async getOrThrow(id: string): Promise<ProgramArchive> {
+    const archive = await this.prisma.programArchive.findUnique({ where: { id } });
+    if (!archive) {
+      throw new EntityNotFoundException('ProgramArchive', id);
+    }
+    return archive;
+  }
+
+  private async ensureYearAvailable(year: number): Promise<void> {
+    const existing = await this.prisma.programArchive.findUnique({ where: { year } });
+    if (existing) {
+      throw new ConflictException(`Program archive for year ${year} already exists.`);
+    }
   }
 }

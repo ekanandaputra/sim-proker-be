@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProgramArchive } from '@prisma/client';
 
 const gdriveUrlSchema = z
@@ -17,9 +17,14 @@ export const createProgramArchiveSchema = z.object({
 });
 export type CreateProgramArchiveBodyDto = z.infer<typeof createProgramArchiveSchema>;
 
-export const updateProgramArchiveSchema = z.object({
-  gdriveUrl: gdriveUrlSchema,
-});
+export const updateProgramArchiveSchema = z
+  .object({
+    year: z.number().int().min(2000).max(9999).optional(),
+    gdriveUrl: gdriveUrlSchema.optional(),
+  })
+  .refine((data) => data.year !== undefined || data.gdriveUrl !== undefined, {
+    message: 'At least one of year or gdriveUrl must be provided',
+  });
 export type UpdateProgramArchiveBodyDto = z.infer<typeof updateProgramArchiveSchema>;
 
 export class CreateProgramArchiveDto {
@@ -34,14 +39,20 @@ export class CreateProgramArchiveDto {
 }
 
 export class UpdateProgramArchiveDto {
-  @ApiProperty({
+  @ApiPropertyOptional({ example: 2025, description: 'Tahun arsip proker' })
+  year?: number;
+
+  @ApiPropertyOptional({
     example: 'https://drive.google.com/drive/folders/abc123',
     description: 'Link Google Drive arsip proker',
   })
-  gdriveUrl!: string;
+  gdriveUrl?: string;
 }
 
 export class ProgramArchiveResponseDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'Archive UUID' })
+  id!: string;
+
   @ApiProperty({ example: 2025, description: 'Tahun arsip proker' })
   year!: number;
 
@@ -54,6 +65,6 @@ export class ProgramArchiveResponseDto {
 
 export class ProgramArchiveMapper {
   static toResponse(a: ProgramArchive): ProgramArchiveResponseDto {
-    return { year: a.year, gdriveUrl: a.gdriveUrl };
+    return { id: a.id, year: a.year, gdriveUrl: a.gdriveUrl };
   }
 }

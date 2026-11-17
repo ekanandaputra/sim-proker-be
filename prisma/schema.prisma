@@ -535,7 +535,8 @@ model UnitBudgetProposal {
 
 /// Arsip Program Kerja — link Google Drive arsip proker per tahun
 model ProgramArchive {
-  year      Int      @id
+  id        String   @id @default(uuid())
+  year      Int      @unique
   gdriveUrl String   @map("gdrive_url") @db.VarChar(500)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
