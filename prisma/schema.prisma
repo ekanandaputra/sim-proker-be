@@ -528,3 +528,17 @@ model UnitBudgetProposal {
   @@index([meubelairDocumentId])
   @@map("unit_budget_proposals")
 }
+
+// ============================================================================
+// PROGRAM ARCHIVE
+// ============================================================================
+
+/// Arsip Program Kerja — link Google Drive arsip proker per tahun
+model ProgramArchive {
+  year      Int      @id
+  gdriveUrl String   @map("gdrive_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("program_archives")
+}

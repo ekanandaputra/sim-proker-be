@@ -21,6 +21,7 @@ import { IkuModule } from '@modules/iku/iku.module';
 import { MasterUnitTypeModule } from './modules/master-unit-type/master-unit-type.module';
 import { MasterBudgetModule } from './modules/master-budget/master-budget.module';
 import { UnitBudgetProposalModule } from '@modules/unit-budget-proposal/unit-budget-proposal.module';
+import { ProgramArchiveModule } from '@modules/program-archive/program-archive.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UnitBudgetProposalModule } from '@modules/unit-budget-proposal/unit-bud
     MasterUnitTypeModule,
     MasterBudgetModule,
     UnitBudgetProposalModule,
+    ProgramArchiveModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -7820,6 +7820,219 @@
           "Master Budget"
         ]
       }
+    },
+    "/api/v1/program-archives": {
+      "get": {
+        "operationId": "ProgramArchiveController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramArchiveResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List arsip proker (tahun & link Google Drive), urut tahun terbaru",
+        "tags": [
+          "Program Archives"
+        ]
+      },
+      "post": {
+        "operationId": "ProgramArchiveController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProgramArchiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramArchiveResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archive for the year already exists"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create arsip proker (ADMIN only)",
+        "tags": [
+          "Program Archives"
+        ]
+      }
+    },
+    "/api/v1/program-archives/{year}": {
+      "get": {
+        "operationId": "ProgramArchiveController_findByYear",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 2025,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramArchiveResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Program archive not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get arsip proker by tahun",
+        "tags": [
+          "Program Archives"
+        ]
+      },
+      "patch": {
+        "operationId": "ProgramArchiveController_update",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 2025,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProgramArchiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramArchiveResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Program archive not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update link Google Drive arsip proker (ADMIN only)",
+        "tags": [
+          "Program Archives"
+        ]
+      },
+      "delete": {
+        "operationId": "ProgramArchiveController_remove",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 2025,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program archive deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isSuccess": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Program archive deleted successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Program archive not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete arsip proker (ADMIN only)",
+        "tags": [
+          "Program Archives"
+        ]
+      }
     }
   },
   "info": {
@@ -12031,6 +12244,57 @@
         },
         "required": [
           "realization"
+        ]
+      },
+      "ProgramArchiveResponseDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2025,
+            "description": "Tahun arsip proker"
+          },
+          "gdriveUrl": {
+            "type": "string",
+            "example": "https://drive.google.com/drive/folders/abc123",
+            "description": "Link Google Drive arsip proker"
+          }
+        },
+        "required": [
+          "year",
+          "gdriveUrl"
+        ]
+      },
+      "CreateProgramArchiveDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2025,
+            "description": "Tahun arsip proker"
+          },
+          "gdriveUrl": {
+            "type": "string",
+            "example": "https://drive.google.com/drive/folders/abc123",
+            "description": "Link Google Drive arsip proker"
+          }
+        },
+        "required": [
+          "year",
+          "gdriveUrl"
+        ]
+      },
+      "UpdateProgramArchiveDto": {
+        "type": "object",
+        "properties": {
+          "gdriveUrl": {
+            "type": "string",
+            "example": "https://drive.google.com/drive/folders/abc123",
+            "description": "Link Google Drive arsip proker"
+          }
+        },
+        "required": [
+          "gdriveUrl"
         ]
       }
     }
