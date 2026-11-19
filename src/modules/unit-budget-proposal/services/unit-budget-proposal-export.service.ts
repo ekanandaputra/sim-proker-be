@@ -66,6 +66,84 @@ export class UnitBudgetProposalExportService {
     return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
+  /**
+   * One-sheet recap: one row per unit with its total proposal per year as columns
+   * (No | Nama Unit | <year> | <year> | ...) and a total row. Years default to the range found in
+   * the data; `startYear`/`endYear` fix the range (years without proposals show 0).
+   */
+  async exportRecapExcel(
+    startYear: number | undefined,
+    endYear: number | undefined,
+    currentUser: JwtPayload,
+    token: string,
+  ): Promise<Buffer> {
+    const proposals = await this.unitBudgetProposalService.findAllForRecap(
+      startYear,
+      endYear,
+      currentUser,
+      token,
+    );
+    const unitNames = await this.getUnitNames(token);
+
+    const dataYears = proposals.map((p) => p.year);
+    const from = startYear ?? (dataYears.length ? Math.min(...dataYears) : endYear);
+    const to = endYear ?? (dataYears.length ? Math.max(...dataYears) : startYear);
+    const years: number[] = [];
+    if (from !== undefined && to !== undefined) {
+      for (let y = from; y <= to; y++) years.push(y);
+    }
+
+    const totalsByUnit = new Map<string, Map<number, number>>();
+    for (const proposal of proposals) {
+      const perYear = totalsByUnit.get(proposal.unitId) ?? new Map<number, number>();
+      perYear.set(proposal.year, (perYear.get(proposal.year) ?? 0) + proposal.totalValue);
+      totalsByUnit.set(proposal.unitId, perYear);
+    }
+    const rows = [...totalsByUnit.entries()]
+      .map(([unitId, perYear]) => ({ unitName: unitNames.get(unitId) ?? unitId, perYear }))
+      .sort((a, b) => a.unitName.localeCompare(b.unitName));
+
+    const workbook = new exceljs.Workbook();
+    workbook.creator = 'SIM PROKER';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Rekap');
+    const lastCol = years.length + 2;
+
+    sheet.getColumn(1).width = 6;
+    sheet.getColumn(2).width = 40;
+    for (let c = 3; c <= lastCol; c++) sheet.getColumn(c).width = 22;
+
+    const period = years.length
+      ? years.length === 1
+        ? ` TAHUN ${years[0]}`
+        : ` TAHUN ${years[0]} - ${years[years.length - 1]}`
+      : '';
+    addSheetTitle(sheet, `REKAP USULAN ANGGARAN UNIT${period}`, lastCol);
+
+    let r = 4;
+    writeHeaderRow(sheet, r++, ['No', 'Nama Unit', ...years.map((y) => `Anggaran ${y}`)]);
+    const currencyCols = years.map((_, i) => i + 3);
+    rows.forEach((row, i) => {
+      writeDataRow(
+        sheet,
+        r++,
+        [i + 1, row.unitName, ...years.map((y) => row.perYear.get(y) ?? 0)],
+        currencyCols,
+      );
+    });
+    if (years.length) {
+      writeTotalRow(
+        sheet,
+        r,
+        'TOTAL',
+        lastCol,
+        years.map((y) => rows.reduce((sum, row) => sum + (row.perYear.get(y) ?? 0), 0)),
+      );
+    }
+
+    return Buffer.from(await workbook.xlsx.writeBuffer());
+  }
+
   /** Map of unit ID → unit name across every page of the auth service. Empty on failure. */
   private async getUnitNames(token: string): Promise<Map<string, string>> {
     const names = new Map<string, string>();

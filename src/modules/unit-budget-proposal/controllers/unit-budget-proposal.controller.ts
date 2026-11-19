@@ -34,6 +34,8 @@ import { UnitBudgetProposalExportService } from '../services/unit-budget-proposa
 import {
   ExportUnitBudgetProposalQuery,
   exportUnitBudgetProposalQuerySchema,
+  ExportUnitBudgetProposalRecapQuery,
+  exportUnitBudgetProposalRecapQuerySchema,
   MyUnitBudgetProposalQuery,
   MyUnitBudgetProposalResponseDto,
   myUnitBudgetProposalQuerySchema,
@@ -123,6 +125,46 @@ export class UnitBudgetProposalController {
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="Usulan_Anggaran_Unit_${query.year}.xlsx"`,
+    );
+    res.send(buffer);
+  }
+
+  @Get('export-recap')
+  @ApiOperation({
+    summary: 'Export multi-year recap of proposed unit budgets to Excel',
+    description:
+      'Downloads one .xlsx file with a single sheet "Rekap": one row per unit, one column per year ' +
+      '(Nama Unit | Anggaran <year> | ...) holding the total proposal of that unit for that year, ' +
+      'plus a total row. Without startYear/endYear the years span the range found in the data. ' +
+      'ADMIN exports all units; other roles only the units they belong to.',
+  })
+  @ApiQuery({ name: 'startYear', required: false, type: Number, example: 2026 })
+  @ApiQuery({ name: 'endYear', required: false, type: Number, example: 2028 })
+  @ApiFileResponse({
+    fileName: 'Rekap_Usulan_Anggaran_Unit.xlsx',
+    description: 'File Excel (.xlsx) siap diunduh',
+  })
+  async exportRecap(
+    @Query(new ZodValidationPipe(exportUnitBudgetProposalRecapQuerySchema))
+    query: ExportUnitBudgetProposalRecapQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.unitBudgetProposalExportService.exportRecapExcel(
+      query.startYear,
+      query.endYear,
+      user,
+      req.headers.authorization || '',
+    );
+    const suffix = [query.startYear, query.endYear].filter(Boolean).join('-');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Rekap_Usulan_Anggaran_Unit${suffix ? `_${suffix}` : ''}.xlsx"`,
     );
     res.send(buffer);
   }

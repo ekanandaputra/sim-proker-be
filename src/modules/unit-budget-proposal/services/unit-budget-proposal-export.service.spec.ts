@@ -35,7 +35,7 @@ async function load(buffer: Buffer) {
 }
 
 describe('UnitBudgetProposalExportService', () => {
-  const proposals = { findAllForExport: vi.fn() };
+  const proposals = { findAllForExport: vi.fn(), findAllForRecap: vi.fn() };
   const units = { getUnits: vi.fn() };
   const user = { userId: 'admin', roles: ['ADMIN'] } as unknown as JwtPayload;
   let service: UnitBudgetProposalExportService;
@@ -99,5 +99,50 @@ describe('UnitBudgetProposalExportService', () => {
     ]);
     const workbook = await load(await service.exportExcel(2026, user, 'token'));
     expect(workbook.worksheets.map((s) => s.name)).toEqual(['Ringkasan', 'unit x', 'unit x (2)']);
+  });
+
+  describe('exportRecapExcel', () => {
+    const withYear = (p: ReturnType<typeof proposal>, year: number) => ({ ...p, year });
+
+    it('builds one row per unit with a column per year found in the data', async () => {
+      proposals.findAllForRecap.mockResolvedValue([
+        withYear(proposal('unit-b', { perbaikanValue: 1000 }), 2026),
+        withYear(proposal('unit-a', { perbaikanValue: 200 }), 2026),
+        withYear(proposal('unit-b', { peralatanValue: 700 }), 2028),
+      ]);
+      const workbook = await load(
+        await service.exportRecapExcel(undefined, undefined, user, 'token'),
+      );
+
+      expect(proposals.findAllForRecap).toHaveBeenCalledWith(undefined, undefined, user, 'token');
+      const sheet = workbook.getWorksheet('Rekap')!;
+      expect(sheet.getCell('A1').value).toBe('REKAP USULAN ANGGARAN UNIT TAHUN 2026 - 2028');
+      expect(sheet.getRow(4).values).toEqual([
+        undefined,
+        'No',
+        'Nama Unit',
+        'Anggaran 2026',
+        'Anggaran 2027',
+        'Anggaran 2028',
+      ]);
+      expect(sheet.getRow(5).values).toEqual([undefined, 1, 'Akademik', 200, 0, 0]);
+      expect(sheet.getRow(6).values).toEqual([undefined, 2, 'Bengkel', 1000, 0, 700]);
+      expect(sheet.getCell('C7').value).toBe(1200);
+      expect(sheet.getCell('E7').value).toBe(700);
+    });
+
+    it('uses the requested year range even without data', async () => {
+      proposals.findAllForRecap.mockResolvedValue([]);
+      const workbook = await load(await service.exportRecapExcel(2026, 2027, user, 'token'));
+      const sheet = workbook.getWorksheet('Rekap')!;
+      expect(sheet.getRow(4).values).toEqual([
+        undefined,
+        'No',
+        'Nama Unit',
+        'Anggaran 2026',
+        'Anggaran 2027',
+      ]);
+      expect(sheet.getCell('C5').value).toBe(0);
+    });
   });
 });

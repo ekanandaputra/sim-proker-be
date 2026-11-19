@@ -187,6 +187,28 @@ export class UnitBudgetProposalService {
     return proposals.map((proposal) => this.mapToDto(proposal));
   }
 
+  /** Proposals within an optional year range the current user may see (ADMIN: every unit). */
+  async findAllForRecap(
+    startYear: number | undefined,
+    endYear: number | undefined,
+    currentUser: JwtPayload,
+    token?: string,
+  ): Promise<UnitBudgetProposalResponseDto[]> {
+    const allowedUnitIds = await this.getAllowedUnitIds(currentUser, token);
+    const year: Prisma.IntFilter = {};
+    if (startYear) year.gte = startYear;
+    if (endYear) year.lte = endYear;
+    const proposals = await this.prisma.unitBudgetProposal.findMany({
+      where: {
+        ...(startYear || endYear ? { year } : {}),
+        ...(allowedUnitIds ? { unitId: { in: allowedUnitIds } } : {}),
+      },
+      include: DOCUMENT_INCLUDE,
+      orderBy: [{ year: 'asc' }, { unitId: 'asc' }],
+    });
+    return proposals.map((proposal) => this.mapToDto(proposal));
+  }
+
   /**
    * Proposals of every unit the current user belongs to (same source as GET /units/my-units).
    * With `year`: one entry per unit for that year. Without `year`: one entry per unit per year

@@ -37,6 +37,24 @@ export const exportUnitBudgetProposalQuerySchema = z.object({
 
 export type ExportUnitBudgetProposalQuery = z.infer<typeof exportUnitBudgetProposalQuerySchema>;
 
+export const exportUnitBudgetProposalRecapQuerySchema = z
+  .object({
+    startYear: z.coerce.number().int().min(2000).optional(),
+    endYear: z.coerce.number().int().min(2000).optional(),
+  })
+  .refine((q) => !q.startYear || !q.endYear || q.startYear <= q.endYear, {
+    message: 'startYear must be <= endYear',
+    path: ['startYear'],
+  })
+  .refine((q) => !q.startYear || !q.endYear || q.endYear - q.startYear < 50, {
+    message: 'Year range must not exceed 50 years',
+    path: ['endYear'],
+  });
+
+export type ExportUnitBudgetProposalRecapQuery = z.infer<
+  typeof exportUnitBudgetProposalRecapQuerySchema
+>;
+
 // --- Upsert ---
 
 const documentId = (label: string) =>
