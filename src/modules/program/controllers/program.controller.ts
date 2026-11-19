@@ -32,6 +32,7 @@ import { ProgramService } from '../services/program.service';
 import { ProgramExportService, ExportProkerType } from '../services/program-export.service';
 import { ProgramIndicatorImportService } from '../services/program-indicator-import.service';
 import { ProgramStatusRecapService } from '../services/program-status-recap.service';
+import { ProgramStatusRecapExportService } from '../services/program-status-recap-export.service';
 import {
   ProgramStatusRecapQuery,
   ProgramStatusRecapResponseDto,
@@ -68,6 +69,7 @@ export class ProgramController {
     private readonly programExportService: ProgramExportService,
     private readonly indicatorImportService: ProgramIndicatorImportService,
     private readonly programStatusRecapService: ProgramStatusRecapService,
+    private readonly programStatusRecapExportService: ProgramStatusRecapExportService,
   ) {}
 
   @Patch('migrate-iku-ids')
@@ -265,7 +267,8 @@ export class ProgramController {
     summary: 'Get program status recap per unit and year',
     description:
       'Counts program indicators (programs assigned to a unit) per status: overall, per year and ' +
-      'one row per unit per year. Every row lists all statuses (0 when none). Without `year` all ' +
+      'one row per unit per year. Only the statuses in use are counted (ASSIGNED_TO_UNIT, SUBMITTED, ' +
+      'APPROVED, REJECTED, REVISION, IN_PROGRESS); every row lists all of them (0 when none). Without `year` all ' +
       'years are included. ADMIN sees every unit; other roles only the units they belong to. ' +
       'Unit names fall back to their IDs when the Auth Service is unavailable.',
   })
@@ -278,6 +281,43 @@ export class ProgramController {
     @Req() req: Request,
   ) {
     return this.programStatusRecapService.getRecap(query, user, req.headers.authorization || '');
+  }
+
+  @Get('status-recap/export')
+  @ApiOperation({
+    summary: 'Export program status recap per unit to Excel',
+    description:
+      'Downloads one .xlsx file. Sheet "Rekap Status": one row per unit per year with the number of ' +
+      'programs per status and a note highlighting units that still have programs in ASSIGNED_TO_UNIT ' +
+      '(not processed yet). Sheet "Belum Diproses": every program still waiting on its unit. ' +
+      'Same filters and access rules as GET /programs/status-recap.',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Program year', example: 2026 })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter by unit ID' })
+  @ApiFileResponse({
+    fileName: 'Rekap_Status_Program_<year>.xlsx',
+    description: 'File Excel (.xlsx) siap diunduh',
+  })
+  async exportStatusRecap(
+    @Query(new ZodValidationPipe(programStatusRecapQuerySchema)) query: ProgramStatusRecapQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.programStatusRecapExportService.exportExcel(
+      query,
+      user,
+      req.headers.authorization || '',
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Rekap_Status_Program_${query.year ?? 'Semua_Tahun'}.xlsx"`,
+    );
+    res.send(buffer);
   }
 
   @Get()

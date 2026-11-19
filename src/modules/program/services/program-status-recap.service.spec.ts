@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProgramStatus } from '@prisma/client';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
-import { Role } from '@common/constants';
+import { ACTIVE_PROGRAM_STATUSES, Role } from '@common/constants';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { UnitService } from '../../unit/services/unit.service';
 import { ProgramStatusRecapService } from './program-status-recap.service';
@@ -41,17 +41,17 @@ describe('ProgramStatusRecapService', () => {
       indicator('unit-b', ProgramStatus.APPROVED, 2026),
       indicator('unit-b', ProgramStatus.APPROVED, 2026),
       indicator('unit-a', ProgramStatus.SUBMITTED, 2026),
-      indicator('unit-a', ProgramStatus.COMPLETED, 2025),
+      indicator('unit-a', ProgramStatus.IN_PROGRESS, 2025),
     ]);
 
     const recap = await service.getRecap({}, admin, 'token');
 
     expect(prisma.programIndicator.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: {} }),
+      expect.objectContaining({ where: { status: { in: [...ACTIVE_PROGRAM_STATUSES] } } }),
     );
     expect(recap.total).toBe(4);
     expect(countOf(recap.statuses, ProgramStatus.APPROVED)).toBe(2);
-    expect(recap.statuses).toHaveLength(Object.values(ProgramStatus).length);
+    expect(recap.statuses.map((s) => s.status)).toEqual(ACTIVE_PROGRAM_STATUSES);
     expect(recap.years.map((y) => [y.year, y.total])).toEqual([
       [2025, 1],
       [2026, 3],
@@ -73,7 +73,13 @@ describe('ProgramStatusRecapService', () => {
     const recap = await service.getRecap({ year: 2026, unitId: 'unit-b' }, user, 'token');
 
     expect(prisma.programIndicator.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { program: { year: 2026 }, unitId: { in: [] } } }),
+      expect.objectContaining({
+        where: {
+          status: { in: [...ACTIVE_PROGRAM_STATUSES] },
+          program: { year: 2026 },
+          unitId: { in: [] },
+        },
+      }),
     );
     expect(recap).toMatchObject({ total: 0, years: [], units: [] });
     expect(units.getUnits).not.toHaveBeenCalled();

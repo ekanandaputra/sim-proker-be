@@ -42,7 +42,8 @@ export class ProgramStatusRecapRowDto {
 
   @ApiProperty({
     type: [ProgramStatusCountDto],
-    description: 'Count per status, always contains every ProgramStatus (0 when none)',
+    description:
+      'Count per status: ASSIGNED_TO_UNIT, SUBMITTED, APPROVED, REJECTED, REVISION, IN_PROGRESS (0 when none)',
   })
   statuses!: ProgramStatusCountDto[];
 }

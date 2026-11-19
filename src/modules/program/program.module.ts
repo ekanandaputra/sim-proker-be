@@ -14,6 +14,7 @@ import { AuthIntegrationModule } from '../external/auth-integration/auth-integra
 import { IkuModule } from '../iku/iku.module';
 import { ProgramExportService } from './services/program-export.service';
 import { ProgramStatusRecapService } from './services/program-status-recap.service';
+import { ProgramStatusRecapExportService } from './services/program-status-recap-export.service';
 import { StorageModule } from '@common/storage';
 
 @Module({
@@ -25,6 +26,7 @@ import { StorageModule } from '@common/storage';
     ProgramExportService,
     ProgramIndicatorImportService,
     ProgramStatusRecapService,
+    ProgramStatusRecapExportService,
     {
       provide: PROGRAM_REPOSITORY,
       useClass: ProgramRepository,

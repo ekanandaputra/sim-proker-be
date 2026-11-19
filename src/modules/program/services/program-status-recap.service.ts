@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, ProgramStatus } from '@prisma/client';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
-import { Role } from '@common/constants';
+import { ACTIVE_PROGRAM_STATUSES, Role } from '@common/constants';
 import { UnitService } from '../../unit/services/unit.service';
 import {
   ProgramStatusCountDto,
@@ -12,9 +12,16 @@ import {
 } from '../dto/program-status-recap.dto';
 
 const UNIT_PAGE_LIMIT = 100;
-const STATUSES = Object.values(ProgramStatus);
+const STATUSES: readonly ProgramStatus[] = ACTIVE_PROGRAM_STATUSES;
 
 type Counts = Map<ProgramStatus, number>;
+
+export interface UnprocessedIndicator {
+  unitId: string;
+  name: string;
+  createdAt: Date;
+  program: { code: string; title: string; year: number };
+}
 
 const toStatusList = (counts: Counts): ProgramStatusCountDto[] =>
   STATUSES.map((status) => ({ status, count: counts.get(status) ?? 0 }));
@@ -42,21 +49,7 @@ export class ProgramStatusRecapService {
     currentUser: JwtPayload,
     token: string,
   ): Promise<ProgramStatusRecapResponseDto> {
-    const { year, unitId } = query;
-    const allowedUnitIds = await this.getAllowedUnitIds(currentUser, token);
-
-    const where: Prisma.ProgramIndicatorWhereInput = {};
-    if (year) where.program = { year };
-    if (allowedUnitIds) {
-      where.unitId =
-        unitId !== undefined
-          ? allowedUnitIds.includes(unitId)
-            ? unitId
-            : { in: [] }
-          : { in: allowedUnitIds };
-    } else if (unitId) {
-      where.unitId = unitId;
-    }
+    const where = await this.buildWhere(query, currentUser, token);
 
     const indicators = await this.prisma.programIndicator.findMany({
       where,
@@ -105,6 +98,51 @@ export class ProgramStatusRecapService {
         .map(([y, counts]) => ({ year: y, total: sum(counts), statuses: toStatusList(counts) })),
       units,
     };
+  }
+
+  /**
+   * Indicators still in ASSIGNED_TO_UNIT, i.e. programs given to a unit that the unit has not
+   * processed yet. Same filter and access rules as getRecap.
+   */
+  async findUnprocessed(
+    query: ProgramStatusRecapQuery,
+    currentUser: JwtPayload,
+    token: string,
+  ): Promise<UnprocessedIndicator[]> {
+    const where = await this.buildWhere(query, currentUser, token);
+    return this.prisma.programIndicator.findMany({
+      where: { ...where, status: ProgramStatus.ASSIGNED_TO_UNIT },
+      select: {
+        unitId: true,
+        name: true,
+        createdAt: true,
+        program: { select: { code: true, title: true, year: true } },
+      },
+      orderBy: [{ program: { year: 'asc' } }, { program: { code: 'asc' } }],
+    });
+  }
+
+  private async buildWhere(
+    query: ProgramStatusRecapQuery,
+    currentUser: JwtPayload,
+    token: string,
+  ): Promise<Prisma.ProgramIndicatorWhereInput> {
+    const { year, unitId } = query;
+    const allowedUnitIds = await this.getAllowedUnitIds(currentUser, token);
+
+    const where: Prisma.ProgramIndicatorWhereInput = { status: { in: [...STATUSES] } };
+    if (year) where.program = { year };
+    if (allowedUnitIds) {
+      where.unitId =
+        unitId !== undefined
+          ? allowedUnitIds.includes(unitId)
+            ? unitId
+            : { in: [] }
+          : { in: allowedUnitIds };
+    } else if (unitId) {
+      where.unitId = unitId;
+    }
+    return where;
   }
 
   /** null for ADMIN (all units), otherwise the unit IDs the user belongs to. */

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as exceljs from 'exceljs';
 import { IndicatorCategory, ProgramStatus } from '@prisma/client';
 import { JwtPayload } from '@common/guards/jwt-auth.guard';
+import { PROGRAM_STATUS_LABELS } from '@common/constants';
 import {
   CURRENCY_FORMAT,
   addSheetTitle,
@@ -24,19 +25,6 @@ export const INDICATOR_CATEGORY_LABELS: Record<IndicatorCategory, string> = {
   TUSI: 'Tusi',
   RUTIN: 'Rutin',
   PENGEMBANGAN: 'Pengembangan',
-};
-
-export const PROGRAM_STATUS_LABELS: Record<ProgramStatus, string> = {
-  ASSIGNED_TO_UNIT: 'Ditugaskan ke Unit',
-  DRAFT: 'Draft',
-  SUBMITTED: 'Diajukan',
-  REVISION: 'Revisi',
-  INDICATOR_APPROVED: 'Indikator Disetujui',
-  APPROVED: 'Disetujui',
-  REJECTED: 'Ditolak',
-  IN_PROGRESS: 'Berjalan',
-  COMPLETED: 'Selesai',
-  CANCELLED: 'Dibatalkan',
 };
 
 const COUNT_FORMAT = '#,##0';

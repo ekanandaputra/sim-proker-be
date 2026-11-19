@@ -483,7 +483,7 @@
     },
     "/api/v1/programs/status-recap": {
       "get": {
-        "description": "Counts program indicators (programs assigned to a unit) per status: overall, per year and one row per unit per year. Every row lists all statuses (0 when none). Without `year` all years are included. ADMIN sees every unit; other roles only the units they belong to. Unit names fall back to their IDs when the Auth Service is unavailable.",
+        "description": "Counts program indicators (programs assigned to a unit) per status: overall, per year and one row per unit per year. Only the statuses in use are counted (ASSIGNED_TO_UNIT, SUBMITTED, APPROVED, REJECTED, REVISION, IN_PROGRESS); every row lists all of them (0 when none). Without `year` all years are included. ADMIN sees every unit; other roles only the units they belong to. Unit names fall back to their IDs when the Auth Service is unavailable.",
         "operationId": "ProgramController_getStatusRecap",
         "parameters": [
           {
@@ -524,6 +524,63 @@
           }
         ],
         "summary": "Get program status recap per unit and year",
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/api/v1/programs/status-recap/export": {
+      "get": {
+        "description": "Downloads one .xlsx file. Sheet \"Rekap Status\": one row per unit per year with the number of programs per status and a note highlighting units that still have programs in ASSIGNED_TO_UNIT (not processed yet). Sheet \"Belum Diproses\": every program still waiting on its unit. Same filters and access rules as GET /programs/status-recap.",
+        "operationId": "ProgramController_exportStatusRecap",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by unit ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Program year",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel (.xlsx) siap diunduh",
+            "headers": {
+              "Content-Disposition": {
+                "description": "attachment; filename=\"Rekap_Status_Program_<year>.xlsx\"",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export program status recap per unit to Excel",
         "tags": [
           "Programs"
         ]
@@ -8359,7 +8416,7 @@
             "description": "Number of indicators (program assignments) of the unit"
           },
           "statuses": {
-            "description": "Count per status, always contains every ProgramStatus (0 when none)",
+            "description": "Count per status: ASSIGNED_TO_UNIT, SUBMITTED, APPROVED, REJECTED, REVISION, IN_PROGRESS (0 when none)",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProgramStatusCountDto"
