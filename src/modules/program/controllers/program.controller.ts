@@ -31,6 +31,12 @@ import {
 import { ProgramService } from '../services/program.service';
 import { ProgramExportService, ExportProkerType } from '../services/program-export.service';
 import { ProgramIndicatorImportService } from '../services/program-indicator-import.service';
+import { ProgramStatusRecapService } from '../services/program-status-recap.service';
+import {
+  ProgramStatusRecapQuery,
+  ProgramStatusRecapResponseDto,
+  programStatusRecapQuerySchema,
+} from '../dto/program-status-recap.dto';
 import {
   createProgramSchema,
   CreateProgramDto,
@@ -61,6 +67,7 @@ export class ProgramController {
     private readonly programService: ProgramService,
     private readonly programExportService: ProgramExportService,
     private readonly indicatorImportService: ProgramIndicatorImportService,
+    private readonly programStatusRecapService: ProgramStatusRecapService,
   ) {}
 
   @Patch('migrate-iku-ids')
@@ -251,6 +258,26 @@ export class ProgramController {
 
     const token = req.headers.authorization as string;
     return this.indicatorImportService.importFromExcel(file, token, user.userId, year);
+  }
+
+  @Get('status-recap')
+  @ApiOperation({
+    summary: 'Get program status recap per unit and year',
+    description:
+      'Counts program indicators (programs assigned to a unit) per status: overall, per year and ' +
+      'one row per unit per year. Every row lists all statuses (0 when none). Without `year` all ' +
+      'years are included. ADMIN sees every unit; other roles only the units they belong to. ' +
+      'Unit names fall back to their IDs when the Auth Service is unavailable.',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Program year', example: 2026 })
+  @ApiQuery({ name: 'unitId', required: false, type: String, description: 'Filter by unit ID' })
+  @ApiResponse({ status: 200, type: ProgramStatusRecapResponseDto })
+  async getStatusRecap(
+    @Query(new ZodValidationPipe(programStatusRecapQuerySchema)) query: ProgramStatusRecapQuery,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+  ) {
+    return this.programStatusRecapService.getRecap(query, user, req.headers.authorization || '');
   }
 
   @Get()

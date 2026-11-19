@@ -13,6 +13,7 @@ import { UnitModule } from '../unit/unit.module';
 import { AuthIntegrationModule } from '../external/auth-integration/auth-integration.module';
 import { IkuModule } from '../iku/iku.module';
 import { ProgramExportService } from './services/program-export.service';
+import { ProgramStatusRecapService } from './services/program-status-recap.service';
 import { StorageModule } from '@common/storage';
 
 @Module({
@@ -23,6 +24,7 @@ import { StorageModule } from '@common/storage';
     ProgramIndicatorService,
     ProgramExportService,
     ProgramIndicatorImportService,
+    ProgramStatusRecapService,
     {
       provide: PROGRAM_REPOSITORY,
       useClass: ProgramRepository,
