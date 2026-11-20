@@ -21,6 +21,30 @@ export class ProgramStatusCountDto {
   count!: number;
 }
 
+export class ProgramStatusUnitCountDto {
+  @ApiProperty({ example: '50c42d0a-e798-4d41-be97-31593d422bbe' })
+  unitId!: string;
+
+  @ApiProperty({
+    example: 'Unit Teknik Informatika',
+    description: 'Unit name from the Auth Service; falls back to the unit ID',
+  })
+  unitName!: string;
+
+  @ApiProperty({ example: 3, description: 'Number of indicators of this unit in the status' })
+  count!: number;
+}
+
+export class ProgramStatusSummaryDto extends ProgramStatusCountDto {
+  @ApiProperty({
+    type: [ProgramStatusUnitCountDto],
+    description:
+      'Units that have indicators in this status, sorted by count (desc) then name. ' +
+      'For ASSIGNED_TO_UNIT these are the units that have not processed their indicators yet.',
+  })
+  units!: ProgramStatusUnitCountDto[];
+}
+
 export class ProgramStatusRecapRowDto {
   @ApiProperty({ example: '50c42d0a-e798-4d41-be97-31593d422bbe' })
   unitId!: string;
@@ -55,16 +79,19 @@ export class ProgramStatusRecapYearDto {
   @ApiProperty({ example: 40 })
   total!: number;
 
-  @ApiProperty({ type: [ProgramStatusCountDto] })
-  statuses!: ProgramStatusCountDto[];
+  @ApiProperty({ type: [ProgramStatusSummaryDto], description: 'Count and units per status' })
+  statuses!: ProgramStatusSummaryDto[];
 }
 
 export class ProgramStatusRecapResponseDto {
   @ApiProperty({ example: 40, description: 'Number of indicators matching the filter' })
   total!: number;
 
-  @ApiProperty({ type: [ProgramStatusCountDto], description: 'Count per status across all rows' })
-  statuses!: ProgramStatusCountDto[];
+  @ApiProperty({
+    type: [ProgramStatusSummaryDto],
+    description: 'Count per status across all rows, with the units in each status',
+  })
+  statuses!: ProgramStatusSummaryDto[];
 
   @ApiProperty({ type: [ProgramStatusRecapYearDto], description: 'Totals per year (ascending)' })
   years!: ProgramStatusRecapYearDto[];

@@ -62,6 +62,15 @@ describe('ProgramStatusRecapService', () => {
       [2026, 'Bengkel', 2],
     ]);
     expect(countOf(recap.units[2].statuses, ProgramStatus.APPROVED)).toBe(2);
+
+    const approved = recap.statuses.find((st) => st.status === ProgramStatus.APPROVED)!;
+    expect(approved.units).toEqual([{ unitId: 'unit-b', unitName: 'Bengkel', count: 2 }]);
+    const submitted2026 = recap.years[1].statuses.find(
+      (st) => st.status === ProgramStatus.SUBMITTED,
+    )!;
+    expect(submitted2026.units).toEqual([{ unitId: 'unit-a', unitName: 'Akademik', count: 1 }]);
+    const assigned = recap.statuses.find((st) => st.status === ProgramStatus.ASSIGNED_TO_UNIT)!;
+    expect(assigned).toEqual({ status: ProgramStatus.ASSIGNED_TO_UNIT, count: 0, units: [] });
     expect(countOf(recap.units[2].statuses, ProgramStatus.REJECTED)).toBe(0);
   });
 

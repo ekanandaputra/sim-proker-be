@@ -8340,6 +8340,92 @@
           "createdAt"
         ]
       },
+      "ProgramStatusUnitCountDto": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "example": "50c42d0a-e798-4d41-be97-31593d422bbe"
+          },
+          "unitName": {
+            "type": "string",
+            "example": "Unit Teknik Informatika",
+            "description": "Unit name from the Auth Service; falls back to the unit ID"
+          },
+          "count": {
+            "type": "number",
+            "example": 3,
+            "description": "Number of indicators of this unit in the status"
+          }
+        },
+        "required": [
+          "unitId",
+          "unitName",
+          "count"
+        ]
+      },
+      "ProgramStatusSummaryDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED_TO_UNIT",
+              "DRAFT",
+              "SUBMITTED",
+              "REVISION",
+              "INDICATOR_APPROVED",
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "APPROVED"
+          },
+          "count": {
+            "type": "number",
+            "example": 5
+          },
+          "units": {
+            "description": "Units that have indicators in this status, sorted by count (desc) then name. For ASSIGNED_TO_UNIT these are the units that have not processed their indicators yet.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramStatusUnitCountDto"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "count",
+          "units"
+        ]
+      },
+      "ProgramStatusRecapYearDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2026
+          },
+          "total": {
+            "type": "number",
+            "example": 40
+          },
+          "statuses": {
+            "description": "Count and units per status",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramStatusSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "year",
+          "total",
+          "statuses"
+        ]
+      },
       "ProgramStatusCountDto": {
         "type": "object",
         "properties": {
@@ -8367,30 +8453,6 @@
         "required": [
           "status",
           "count"
-        ]
-      },
-      "ProgramStatusRecapYearDto": {
-        "type": "object",
-        "properties": {
-          "year": {
-            "type": "number",
-            "example": 2026
-          },
-          "total": {
-            "type": "number",
-            "example": 40
-          },
-          "statuses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProgramStatusCountDto"
-            }
-          }
-        },
-        "required": [
-          "year",
-          "total",
-          "statuses"
         ]
       },
       "ProgramStatusRecapRowDto": {
@@ -8440,10 +8502,10 @@
             "description": "Number of indicators matching the filter"
           },
           "statuses": {
-            "description": "Count per status across all rows",
+            "description": "Count per status across all rows, with the units in each status",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ProgramStatusCountDto"
+              "$ref": "#/components/schemas/ProgramStatusSummaryDto"
             }
           },
           "years": {

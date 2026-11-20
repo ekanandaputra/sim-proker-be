@@ -9,12 +9,15 @@ import {
   ProgramStatusRecapQuery,
   ProgramStatusRecapResponseDto,
   ProgramStatusRecapRowDto,
+  ProgramStatusSummaryDto,
 } from '../dto/program-status-recap.dto';
 
 const UNIT_PAGE_LIMIT = 100;
 const STATUSES: readonly ProgramStatus[] = ACTIVE_PROGRAM_STATUSES;
 
 type Counts = Map<ProgramStatus, number>;
+/** status → unit ID → indicator count */
+type UnitCounts = Map<ProgramStatus, Map<string, number>>;
 
 export interface UnprocessedIndicator {
   unitId: string;
@@ -30,6 +33,25 @@ const sum = (counts: Counts) => [...counts.values()].reduce((s, n) => s + n, 0);
 
 const increment = (counts: Counts, status: ProgramStatus) =>
   counts.set(status, (counts.get(status) ?? 0) + 1);
+
+const incrementUnit = (unitCounts: UnitCounts, status: ProgramStatus, unitId: string) => {
+  const perUnit = unitCounts.get(status) ?? new Map<string, number>();
+  perUnit.set(unitId, (perUnit.get(unitId) ?? 0) + 1);
+  unitCounts.set(status, perUnit);
+};
+
+const toSummaryList = (
+  counts: Counts,
+  unitCounts: UnitCounts,
+  unitNames: Map<string, string>,
+): ProgramStatusSummaryDto[] =>
+  STATUSES.map((status) => ({
+    status,
+    count: counts.get(status) ?? 0,
+    units: [...(unitCounts.get(status) ?? new Map<string, number>()).entries()]
+      .map(([unitId, count]) => ({ unitId, unitName: unitNames.get(unitId) ?? unitId, count }))
+      .sort((a, b) => b.count - a.count || a.unitName.localeCompare(b.unitName)),
+  }));
 
 @Injectable()
 export class ProgramStatusRecapService {
@@ -57,15 +79,18 @@ export class ProgramStatusRecapService {
     });
 
     const overall: Counts = new Map();
-    const perYear = new Map<number, Counts>();
+    const overallUnits: UnitCounts = new Map();
+    const perYear = new Map<number, { counts: Counts; units: UnitCounts }>();
     const perUnitYear = new Map<string, { unitId: string; year: number; counts: Counts }>();
 
     for (const { unitId: indicatorUnitId, status, program } of indicators) {
       increment(overall, status);
+      incrementUnit(overallUnits, status, indicatorUnitId);
 
-      const yearCounts = perYear.get(program.year) ?? new Map();
-      increment(yearCounts, status);
-      perYear.set(program.year, yearCounts);
+      const yearRow = perYear.get(program.year) ?? { counts: new Map(), units: new Map() };
+      increment(yearRow.counts, status);
+      incrementUnit(yearRow.units, status, indicatorUnitId);
+      perYear.set(program.year, yearRow);
 
       const key = `${indicatorUnitId}|${program.year}`;
       const row = perUnitYear.get(key) ?? {
@@ -92,10 +117,14 @@ export class ProgramStatusRecapService {
 
     return {
       total: indicators.length,
-      statuses: toStatusList(overall),
+      statuses: toSummaryList(overall, overallUnits, unitNames),
       years: [...perYear.entries()]
         .sort(([a], [b]) => a - b)
-        .map(([y, counts]) => ({ year: y, total: sum(counts), statuses: toStatusList(counts) })),
+        .map(([y, row]) => ({
+          year: y,
+          total: sum(row.counts),
+          statuses: toSummaryList(row.counts, row.units, unitNames),
+        })),
       units,
     };
   }
